@@ -1,22 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   CheckCircle2,
   Download,
-  FileSignature,
   FileText,
   ReceiptText,
   Award,
   Loader2,
   AlertCircle,
   BookOpen,
-  PenTool,
 } from "lucide-react";
-import { buildEmargementHTML } from "./EmargementsSignesViewer";
-import { EmargementFCModal } from "./EmargementFCModal";
-import { creneauHoraire, creneauLabel, getExpectedEmargements, type CreneauKey } from "@/lib/agendaSlots";
+import EmargementsSignesViewer from "./EmargementsSignesViewer";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { controlerAttestationFC, messageRefusAttestationFC, type ControleAttestationFC } from "@/lib/attestationFcVerrou";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
@@ -60,15 +56,6 @@ interface ApprenantInfo {
   date_naissance?: string | null;
 }
 
-interface EmargementRow {
-  id: string;
-  date_emargement: string;
-  demi_journee: string;
-  signature_data_url: string | null;
-  signed_at: string;
-  absent?: boolean | null;
-}
-
 interface FactureDoc {
   id: string;
   url: string;
@@ -76,34 +63,6 @@ interface FactureDoc {
   titre: string;
   created_at?: string;
 }
-
-type GroupedEmargements = {
-  matin?: EmargementRow;
-  apresMidi?: EmargementRow;
-  soir?: EmargementRow;
-  soir1?: EmargementRow;
-  soir2?: EmargementRow;
-  expectedSet?: Set<CreneauKey>;
-};
-
-const normalizeDemi = (d: string) => (d || "").toLowerCase().replace(/_/g, "-").trim();
-const normalizeCreneauKey = (d: string): CreneauKey | null => {
-  const k = normalizeDemi(d);
-  if (k === "matin") return "matin";
-  if (k === "apres-midi" || k === "après-midi") return "apres_midi";
-  if (k === "soir") return "soir";
-  if (k === "soir-1") return "soir_1";
-  if (k === "soir-2") return "soir_2";
-  return null;
-};
-const emargementSlotKey = (date: string, creneau: CreneauKey) => `${date}|${creneau}`;
-const isEmargementFilled = (row?: EmargementRow | null) => Boolean(row?.signature_data_url?.trim()) || row?.absent === true;
-
-const formatDateFR = (iso: string) => {
-  const d = new Date(iso + "T00:00:00");
-  if (isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("fr-FR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
-};
 
 function buildProgrammeHTML(formation: "VTC" | "TAXI") {
   const titre = `PROGRAMME DE FORMATION CONTINUE ${formation}`;
@@ -203,8 +162,6 @@ function openHtmlInNewWindow(html: string) {
 export default function RemboursementFCViewer({ apprenantId, completed, onComplete, formation = "VTC" }: Props) {
   const [loading, setLoading] = useState(true);
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
-  const [emargements, setEmargements] = useState<EmargementRow[]>([]);
-  const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
   const [factures, setFactures] = useState<FactureDoc[]>([]);
   const [attestations, setAttestations] = useState<FactureDoc[]>([]);
   // Verrou serveur : attestations (y compris déjà déposées) visibles seulement si les 4 émargements sont signés.
@@ -214,26 +171,17 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
   const [dbFactures, setDbFactures] = useState<DbFacture[]>([]);
   const [generatingFactureId, setGeneratingFactureId] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean } | null>(null);
-  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     if (!apprenantId) { setLoading(false); return; }
     (async () => {
       setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
-      const [apRes, emRes, fRes, atRes] = await Promise.all([
+      const [apRes, fRes, atRes] = await Promise.all([
         supabase
           .from("apprenants")
           .select("auth_user_id, nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, creneau_horaire, date_naissance")
           .eq("id", apprenantId)
           .maybeSingle(),
-        supabase
-          .from("emargements_fc")
-          .select("id, date_emargement, demi_journee, signature_data_url, signed_at, absent").filter("masque", "eq", false)
-          .eq("apprenant_id", apprenantId)
-          .order("date_emargement", { ascending: true }),
         supabase
           .from("documents_inscription")
           .select("id, url, nom_fichier, titre, created_at")
@@ -250,8 +198,6 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
 
       const ap = (!apRes.error && apRes.data) ? (apRes.data as ApprenantInfo) : null;
       setApprenant(ap);
-      setUserId(session?.user?.id || ap?.auth_user_id || null);
-      if (!emRes.error && Array.isArray(emRes.data)) setEmargements(emRes.data as unknown as EmargementRow[]);
       if (!fRes.error && Array.isArray(fRes.data)) setFactures(fRes.data as FactureDoc[]);
       if (!atRes.error && Array.isArray(atRes.data)) setAttestations(atRes.data as FactureDoc[]);
 
@@ -293,100 +239,11 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
       }
 
 
-      if (ap) {
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const parseDate = (s?: string | null): Date | null => {
-          if (!s) return null;
-          if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s.slice(0, 10) + "T00:00:00");
-          if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
-            const [d, m, y] = s.slice(0, 10).split("/");
-            return new Date(`${y}-${m}-${d}T00:00:00`);
-          }
-          return null;
-        };
-        let start = parseDate(ap.date_debut_formation);
-        if (!start || isNaN(start.getTime())) { start = new Date(today); start.setDate(today.getDate() - 30); }
-        let end = parseDate(ap.date_fin_formation);
-        if (!end || isNaN(end.getTime()) || end.getTime() > today.getTime()) end = today;
-        const exp = await getExpectedEmargements({
-          mode: "fc",
-          formationChoisie: ap.formation_choisie,
-          creneauHoraire: ap.creneau_horaire,
-          typeApprenant: (ap as any).type_apprenant,
-          apprenantId,
-          startDate: start,
-          endDate: end,
-        });
-        setExpected(exp);
-      }
       setLoading(false);
     })();
-  }, [apprenantId, refreshTick]);
+  }, [apprenantId]);
 
-  const signedCount = emargements.filter((r) => r.signature_data_url?.trim()).length;
-  const hasEmargements = signedCount > 0;
   const hasFacture = factures.length > 0 || dbFactures.length > 0;
-  const emargementBySlot = useMemo(() => {
-    const map = new Map<string, EmargementRow>();
-    for (const row of emargements) {
-      const key = normalizeCreneauKey(row.demi_journee);
-      if (key) map.set(emargementSlotKey(row.date_emargement, key), row);
-    }
-    return map;
-  }, [emargements]);
-  const missingEmargements = expected.filter((slot) => !isEmargementFilled(emargementBySlot.get(emargementSlotKey(slot.date, slot.creneau))));
-  const missingCount = missingEmargements.length;
-  const allSignableSlots = expected.length > 0
-    ? expected
-    : emargements
-        .map((row) => {
-          const creneau = normalizeCreneauKey(row.demi_journee);
-          return creneau ? { date: row.date_emargement, creneau } : null;
-        })
-        .filter((slot): slot is { date: string; creneau: CreneauKey } => Boolean(slot));
-  const signableSlots = missingEmargements.length > 0 ? missingEmargements : allSignableSlots;
-  const firstSignable = signableSlots[0];
-  const openSignatureFor = useCallback((slot: { date: string; creneau: CreneauKey }) => {
-    const existing = emargementBySlot.get(emargementSlotKey(slot.date, slot.creneau));
-    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing) });
-  }, [emargementBySlot]);
-
-  useEffect(() => {
-    const handler = (event: MessageEvent) => {
-      const data = event.data as { type?: string; date?: string; creneau?: CreneauKey } | null;
-      if (data?.type !== "open-emargement-signature" || !data.date || !data.creneau) return;
-      openSignatureFor({ date: data.date, creneau: data.creneau });
-    };
-    window.addEventListener("message", handler);
-    return () => window.removeEventListener("message", handler);
-  }, [openSignatureFor]);
-
-  const handleDownloadEmargements = () => {
-    setDownloading("emargements");
-    try {
-      const map = new Map<string, GroupedEmargements>();
-      const ensure = (date: string) => {
-        let e = map.get(date);
-        if (!e) { e = { expectedSet: new Set() }; map.set(date, e); }
-        return e;
-      };
-      for (const r of emargements) {
-        const entry = ensure(r.date_emargement);
-        const k = normalizeDemi(r.demi_journee);
-        if (k === "matin") entry.matin = r;
-        else if (k === "apres-midi" || k === "après-midi") entry.apresMidi = r;
-        else if (k === "soir") entry.soir = r;
-        else if (k === "soir-1") entry.soir1 = r;
-        else if (k === "soir-2") entry.soir2 = r;
-      }
-      for (const e of expected) ensure(e.date).expectedSet?.add(e.creneau);
-      const grouped = Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-      const html = buildEmargementHTML(grouped, apprenant, { isFormationContinue: true });
-      openHtmlInNewWindow(html);
-    } finally {
-      setDownloading(null);
-    }
-  };
 
   const handleDownloadProgramme = () => {
     if (formation === "TAXI") {
@@ -598,111 +455,8 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
         </div>
       </Card>
 
-      {/* 2. Feuilles d'émargement */}
-      <Card className="p-4">
-        <div className="flex items-start gap-3">
-          <FileSignature className="h-6 w-6 text-blue-600 shrink-0 mt-1" />
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold">2. Feuilles d'émargement signées</h3>
-              {hasEmargements && (
-                <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                  <CheckCircle2 className="h-3 w-3" />
-                  {signedCount} signature{signedCount > 1 ? "s" : ""}
-                </span>
-              )}
-              {missingCount > 0 && (
-                <span className="inline-flex items-center gap-1 text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
-                  <AlertCircle className="h-3 w-3" />
-                  {missingCount} à signer
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Feuille individuelle reprenant toutes vos signatures par demi-journée durant la formation.
-            </p>
-            {missingCount > 0 ? (
-              <p className="text-xs text-amber-700 mt-1">
-                Il reste {missingCount} créneau{missingCount > 1 ? "x" : ""} à signer avant de télécharger une feuille complète.
-              </p>
-            ) : !hasEmargements && (
-              <p className="text-xs text-amber-700 mt-1">
-                Aucune signature enregistrée pour le moment. Pensez à signer chaque demi-journée dans le module dédié.
-              </p>
-            )}
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                disabled={(emargements.length === 0 && expected.length === 0) || downloading === "emargements"}
-                onClick={handleDownloadEmargements}
-              >
-                {downloading === "emargements" ? (
-                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4 mr-1.5" />
-                )}
-                Télécharger les feuilles d'émargement (PDF)
-              </Button>
-              {firstSignable && userId && (
-                <Button size="sm" onClick={() => openSignatureFor(firstSignable)}>
-                  <PenTool className="h-4 w-4 mr-1.5" />
-                  {missingCount > 0 ? "Signer maintenant" : "Re-signer"}
-                </Button>
-              )}
-            </div>
-            {missingCount > 0 && userId && (
-              <div className="mt-3 rounded-md border border-amber-200 bg-amber-50/70 p-2">
-                <p className="text-[11px] font-medium text-amber-900 mb-1.5">
-                  Créneaux non signés ({missingCount})
-                </p>
-                <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-                  {missingEmargements.map((slot) => (
-                    <button
-                      key={emargementSlotKey(slot.date, slot.creneau)}
-                      type="button"
-                      onClick={() => openSignatureFor(slot)}
-                      className="flex w-full items-center justify-between gap-2 rounded bg-background/80 px-2 py-1.5 text-left text-xs hover:bg-amber-100 transition-colors"
-                    >
-                      <span className="text-foreground">
-                        <span className="capitalize">{formatDateFR(slot.date)}</span> — {creneauLabel(slot.creneau)} ({creneauHoraire(slot.creneau)})
-                      </span>
-                      <span className="inline-flex h-7 items-center rounded px-2 text-xs font-medium text-primary">
-                        <PenTool className="h-3.5 w-3.5 mr-1" />
-                        Signer
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {missingCount === 0 && userId && signableSlots.length > 0 && (
-              <div className="mt-3 rounded-md border border-blue-200 bg-blue-50/70 p-2">
-                <p className="text-[11px] font-medium text-blue-900 mb-1.5">
-                  Besoin de refaire une signature ?
-                </p>
-                <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
-                  {signableSlots.map((slot) => (
-                    <button
-                      key={emargementSlotKey(slot.date, slot.creneau)}
-                      type="button"
-                      onClick={() => openSignatureFor(slot)}
-                      className="flex w-full items-center justify-between gap-2 rounded bg-background/80 px-2 py-1.5 text-left text-xs hover:bg-blue-100 transition-colors"
-                    >
-                      <span className="text-foreground">
-                        <span className="capitalize">{formatDateFR(slot.date)}</span> — {creneauLabel(slot.creneau)} ({creneauHoraire(slot.creneau)})
-                      </span>
-                      <span className="inline-flex h-7 items-center rounded px-2 text-xs font-medium text-primary">
-                        <PenTool className="h-3.5 w-3.5 mr-1" />
-                        Re-signer
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </Card>
+      {/* Same dossier-scoped sheets and PDF as CRM; only owner may sign. */}
+      <EmargementsSignesViewer apprenantId={apprenantId} completed={true} onComplete={() => {}} />
 
       {/* 3. Attestation de fin de formation */}
       <Card className="p-4">
@@ -853,23 +607,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
         </div>
       )}
 
-      {signTarget && userId && apprenantId && (
-        <EmargementFCModal
-          apprenantId={apprenantId}
-          userId={userId}
-          apprenantNom={apprenant?.nom || ""}
-          apprenantPrenom={apprenant?.prenom || ""}
-          creneau={signTarget.creneau}
-          mode="fc"
-          dateEmargement={signTarget.date}
-          replaceExisting={signTarget.replaceExisting}
-          onSigned={() => {
-            setSignTarget(null);
-            setRefreshTick((tick) => tick + 1);
-          }}
-          onSkipped={() => setSignTarget(null)}
-        />
-      )}
+
     </div>
   );
 }

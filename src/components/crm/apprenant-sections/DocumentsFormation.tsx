@@ -695,7 +695,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
                             onClick={() => setShowEmargementSigner((v) => !v)}
                           >
                             <PenTool className="w-4 h-4 mr-2" />
-                            {showEmargementSigner ? 'Masquer signatures' : 'Signer / re-signer'}
+                            {showEmargementSigner ? 'Masquer signatures' : 'Voir les signatures'}
                           </Button>
                         )}
                         <Button
@@ -776,7 +776,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
                 </div>
                 {doc.id === 'emargement' && showEmargementSigner && (
                   <div className="border-t bg-background p-4">
-                    <EmargementsSignesViewer apprenantId={apprenant.id} completed={true} onComplete={() => {}} />
+                    <EmargementsSignesViewer readOnly apprenantId={apprenant.id} completed={true} onComplete={() => {}} />
                   </div>
                 )}
               </div>

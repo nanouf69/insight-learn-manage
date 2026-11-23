@@ -1,4 +1,9 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Émargements Thomas FC VTC (23/11)
+- [x] Deux dossiers distincts prouvés ; affichage/PDF partagés, consultation admin sans re-signature, erreurs explicites : 31 tests + 8 parcours fictifs PC/mobile, PDF identiques, quatre empreintes historiques inchangées. Aperçu non publié ; rapport docs/emargement-thomas-parite-2026-11-23.md.
+- [ ] Vérification connectée des vues Thomas : compte disponible non administrateur, refus des deux dossiers ; session Thomas/admin autorisée nécessaire, aucun droit élargi.
+- [ ] Même périmètre entre les deux dossiers : bloqué par absence de rattachement autorisé ; aucune fusion ni déplacement de signature.
+
 Légende : PROD = en ligne · APERÇU = prêt non publié · BLOQUÉ = raison indiquée.
 Prérequis global des lots serveur à risque : export de la base fait par l'utilisateur (More → Database → Settings → Export) + restauration test sur un projet distinct.
 

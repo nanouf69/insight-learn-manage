@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Download, FileSignature, Loader2, User, PenTool } from "lucide-react";
+import { CheckCircle2, Download, FileSignature, Loader2, User, PenTool, RefreshCw } from "lucide-react";
 import { EmargementFCModal, isFormationContinue } from "./EmargementFCModal";
-import { getExpectedEmargements, isPresentielType, PRATIQUE_HORAIRES, type CreneauKey } from "@/lib/agendaSlots";
+import { PRATIQUE_HORAIRES, type CreneauKey } from "@/lib/agendaSlots";
 import { getPratiqueDates } from "@/lib/pratiqueEmargements";
 import { SIGNATURE_NAOUFAL_DATA_URL } from "@/lib/signatureNaoufal";
+import { lireSignaturesDossier, indexerEmargements, creneauxManquants } from '@/lib/emargementLecture';
+import { lireFenetresEmargement, fenetresDues } from '@/lib/emargementFenetres';
 import cachetAsset from "@/assets/cachet-ftransport.png.asset.json";
 import { autorisationsPourCreneau, EMARGEMENT_TARDIF_ACTIF, signatureTardive, type AutorisationTardive } from '@/lib/emargementTardif';
 import { ConfirmationEmargementTardif } from './ConfirmationEmargementTardif';
@@ -41,6 +43,7 @@ interface Props {
   apprenantId?: string;
   completed: boolean;
   onComplete: () => void;
+  readOnly?: boolean;
 }
 
 const formatDateFR = (iso: string) => {
@@ -111,7 +114,7 @@ type GroupedEmargements = {
 export const buildEmargementHTML = (
   groupedByDay: Array<[string, GroupedEmargements]>,
   apprenant: ApprenantInfo | null,
-  options?: { isFormationContinue?: boolean; pratiqueDates?: Set<string> }
+  options?: { isFormationContinue?: boolean; pratiqueDates?: Set<string>; readOnly?: boolean; versions?: EmargementRow[] }
 ) => {
   const isFC = !!options?.isFormationContinue;
   const pratiqueDates = options?.pratiqueDates;
@@ -153,15 +156,18 @@ export const buildEmargementHTML = (
 
   let totalHeures = 0;
   const missingSignatureCell = (date: string, creneau: CreneauKey) =>
-    `<span class="missing-signature">Signature manquante</span><button class="sign-action" data-date="${date}" data-creneau="${creneau}">Signer ici</button>`;
+    `<span class="missing-signature">Signature manquante</span>${options?.readOnly ? "" : `<button class="sign-action" data-date="${date}" data-creneau="${creneau}">Signer ici</button>`}`;
 
   const rowsHtml = groupedByDay
     .map(([date, { matin, apresMidi, soir, soir1, soir2, expectedSet }]) => {
       const jourLabel = capitalize(formatDateFR(date));
-      const sigImg = (r: EmargementRow | undefined, creneau: CreneauKey, expectedSlot = false) =>
-        r?.signature_data_url
+      const sigImg = (r: EmargementRow | undefined, creneau: CreneauKey, expectedSlot = false) => {
+        const cell = r?.absent === true ? `<span>Absence déclarée</span>` : r?.signature_data_url
           ? `<img src="${r.signature_data_url}" alt="Signature" style="max-height:55px;max-width:95%;"/>`
           : expectedSlot ? missingSignatureCell(date, creneau) : "";
+        const versions = (options?.versions ?? []).filter(v => v.id !== r?.id && v.date_emargement === date && normalizeCreneauKey(v.demi_journee) === creneau);
+        return cell + versions.map(v => `<div>Version conservée — ${formatShortDate(v.signed_at)}${v.signature_data_url ? `<br/><img src="${v.signature_data_url}" alt="Signature conservée" style="max-height:55px;max-width:95%;"/>` : v.absent ? ' — Absence déclarée' : ' — Non signé'}</div>`).join('');
+      };
       let heuresJour = 0;
       let cells = "";
       if (hasSoirSplit) {
@@ -304,9 +310,10 @@ export const buildEmargementHTML = (
 
 const downloadAllJournees = (
   groupedByDay: Array<[string, GroupedEmargements]>,
-  apprenant: ApprenantInfo | null
+  apprenant: ApprenantInfo | null,
+  options?: Parameters<typeof buildEmargementHTML>[2]
 ) => {
-  const html = buildEmargementHTML(groupedByDay, apprenant);
+  const html = buildEmargementHTML(groupedByDay, apprenant, options);
   const w = window.open("", "_blank");
   if (w) {
     w.document.write(html);
@@ -317,21 +324,26 @@ const downloadAllJournees = (
 const downloadJournee = (
   date: string,
   day: GroupedEmargements,
-  apprenant: ApprenantInfo | null
+  apprenant: ApprenantInfo | null,
+  options?: Parameters<typeof buildEmargementHTML>[2]
 ) => {
-  downloadAllJournees([[date, day]], apprenant);
+  downloadAllJournees([[date, day]], apprenant, options);
 };
 
-export default function EmargementsSignesViewer({ apprenantId, completed, onComplete }: Props) {
+export default function EmargementsSignesViewer({ apprenantId, completed, onComplete, readOnly = false }: Props) {
   const [rows, setRows] = useState<EmargementRow[]>([]);
   const [apprenant, setApprenant] = useState<ApprenantInfo | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [readError, setReadError] = useState<string | null>(null);
+  const canSign = !readOnly && !!userId && userId === apprenant?.auth_user_id;
+  const isFC = isFormationContinue(apprenant?.type_apprenant, apprenant?.formation_choisie);
   const [expected, setExpected] = useState<Array<{ date: string; creneau: CreneauKey }>>([]);
   const [signTarget, setSignTarget] = useState<{ date: string; creneau: CreneauKey; replaceExisting?: boolean; extras?: CreneauKey[] } | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
   const [confirmationTardive, setConfirmationTardive] = useState<{ date: string; creneau: CreneauKey; existing: boolean; grant?: string; error?: string } | null>(null);
   const [pratiqueDates, setPratiqueDates] = useState<Set<string>>(new Set());
+  const pdfOptions = { isFormationContinue: isFC, pratiqueDates, readOnly: !canSign, versions: rows };
   useEffect(() => {
     if (!apprenantId) return;
     let cancelled = false;
@@ -346,67 +358,52 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       setLoading(false);
       return;
     }
+    let cancelled = false;
+    setRows([]); setExpected([]); setApprenant(null); setUserId(null); setReadError(null);
+    setSignTarget(null); setConfirmationTardive(null);
     (async () => {
       setLoading(true);
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const [emRes, apRes] = await Promise.all([
-        supabase
-          .from("emargements_fc")
-          .select("id, date_emargement, demi_journee, signature_data_url, signed_at, absent").filter("masque", "eq", false)
-          .eq("apprenant_id", apprenantId)
-          .order("date_emargement", { ascending: true })
-          .order("demi_journee", { ascending: true }),
-        supabase
-          .from("apprenants")
-          .select("auth_user_id, nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, creneau_horaire")
-          .eq("id", apprenantId)
-          .maybeSingle(),
-      ]);
-
-      if (!emRes.error && Array.isArray(emRes.data)) {
-        setRows(emRes.data as unknown as EmargementRow[]);
+      try {
+        const [sessionRes, signatures, apRes, windows] = await Promise.all([
+          supabase.auth.getSession(),
+          lireSignaturesDossier(apprenantId),
+          supabase.from("apprenants")
+            .select("auth_user_id, nom, prenom, email, telephone, adresse, code_postal, ville, formation_choisie, type_apprenant, date_debut_formation, date_fin_formation, creneau_horaire")
+            .eq("id", apprenantId).maybeSingle(),
+          lireFenetresEmargement(apprenantId),
+        ]);
+        if (apRes.error) throw apRes.error;
+        if (!apRes.data) throw new Error('Dossier inaccessible');
+        if (cancelled) return;
+        setRows(signatures);
+        setApprenant(apRes.data);
+        setUserId(sessionRes.data.session?.user.id ?? null);
+        setExpected(fenetresDues(windows, false));
+      } catch {
+        if (!cancelled) setReadError('Vérification des feuilles impossible. Aucune signature manquante ne peut être confirmée.');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      const ap = (!apRes.error && apRes.data) ? (apRes.data as ApprenantInfo) : null;
-      if (ap) setApprenant(ap);
-      setUserId(session?.user?.id || ap?.auth_user_id || null);
-
-      // Calcul des créneaux attendus pour TOUS les apprenants ayant des dates de formation
-      // (permet à chaque apprenant de signer/re-signer toute journée passée)
-      if (ap) {
-        const isFC = isFormationContinue(ap.type_apprenant, ap.formation_choisie);
-        const isPres = isPresentielType(ap.type_apprenant, ap.formation_choisie);
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const parseDate = (s?: string | null): Date | null => {
-          if (!s) return null;
-          if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s.slice(0, 10) + "T00:00:00");
-          if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) {
-            const [d, m, y] = s.slice(0, 10).split("/");
-            return new Date(`${y}-${m}-${d}T00:00:00`);
-          }
-          return null;
-        };
-        let start = parseDate(ap.date_debut_formation);
-        if (!start || isNaN(start.getTime())) {
-          start = new Date(today); start.setDate(today.getDate() - 30);
-        }
-        let end = parseDate(ap.date_fin_formation);
-        if (!end || isNaN(end.getTime()) || end.getTime() > today.getTime()) end = today;
-        const exp = await getExpectedEmargements({
-          mode: isFC ? "fc" : "presentiel",
-          formationChoisie: ap.formation_choisie,
-          creneauHoraire: ap.creneau_horaire,
-          typeApprenant: ap.type_apprenant,
-          apprenantId,
-          startDate: start,
-          endDate: end,
-        });
-        setExpected(exp);
-      }
-      setLoading(false);
     })();
+    return () => { cancelled = true; };
   }, [apprenantId, refreshTick]);
+
+  useEffect(() => {
+    if (!apprenantId) return;
+    const refresh = () => setRefreshTick(t => t + 1);
+    const visible = () => { if (document.visibilityState === 'visible') refresh(); };
+    window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
+    document.addEventListener('visibilitychange', visible);
+    const channel = supabase.channel(`feuilles-${apprenantId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'emargements_fc', filter: `apprenant_id=eq.${apprenantId}` }, refresh)
+      .subscribe();
+    return () => {
+      window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh);
+      document.removeEventListener('visibilitychange', visible);
+      void supabase.removeChannel(channel);
+    };
+  }, [apprenantId]);
 
   const isWithinFormation = (date: string): boolean => {
     const d = new Date(date + "T00:00:00");
@@ -418,6 +415,9 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     return true;
   };
 
+  const rowBySlot = useMemo(() => indexerEmargements(rows), [rows]);
+  const missingSlots = useMemo(() => creneauxManquants(rows, expected), [rows, expected]);
+
   // Group by date — fusionne signatures existantes ET créneaux attendus
   const groupedByDay = useMemo(() => {
     const map = new Map<string, GroupedEmargements>();
@@ -426,7 +426,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       if (!e) { e = { expectedSet: new Set() }; map.set(date, e); }
       return e;
     };
-    for (const r of rows) {
+    for (const r of rowBySlot.values()) {
       const entry = ensure(r.date_emargement);
       const k = normalizeDemi(r.demi_journee);
       if (k === "matin") entry.matin = r;
@@ -440,33 +440,10 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
       entry.expectedSet?.add(e.creneau);
     }
     return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b));
-  }, [rows, expected]);
-
-  const rowBySlot = useMemo(() => {
-    const map = new Map<string, EmargementRow>();
-    for (const row of rows) {
-      const key = normalizeCreneauKey(row.demi_journee);
-      if (key) map.set(emargementSlotKey(row.date_emargement, key), row);
-    }
-    return map;
-  }, [rows]);
-
-  const missingSlots = useMemo(
-    () => expected.filter((slot) => !hasValidSignature(rowBySlot.get(emargementSlotKey(slot.date, slot.creneau)))),
-    [expected, rowBySlot],
-  );
-
-  const allSignableSlots = useMemo(() => {
-    if (expected.length > 0) return expected;
-    return rows
-      .map((row) => {
-        const creneau = normalizeCreneauKey(row.demi_journee);
-        return creneau ? { date: row.date_emargement, creneau } : null;
-      })
-      .filter((slot): slot is { date: string; creneau: CreneauKey } => Boolean(slot));
-  }, [expected, rows]);
+  }, [rowBySlot, expected]);
 
   const openSignatureFor = useCallback(async (slot: { date: string; creneau: CreneauKey }) => {
+    if (!canSign || !missingSlots.some(s => s.date === slot.date && s.creneau === slot.creneau)) return;
     const existing = rowBySlot.get(emargementSlotKey(slot.date, slot.creneau));
     if (hasValidSignature(existing)) {
       setConfirmationTardive({ ...slot, existing: true });
@@ -479,13 +456,13 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     const extras = pratiqueDates.has(slot.date)
       ? missingSlots.filter((s) => s.date === slot.date && s.creneau !== slot.creneau && (s.creneau === "matin" || s.creneau === "apres_midi")).map((s) => s.creneau)
       : [];
-    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: Boolean(existing), extras });
-  }, [rowBySlot, pratiqueDates, missingSlots, apprenantId, userId]);
+    setSignTarget({ date: slot.date, creneau: slot.creneau, replaceExisting: false, extras });
+  }, [rowBySlot, pratiqueDates, missingSlots, canSign]);
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const data = event.data as { type?: string; date?: string; creneau?: CreneauKey } | null;
-      if (data?.type !== "open-emargement-signature" || !data.date || !data.creneau) return;
+      if (event.origin !== window.location.origin || data?.type !== "open-emargement-signature" || !data.date || !data.creneau) return;
       openSignatureFor({ date: data.date, creneau: data.creneau });
     };
     window.addEventListener("message", handler);
@@ -501,6 +478,8 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
     );
   }
 
+  if (readError) return <div role="alert" className="space-y-3 text-destructive"><p>{readError}</p><Button variant="outline" onClick={() => setRefreshTick(t => t + 1)}><RefreshCw className="h-4 w-4 mr-2" />Actualiser</Button></div>;
+
   const hasEveningEmargements = groupedByDay.some(([, day]) => day.expectedSet?.has("soir_1") || day.expectedSet?.has("soir_2") || day.soir1 || day.soir2 || day.soir);
 
   return (
@@ -509,17 +488,17 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         <div className="flex items-center gap-3">
           <FileSignature className="h-6 w-6 text-primary" />
           <div>
-            <h2 className="text-xl font-bold">Mes feuilles d'émargement signées</h2>
+            <h2 className="text-xl font-bold">Feuilles d'émargement</h2>
             <p className="text-xs text-muted-foreground">
               {hasEveningEmargements ? "Regroupées par journée — 17h00-18h30 et 18h30-21h00." : "Regroupées par journée — matin et après-midi sur la même feuille."}
             </p>
           </div>
         </div>
+        <Button variant="outline" size="sm" onClick={() => setRefreshTick(t => t + 1)}><RefreshCw className="h-4 w-4 mr-2" />Actualiser</Button>
         {groupedByDay.length > 0 && (
           <Button
             size="sm"
-            onClick={() => downloadAllJournees(groupedByDay, apprenant)}
-            className="bg-[#6b7fc7] hover:bg-[#5a6fb8] text-white"
+            onClick={() => downloadAllJournees(groupedByDay, apprenant, pdfOptions)}
           >
             <Download className="h-4 w-4 mr-1" />
             Télécharger la feuille complète
@@ -527,7 +506,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         )}
       </div>
 
-      {userId && apprenantId && (
+      {canSign && !isFC && apprenantId && (
         <Card className="p-3 border-primary/30 bg-primary/5">
           <div className="flex flex-col sm:flex-row sm:items-end gap-3">
             <div className="flex-1">
@@ -573,45 +552,17 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         </Card>
       )}
 
-      {missingSlots.length > 0 && userId && apprenantId && (
+      {missingSlots.length > 0 && apprenantId && (
         <Card className="p-3 border-amber-300 bg-amber-50/70">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div>
               <p className="text-sm font-semibold text-amber-900">{missingSlots.length} signature{missingSlots.length > 1 ? "s" : ""} manquante{missingSlots.length > 1 ? "s" : ""}</p>
               <p className="text-xs text-amber-800 mt-0.5">Cliquez sur une signature manquante ci-dessous ou signez directement le prochain créneau.</p>
             </div>
-            <Button size="sm" onClick={() => openSignatureFor(missingSlots[0])}>
+            {canSign && <Button size="sm" onClick={() => openSignatureFor(missingSlots[0])}>
               <PenTool className="h-4 w-4 mr-1" />
               Signer maintenant
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      {missingSlots.length === 0 && allSignableSlots.length > 0 && userId && apprenantId && (
-        <Card className="p-3 border-blue-200 bg-blue-50/70">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div>
-              <p className="text-sm font-semibold text-blue-900">Refaire une signature</p>
-              <p className="text-xs text-blue-800 mt-0.5">Si une signature n'apparaît pas correctement, choisissez le créneau à re-signer.</p>
-            </div>
-            <Button size="sm" onClick={() => openSignatureFor(allSignableSlots[allSignableSlots.length - 1])}>
-              <PenTool className="h-4 w-4 mr-1" />
-              Re-signer
-            </Button>
-          </div>
-          <div className="mt-2 grid gap-1.5 sm:grid-cols-2 max-h-72 overflow-y-auto pr-1">
-            {allSignableSlots.map((slot) => (
-              <button
-                key={emargementSlotKey(slot.date, slot.creneau)}
-                type="button"
-                onClick={() => openSignatureFor(slot)}
-                className="flex items-center justify-between gap-2 rounded bg-background/80 px-2 py-1.5 text-left text-xs hover:bg-blue-100 transition-colors"
-              >
-                <span><span className="capitalize">{formatDateFR(slot.date)}</span> — {labelDemi(slot.creneau === "apres_midi" ? "apres-midi" : slot.creneau, pratiqueDates.has(slot.date))}</span>
-                <span className="font-medium text-primary">Re-signer</span>
-              </button>
-            ))}
+            </Button>}
           </div>
         </Card>
       )}
@@ -623,6 +574,8 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
             <User className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
             <div className="text-xs space-y-0.5 flex-1">
               <div className="font-semibold text-sm">{fullName(apprenant)}</div>
+              <div>Du {formatShortDate(apprenant.date_debut_formation)} au {formatShortDate(apprenant.date_fin_formation)}</div>
+              <div className="text-muted-foreground break-all">Dossier : {apprenantId}</div>
               {apprenant.formation_choisie && (
                 <div className="text-muted-foreground">
                   Formation : <span className="text-foreground">{apprenant.formation_choisie}</span>
@@ -664,7 +617,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => downloadJournee(date, day, apprenant)}
+                  onClick={() => downloadJournee(date, day, apprenant, pdfOptions)}
                   className="h-7 text-xs"
                 >
                   <Download className="h-3.5 w-3.5 mr-1" />
@@ -684,6 +637,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
                             <CheckCircle2 className="h-2.5 w-2.5" />
                             {r?.absent === true ? "Absent" : new Date(r.signed_at).toLocaleTimeString("fr-FR", {
+                              timeZone: "Europe/Paris",
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
@@ -703,7 +657,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           />
                         ) : r?.absent === true ? (
                           <span className="text-[10px] text-amber-700 font-medium">Absence déclarée</span>
-                        ) : userId && apprenantId && isWithinFormation(date) ? (
+                        ) : canSign && apprenantId && expectedSet?.has(key) && isWithinFormation(date) ? (
                           <button
                             type="button"
                             onClick={() => openSignatureFor({ date, creneau: key })}
@@ -716,7 +670,8 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
                           <span className="text-[10px] text-muted-foreground italic">Signature manquante</span>
                         )}
                       </div>
-                      {userId && apprenantId && isWithinFormation(date) && (
+                      {rows.filter(v => v.id !== r?.id && v.date_emargement === date && normalizeCreneauKey(v.demi_journee) === key).map(v => <div key={v.id} className="mt-2 border-t pt-2 text-xs text-muted-foreground">Version conservée — {new Date(v.signed_at).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}{v.signature_data_url && <img src={v.signature_data_url} alt="Signature conservée" className="max-h-20 object-contain" />}</div>)}
+                      {canSign && !hasValidSignature(r) && expectedSet?.has(key) && apprenantId && isWithinFormation(date) && (
                         <Button
                           size="sm"
                           className="w-full mt-2 h-7 text-xs"
@@ -737,7 +692,7 @@ export default function EmargementsSignesViewer({ apprenantId, completed, onComp
         </div>
       )}
 
-      {signTarget && userId && apprenantId && (
+      {signTarget && canSign && userId && apprenantId && (
         <EmargementFCModal
           apprenantId={apprenantId}
           userId={userId}

@@ -65,7 +65,7 @@ export function DocumentsDossier({ apprenant }: DocumentsDossierProps) {
           {/* Feuilles d'émargement signées (signatures apprenant) */}
           <div>
             <h4 className="font-medium mb-3">Feuilles d'émargement signées</h4>
-            <EmargementsSignesViewer apprenantId={apprenant.id} completed={true} onComplete={() => {}} />
+            <EmargementsSignesViewer readOnly apprenantId={apprenant.id} completed={true} onComplete={() => {}} />
           </div>
 
           {/* Sessions liées */}
