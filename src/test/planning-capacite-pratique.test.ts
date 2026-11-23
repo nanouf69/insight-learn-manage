@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { appliquerCapacitePratique, capacitePratique, joursFormationPratique } from '@/lib/planningCapacitePratique';
+import { appliquerCapacitePratique, capacitePratique, joursFormationPratique, ecartsJoursPratique } from '@/lib/planningCapacitePratique';
 
 describe('Choix de 3 ou 4 candidats par jour', () => {
+  it('20 jours pour 56 VTC et 12 TAXI à quatre : trois jours libres, aucun surplus attribué à une filière', () => {
+    expect(ecartsJoursPratique([...Array(14).fill('vtc'), ...Array(3).fill('taxi'), ...Array(3).fill('libre')], 14, 3))
+      .toEqual({ vtc: 14, taxi: 3, libres: 3, ecartVtc: 0, ecartTaxi: 0 });
+  });
+  it('un surplus VTC ne masque pas un manque TAXI', () => {
+    expect(ecartsJoursPratique([...Array(16).fill('vtc'), 'taxi'], 14, 3))
+      .toMatchObject({ ecartVtc: 2, ecartTaxi: -2, libres: 0 });
+  });
+  it('distingue un manque VTC et un surplus TAXI', () => {
+    expect(ecartsJoursPratique([...Array(12).fill('vtc'), ...Array(4).fill('taxi')], 14, 3))
+      .toMatchObject({ ecartVtc: -2, ecartTaxi: 1 });
+  });
   it('3 candidats : 56 VTC nécessitent 19 jours', () => {
     expect(joursFormationPratique(56, 3)).toBe(19);
     expect(capacitePratique(3, '2026-11-24')).toBe(3);

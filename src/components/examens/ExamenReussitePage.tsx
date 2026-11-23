@@ -52,7 +52,7 @@ import { enregistrerDeplacementPratique } from '@/lib/resultatPratiqueDeplacemen
 import { FormationPratiqueDateSelect } from './FormationPratiqueDateSelect';
 import { periodesFormationPratique } from '@/lib/periodesFormationPratique';
 import { enregistrerListesPlanning } from '@/lib/planningCandidatsSave';
-import { appliquerCapacitePratique, joursFormationPratique } from '@/lib/planningCapacitePratique';
+import { appliquerCapacitePratique, joursFormationPratique, ecartsJoursPratique } from '@/lib/planningCapacitePratique';
 import { CapacitePratiqueSelect } from './CapacitePratiqueSelect';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
@@ -4723,6 +4723,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         
         const vtcDaysNeeded = joursFormationPratique(totalVTC, maxPerDay);
         const taxiDaysNeeded = joursFormationPratique(totalTAXI, maxPerDay);
+        const ecartsJours = ecartsJoursPratique(Object.values(dayTypeMap), vtcDaysNeeded, taxiDaysNeeded);
         const vtcRestant = Math.max(0, totalVTC - vtcPlaces);
         const taxiRestant = Math.max(0, totalTAXI - taxiPlaces);
 
@@ -5274,27 +5275,37 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 </div>
               ))}
 
-              <div className="p-4 bg-emerald-50 rounded-lg flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-bold text-emerald-800">
+              <div className="p-4 bg-success/10 rounded-lg flex flex-wrap gap-3 items-center justify-between">
+                <div className="space-y-1 min-w-0">
+                  <p className="text-sm font-bold text-foreground">
                     VTC : {totalVTC} candidats ({vtcDaysNeeded}j) • TAXI : {totalTAXI} candidats ({taxiDaysNeeded}j) • {weekdays.length} jour(s) de formation
                   </p>
                   {(() => {
                     const besoin = (vtcDaysNeeded || 0) + (taxiDaysNeeded || 0);
                     const diff = weekdays.length - besoin;
                     return (
-                      <p className={`text-sm font-semibold ${diff < 0 ? 'text-destructive' : diff > 0 ? 'text-amber-700' : 'text-emerald-800'}`}>
+                      <p className={`text-sm font-semibold ${diff < 0 ? 'text-destructive' : 'text-foreground'}`}>
                         Besoin : {besoin} jour(s) • Planning : {weekdays.length} jour(s) •{' '}
                         {diff < 0 ? `Il manque ${-diff} jour(s)` : diff > 0 ? `${diff} jour(s) en trop` : 'Planning juste'}
                       </p>
                     );
                   })()}
-                  <p className="text-xs text-emerald-700">
+                  {([
+                    { formation: 'VTC', besoin: vtcDaysNeeded, planifies: ecartsJours.vtc, ecart: ecartsJours.ecartVtc },
+                    { formation: 'TAXI', besoin: taxiDaysNeeded, planifies: ecartsJours.taxi, ecart: ecartsJours.ecartTaxi },
+                  ]).map(({ formation, besoin, planifies, ecart }) => (
+                    <p key={formation} className={`text-sm font-semibold ${ecart < 0 ? 'text-destructive' : 'text-foreground'}`}>
+                      {formation} : {besoin} jour(s) nécessaires • {planifies} jour(s) planifiés •{' '}
+                      {ecart < 0 ? `${-ecart} jour(s) manquant(s)` : ecart > 0 ? `${ecart} jour(s) en trop` : 'Aucun jour en trop ni manquant'}
+                    </p>
+                  ))}
+                  {ecartsJours.libres > 0 && <p className="text-sm text-muted-foreground">{ecartsJours.libres} jour(s) libre(s), non attribué(s) aux VTC ou TAXI</p>}
+                  <p className="text-xs text-muted-foreground">
 
                     {totalReserved > 0 ? `${totalReserved} réservation(s) confirmée(s)` : 'Aucune réservation confirmée — les noms apparaîtront quand les candidats choisiront leur date'}
                   </p>
                 </div>
-                <Badge className="bg-emerald-200 text-emerald-900 text-sm px-3 py-1">
+                <Badge variant="secondary" className="text-sm px-3 py-1">
                   {totalVTC + totalTAXI} candidat(s) à former
                 </Badge>
               </div>

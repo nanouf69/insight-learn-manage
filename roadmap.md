@@ -5,6 +5,7 @@
 - [ ] Vérification écrite réelle après migration : non effectuée pour préserver dossiers/preuves ; comptes techniques isolés autorisés nécessaires, matrice écriture prouvée sur copie jetable.
 - [ ] Audit hors cinq politiques : 3 alertes scanner + 287 observations linter, notamment chaîne SECURITY DEFINER finalisation/propriété ; périmètre supplémentaire et tests isolés requis, aucun élargissement automatique.
 ## Planning pratique — choix 3 ou 4 candidats (23/11)
+- [x] Détail visuel des journées en trop/manquantes par TAXI/VTC et journées libres séparées, sans modification des dates/réservations : 12 tests PASS, build OK ; vérification écran admin bloquée par le compte disponible redirigé vers cours-public (accès expiré), aucune publication.
 - [x] Choix 3/4 partagé Candidats/Planning, journées/places et portail candidat alignés, réservations inchangées ; 16 tests + PC/mobile fictifs PASS, build OK, aucune publication. Rapport docs/planning-capacite-3-4-2026-11-23.md.
 - [ ] Vérification réelle choix/sauvegarde/relecture CRM : compte demandeur redirigé vers cours-public, accès administrateur nécessaire ; aucun réglage réel écrit.
 ## Émargements Thomas FC VTC (23/11)
