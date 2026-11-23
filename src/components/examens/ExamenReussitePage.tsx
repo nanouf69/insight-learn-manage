@@ -52,6 +52,8 @@ import { enregistrerDeplacementPratique } from '@/lib/resultatPratiqueDeplacemen
 import { FormationPratiqueDateSelect } from './FormationPratiqueDateSelect';
 import { periodesFormationPratique } from '@/lib/periodesFormationPratique';
 import { enregistrerListesPlanning } from '@/lib/planningCandidatsSave';
+import { appliquerCapacitePratique, joursFormationPratique } from '@/lib/planningCapacitePratique';
+import { CapacitePratiqueSelect } from './CapacitePratiqueSelect';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
 function TopScrollContainer({ children }: { children: React.ReactNode }) {
@@ -1084,6 +1086,12 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   const fileInputRef = useRef<HTMLInputElement>(null);
   const planningFileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+
+  const handleCapacityChange = (value: 3 | 4) => {
+    if (loadedPlanningKey !== `${selectedExamDate}::${selectedDatePratique}`) return;
+    setMaxPerDay(value);
+    setMaxPerDayMap(previous => appliquerCapacitePratique(value, previous));
+  };
 
   const saveCandidateListsNow = useCallback(async ({
     extraFormation = extraCandidatsFormation,
@@ -3675,11 +3683,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
         const vtcList = tousAFormer.filter(a => isPracticeVTCType(a.type_apprenant));
         const taxiList = tousAFormer.filter(a => isPracticeTAXIType(a.type_apprenant));
-        // Règle fixe : 3 candidats par jour. Ne jamais diviser par la capacité
-        // enregistrée (max_per_day), sinon le besoin en jours redevient faux.
-        const CANDIDATS_PAR_JOUR = 3;
-        const joursVTC = Math.ceil(vtcList.length / CANDIDATS_PAR_JOUR);
-        const joursTAXI = Math.ceil(taxiList.length / CANDIDATS_PAR_JOUR);
+        const joursVTC = joursFormationPratique(vtcList.length, maxPerDay);
+        const joursTAXI = joursFormationPratique(taxiList.length, maxPerDay);
         const maxRows = Math.max(vtcList.length, taxiList.length);
 
         // Compute VTC/TAXI date ranges from calendar
@@ -3829,6 +3834,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="mb-5">
+                <CapacitePratiqueSelect id="capacite-candidats-formation" value={maxPerDay} disabled={loadedPlanningKey !== `${selectedExamDate}::${selectedDatePratique}`} onChange={handleCapacityChange} />
               </div>
               <div className="grid grid-cols-2 gap-6">
                 {/* VTC */}
@@ -4163,7 +4171,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   </div>
                   <div className="mt-3 p-3 bg-blue-50 rounded-lg space-y-1">
                     <p className="text-sm font-bold text-blue-800">Total VTC à former : {vtcList.length}</p>
-                    <p className="text-sm text-blue-700">3 candidats/jour → <strong>{joursVTC} jour(s)</strong> de formation nécessaires</p>
+                    <p className="text-sm text-blue-700">{maxPerDay} candidats/jour → <strong>{joursVTC} jour(s)</strong> de formation nécessaires</p>
                   </div>
                 </div>
 
@@ -4499,7 +4507,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   </div>
                   <div className="mt-3 p-3 bg-amber-50 rounded-lg space-y-1">
                     <p className="text-sm font-bold text-amber-800">Total TAXI à former : {taxiList.length}</p>
-                    <p className="text-sm text-amber-700">3 candidats/jour → <strong>{joursTAXI} jour(s)</strong> de formation nécessaires</p>
+                    <p className="text-sm text-amber-700">{maxPerDay} candidats/jour → <strong>{joursTAXI} jour(s)</strong> de formation nécessaires</p>
                   </div>
                 </div>
               </div>
@@ -4713,10 +4721,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           }
         }
         
-        // Le besoin est toujours calculé sur la règle de 3 candidats par jour.
-        // Les jours déjà affectés dans le planning ne doivent pas remplacer ce calcul.
-        const vtcDaysNeeded = Math.ceil(totalVTC / 3);
-        const taxiDaysNeeded = Math.ceil(totalTAXI / 3);
+        const vtcDaysNeeded = joursFormationPratique(totalVTC, maxPerDay);
+        const taxiDaysNeeded = joursFormationPratique(totalTAXI, maxPerDay);
         const vtcRestant = Math.max(0, totalVTC - vtcPlaces);
         const taxiRestant = Math.max(0, totalTAXI - taxiPlaces);
 
@@ -4764,6 +4770,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
             <CardContent className="space-y-6">
               {/* Date range controls */}
               <div className="p-4 bg-muted/30 rounded-lg space-y-3">
+                <CapacitePratiqueSelect id="capacite-planning-formation" value={maxPerDay} disabled={loadedPlanningKey !== `${selectedExamDate}::${selectedDatePratique}`} onChange={handleCapacityChange} />
                 <p className="text-sm font-semibold flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
                   Configuration des dates de formation

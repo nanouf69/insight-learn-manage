@@ -1,4 +1,7 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Planning pratique — choix 3 ou 4 candidats (23/11)
+- [x] Choix 3/4 partagé Candidats/Planning, journées/places et portail candidat alignés, réservations inchangées ; 16 tests + PC/mobile fictifs PASS, build OK, aucune publication. Rapport docs/planning-capacite-3-4-2026-11-23.md.
+- [ ] Vérification réelle choix/sauvegarde/relecture CRM : compte demandeur redirigé vers cours-public, accès administrateur nécessaire ; aucun réglage réel écrit.
 ## Émargements Thomas FC VTC (23/11)
 - [x] Relecture transversale après rectification : sources de 60 fichiers et 12 fonctions actives relues, tâches inventoriées ; écarts/limites actualisés dans docs/emargements-revue-lecteurs-2026-11-23.md, aucune correction hors périmètre ni publication.
 - [x] Rectification 23/11 15:37 : vraie formation uniquement 17–18 novembre, jamais octobre ; relecture de tous les créneaux, masqués inclus, compte/deux dossiers/papier/documents/journaux : aucune preuve novembre retrouvée ; quatre images sous octobre intactes, rapport docs/emargement-thomas-rectification-2026-11-23-1537.md, aucun changement fonctionnel/publication.

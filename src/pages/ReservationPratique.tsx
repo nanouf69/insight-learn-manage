@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import logoFtransport from "@/assets/logo-ftransport.png";
 import { ALL_DATES_EXAMEN_REUSSITE, ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT } from "@/lib/examDatesConfig";
+import { capacitePratique, joursFormationPratique } from '@/lib/planningCapacitePratique';
 
 interface ApprenantInfo {
   id: string;
@@ -153,6 +154,7 @@ export default function ReservationPratique() {
   const [allApprenants, setAllApprenants] = useState<PlanningApprenant[]>([]);
   const [examApprenants, setExamApprenants] = useState<PlanningApprenant[]>([]);
   const [maxPerDayMap, setMaxPerDayMap] = useState<Record<string, number>>({});
+  const [maxPerDay, setMaxPerDay] = useState(3);
   const [dayTimeSlots, setDayTimeSlots] = useState<Record<string, { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre' }>>({});
   const [deplacesIds, setDeplacesIds] = useState<string[]>([]);
   const [dejaFormesIds, setDejaFormesIds] = useState<string[]>([]);
@@ -216,6 +218,7 @@ export default function ReservationPratique() {
             setExcludedDays(config.excluded_days || []);
             setExtraDays(config.extra_days || []);
             setExtraCandidats(config.extra_candidats || []);
+            setMaxPerDay(capacitePratique(config.max_per_day));
             setMaxPerDayMap(config.max_per_day_map || {});
             // Parse day_time_slots - handle both new {matin,apresmidi} and legacy string format
             const rawSlots = config.day_time_slots || {};
@@ -381,14 +384,15 @@ export default function ReservationPratique() {
     // L'admin a la main : ces jours-là sont la liste définitive pour ce type.
     const hasManualVTC = manualDays.some((d) => dayTimeSlots[toLocalDateKey(d)]?.type === 'vtc');
     const hasManualTAXI = manualDays.some((d) => dayTimeSlots[toLocalDateKey(d)]?.type === 'taxi');
-    const vtcDaysNeeded = hasManualVTC ? 0 : Math.ceil(totalVTC / 3);
-    const taxiDaysNeeded = hasManualTAXI ? 0 : Math.ceil(totalTAXI / 3);
+    const vtcDaysNeeded = hasManualVTC ? 0 : joursFormationPratique(totalVTC, maxPerDay);
+    const taxiDaysNeeded = hasManualTAXI ? 0 : joursFormationPratique(totalTAXI, maxPerDay);
     const dayTypeMap: Record<string, "vtc" | "taxi" | "libre"> = {};
 
     // Appliquer les overrides manuels
     manualDays.forEach((date) => {
       const key = toLocalDateKey(date);
-      dayTypeMap[key] = dayTimeSlots[key]!.type as "vtc" | "taxi" | "libre";
+      const manualType = dayTimeSlots[key]?.type;
+      if (manualType) dayTypeMap[key] = manualType;
     });
 
     // Auto-assigner le reste uniquement si aucun override manuel n'a été défini pour ce type
@@ -408,7 +412,7 @@ export default function ReservationPratique() {
       .filter((date) => dayTypeMap[toLocalDateKey(date)] === type)
       .map((date) => {
         const key = toLocalDateKey(date);
-        const capacity = maxPerDayMap[key] != null ? Number(maxPerDayMap[key]) : 3;
+        const capacity = capacitePratique(maxPerDay, key, maxPerDayMap);
         return { date, capacity };
       });
   }, [
@@ -425,6 +429,7 @@ export default function ReservationPratique() {
     extraDays,
     occupiedDays,
     dayTimeSlots,
+    maxPerDay,
     maxPerDayMap,
   ]);
 
