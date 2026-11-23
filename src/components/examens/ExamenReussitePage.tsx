@@ -9,7 +9,7 @@ import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { filterFutureExamDates, filterFutureDateStrings } from "@/lib/filterPastDates";
 import { ALL_DATES_EXAMEN_REUSSITE, ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT, trouverExamenTheorique } from '@/lib/examDatesConfig';
-import { datesExamenChoisissables } from '@/lib/examDatesChoix';
+import { datesExamenResultatsChoisissables, derniereSessionExamenPassee } from '@/lib/examDatesChoix';
 import { limiteCourte } from '@/lib/examDateLimiteAffichage';
 import { safeDateParse, formatDateFR, formatDateShortFR } from "@/lib/safeDateParse";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -568,9 +568,9 @@ function InlineStatutSuivi({
 
 
 
-// Propose seulement une session non passée ; aucun dossier n'est modifié.
+// Résultats : dernière session passée par défaut ; aucune date de dossier modifiée.
 function getDefaultExamDate(): string {
-  return datesExamenChoisissables()[0]?.date ?? '';
+  return derniereSessionExamenPassee()?.date ?? '';
 }
 
 function getDefaultPratiqueDate(): string {
@@ -1518,7 +1518,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     { date: "26 mai 2026", lieu: "Villeurbanne (passé)", pratiqueIndex: 0 },
   ];
   const datesExamenTheorique = [...HISTORICAL_DATES_THEORIQUE, ...ALL_DATES_EXAMEN_REUSSITE];
-  const datesChoisissables = datesExamenChoisissables();
+  const datesChoisissables = datesExamenResultatsChoisissables();
   const datesExamenPratique = ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT;
 
   const handleExamDateChange = (date: string) => {
