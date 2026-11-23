@@ -45,6 +45,7 @@ const TAXI_TYPES = ["taxi", "taxi-e", "taxi-e-presentiel", "ta", "ta-e", "ta-e-p
 const VTC_TYPES = ["vtc", "vtc-e", "vtc-e-presentiel", "va", "va-e", "va-e-presentiel", "pa-vtc", "rp-vtc"];
 const PA_TYPES = ["pa-vtc", "pa-taxi"];
 const RP_TYPES = ["rp-vtc", "rp-taxi"];
+const RAPPEL_PRATIQUE_ELEARNING = "Si vous suivez votre formation en e-learning, votre date d’entraînement pratique pourra être annulée si vous n’avez pas terminé tous les modules de votre formation. Vous ne pourrez alors choisir une nouvelle date que parmi les places restantes, s’il en reste.";
 
 function detectFormationType(typeApprenant: string | null): "vtc" | "taxi" {
   if (!typeApprenant) return "vtc";
@@ -540,6 +541,9 @@ export default function ReservationPratique() {
             <div className="text-sm text-muted-foreground space-y-1">
               <p className="font-semibold text-foreground">📍 Rendez-vous au 86 route de Genas, 69003 Lyon</p>
             </div>
+            {isElearning && (
+              <p className="text-sm font-semibold text-destructive text-left">{RAPPEL_PRATIQUE_ELEARNING}</p>
+            )}
             {hasAvailableSlots && (
               <Button
                 variant="outline"
@@ -586,6 +590,9 @@ export default function ReservationPratique() {
                   <li>Vous recevrez un <strong>email de confirmation</strong> après votre choix</li>
                   {isElearning && (
                     <li className="text-red-700 font-semibold">Vous devez obligatoirement terminer le nombre d'heures présent sur votre plateforme, sous peine de sanction par le CPF ou France Travail.</li>
+                  )}
+                  {isElearning && (
+                    <li className="font-semibold text-destructive">{RAPPEL_PRATIQUE_ELEARNING}</li>
                   )}
                  <li>Pause déjeuner à Confluences (12h-13h)</li>
                  {isVTC ? (
@@ -658,6 +665,9 @@ export default function ReservationPratique() {
                  <p className="font-semibold">⚠️ Attention, si vous n'effectuez pas les exercices et que vous n'apprenez pas les éléments de la ville, vous risquez fortement d'échouer votre examen pratique.</p>
                  {isElearning && (
                    <p className="font-semibold text-red-700">⏱️ Vous devez obligatoirement terminer le nombre d'heures présent sur votre plateforme, sous peine de sanction par le CPF ou France Travail.</p>
+                 )}
+                 {isElearning && (
+                   <p className="font-semibold text-destructive">{RAPPEL_PRATIQUE_ELEARNING}</p>
                  )}
                 <p>🍽️ Vous aurez une pause à Confluences aux alentours de 12h jusqu'à 13h.</p>
                 <p className="font-semibold">📍 RDV au 86 Route de Genas 69003 Lyon à la date que vous aurez choisie.</p>
