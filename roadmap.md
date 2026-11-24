@@ -1,4 +1,9 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Demandes annuelles de compétences formateurs (24/11 16:30)
+- [x] Moteur préparé : 12 mois calendaires après validation responsable, première demande sans validation, contrats tous couverts, inactifs/inconnus exclus ; 13 tests Vitest PASS.
+- [x] Suivi annuel CRM aperçu lecture seule, modèle mail + transport injecté, SQL candidat atomique/append-only non appliqué ; 8 tests PostgreSQL jetable et PC/mobile fictifs PASS, aucune écriture réelle/envoi/publication.
+- [x] Lien Albert relu GET réel 200, brouillon et échéance 24/12 inclus ; docs/competences-annuelles-preparation-2026-11-24.md.
+- [ ] Installation/activation réelle : restauration indépendante et accord de publication/activation requis ; adaptateur email, tâche quotidienne et révocation persistante non installés. Activité non représentée en base : décisions responsables à enregistrer lors de l’installation, aucune déduction automatique des anciens créneaux.
 ## Règlement SERVICES PRO article 21 / compétences Albert (24/11)
 - [x] RI v2 avec article 21 seul, vingt articles/CGV exactement conservés ; snapshot et relecture nouveaux formulaires, anciens inchangés, message non envoyé. 133 acceptations/MD5 identiques, 8 tests règlement et PC/mobile fictifs PASS.
 - [x] Preuve f1c4cfc9 rattachée et relue indicateur 12 ; manque documentaire levé, À compléter maintenu faute de publication/diffusion, sources intactes.

@@ -21,6 +21,7 @@ import {
 import { FormateurForm } from "./FormateurForm";
 import { FormateurEditForm } from "./FormateurEditForm";
 import { CompetencesFormateurDialog } from "./CompetencesFormateurDialog";
+import { CompetencesAnnuellesDialog } from "./CompetencesAnnuellesDialog";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -43,6 +44,7 @@ interface Formateur {
 }
 
 export function FormateursList() {
+  const [annuelOpen, setAnnuelOpen] = useState(false);
   const [competencesFormateurId, setCompetencesFormateurId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [syncing, setSyncing] = useState(false);
@@ -147,6 +149,7 @@ export function FormateursList() {
           <p className="text-muted-foreground">Gérez votre équipe de formateurs</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setAnnuelOpen(true)}><GraduationCap className="mr-2 h-4 w-4" />Suivi annuel</Button>
           <Button
             variant="outline"
             className="gap-2"
@@ -353,6 +356,7 @@ export function FormateursList() {
 
       {/* Dialog d'édition */}
       {competencesFormateurId && <CompetencesFormateurDialog formateurId={competencesFormateurId} onClose={() => setCompetencesFormateurId(null)} />}
+      {annuelOpen && <CompetencesAnnuellesDialog onClose={() => setAnnuelOpen(false)} />}
       {editFormateur && (
         <FormateurEditForm
           formateur={editFormateur}
