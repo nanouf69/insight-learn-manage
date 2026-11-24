@@ -4550,10 +4550,14 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   !tousAFormer.some(r => r.id === a.id)
                 );
                 if (horsListe.length === 0) return null;
+                const nbDeja = horsListe.filter(a => dejaFormesSet.has(a.id)).length;
+                const nbRetires = horsListe.filter(a => !dejaFormesSet.has(a.id) && removedFormationSet.has(a.id)).length;
+                const nbAutre = horsListe.length - nbDeja - nbRetires;
                 return (
-                  <details className="mt-3 p-4 rounded-lg border bg-muted/30">
+                  <details open className="mt-3 p-4 rounded-lg border bg-muted/30">
                     <summary className="cursor-pointer text-sm font-semibold">
-                      Réussis à l'examen non inclus dans les candidats à former : {horsListe.length}
+                      {tousAFormer.length + horsListe.length} réussis = {tousAFormer.length} à former + {horsListe.length} non inclus
+                      {' '}({nbDeja} pratique déjà faite, {nbRetires} retiré(s) manuellement, {nbAutre} autre filière)
                     </summary>
                     <ul className="mt-2 space-y-1 text-sm">
                       {horsListe.map(a => (
