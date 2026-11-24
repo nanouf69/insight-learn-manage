@@ -1,4 +1,7 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Qualiopi après 21 — 24/11 16:49
+- [x] 32 statuts relus ; 22/23 approfondis et enregistrés À compléter avec 7/5 références ; première passe 24–32, 93 nouvelles fiches/104 liens, sources avant/après identiques, aucun envoi/publication. Rapport docs/qualiopi-22-32-revue-2026-11-24.md ; ordre officiel 27/28 différent des libellés app signalé, non modifié.
+- [ ] Conclusions finales : 22 attend traces réelles de professionnalisation et périmètre social ; 23 continuité/partage interne et dépôts applicables non prouvés ; 24–32 approfondissement selon sources disponibles, statut absent conservé hors 29 Non applicable. Aucune nouvelle pièce arbitraire imposée.
 ## Envoi individuel Albert — 24/11 16:47
 - [ ] Envoi réel autorisé mais refusé HTTP 401 : aucune session jointe ; session propre du demandeur retrouvée, rôle user et non admin. Nécessite session CRM administrateur autorisée ; aucune élévation, aucun fournisseur contacté ni publication. Trace d’échec rattachée I21, rapport docs/albert-envoi-2026-11-24-1647.md.
 ## Preuves Qualiopi systématiques — 24/11 16:44
