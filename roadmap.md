@@ -1,4 +1,6 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Preuves Qualiopi systématiques — 24/11 16:44
+- [x] Règle durable enregistrée et relue ; I12 175 références, I21 18 après ajout idempotent de l’invitation Albert vérifiée/non remise/non validée ; deux statuts À compléter conservés, aucun envoi ni donnée élève modifiés. Limites des circuits consignées dans docs/qualiopi-preuves-systematiques-2026-11-24.md.
 ## Règlement prospectif — décision 24/11 16:41 UTC
 - [x] Décision consignée, projet d’information abandonné et conservé ; aucun mail/notification/nouvelle confirmation aux inscrits actuels. Version selon création du dossier, ancien non signé = vingt articles ; 11 tests PASS. I12 réévalué À compléter, réserve de mise en œuvre effective et aucune nouvelle signature obligatoire.
 - [ ] Mise en ligne du filtre prospectif : publication contrôlée requise, publication globale non autorisée ; aucune modification de l’autorisation Albert.
