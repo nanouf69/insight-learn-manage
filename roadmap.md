@@ -1,4 +1,6 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Envoi individuel Albert — 24/11 16:47
+- [ ] Envoi réel autorisé mais refusé HTTP 401 : aucune session jointe ; session propre du demandeur retrouvée, rôle user et non admin. Nécessite session CRM administrateur autorisée ; aucune élévation, aucun fournisseur contacté ni publication. Trace d’échec rattachée I21, rapport docs/albert-envoi-2026-11-24-1647.md.
 ## Preuves Qualiopi systématiques — 24/11 16:44
 - [x] Règle durable enregistrée et relue ; I12 175 références, I21 18 après ajout idempotent de l’invitation Albert vérifiée/non remise/non validée ; deux statuts À compléter conservés, aucun envoi ni donnée élève modifiés. Limites des circuits consignées dans docs/qualiopi-preuves-systematiques-2026-11-24.md.
 ## Règlement prospectif — décision 24/11 16:41 UTC
