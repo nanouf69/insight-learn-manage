@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { CompetencesIntervenantForm, type CompetencesDocument } from "@/components/documents/CompetencesIntervenantForm";
+import { ParcoursSignatureIntervenant } from "@/components/documents/ParcoursSignatureIntervenant";
 
 export default function CompetencesIntervenantPublic() {
   const { token } = useParams();
@@ -21,5 +22,5 @@ export default function CompetencesIntervenantPublic() {
   useEffect(() => { setDoc(null); void recharger().catch(e => setError(e.message)); }, [token]);
   if (error) return <main className="p-6"><h1 className="text-xl font-bold">Formulaire indisponible</h1><p role="alert">{error}</p></main>;
   if (!doc) return <p className="p-6">Chargement…</p>;
-  return <CompetencesIntervenantForm key={token} doc={doc} appel={appel} recharger={recharger} />;
+  return <div className="min-h-screen bg-background"><CompetencesIntervenantForm key={token} doc={doc} appel={appel} recharger={recharger} /><ParcoursSignatureIntervenant token={token!} declaration={doc} /></div>;
 }

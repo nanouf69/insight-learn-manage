@@ -41,7 +41,7 @@ serve(async (req) => {
     if (error) throw error;
     if (!doc) return json({ error: "Document introuvable ou lien expiré" }, 404);
     // Competency tokens must never enter generic choice/signature handlers.
-    if (["justification_competences_intervenant", "validation_competences_responsable", "reglement_services_pro"].includes(doc.modele_code ?? "")) {
+    if (["justification_competences_intervenant", "validation_competences_responsable", "reglement_services_pro", "contrat_cadre_prestation_intervenant"].includes(doc.modele_code ?? "")) {
       return json({ error: "Ce document relève de son formulaire individuel dédié." }, 404);
     }
 

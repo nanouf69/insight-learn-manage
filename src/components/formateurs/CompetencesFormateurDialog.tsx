@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { COMPETENCES_CHAMPS, COMPETENCES_MODELE } from "@/lib/competencesIntervenant";
+import { ParcoursFormateurAdmin } from "./ParcoursFormateurAdmin";
 
 export function CompetencesFormateurDialog({ formateurId, onClose }: { formateurId: string; onClose: () => void }) {
   const [decision, setDecision] = useState("a_completer");
@@ -23,7 +24,7 @@ export function CompetencesFormateurDialog({ formateurId, onClose }: { formateur
     if (!data) return null;
     const result = await supabase.functions.invoke("competences-intervenant", { body: { action: "admin_get", document_id: data.id } });
     if (result.error || !result.data?.document) throw new Error("Lecture des justificatifs indisponible");
-    return { ...result.data, link: `${window.location.origin}/competences-intervenant/${data.token}` };
+    return { ...result.data, token: data.token, link: `${window.location.origin}/competences-intervenant/${data.token}` };
   } });
   const doc = query.data?.document;
   return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -35,6 +36,7 @@ export function CompetencesFormateurDialog({ formateurId, onClose }: { formateur
       <p>{doc.destinataire_nom} · {doc.destinataire_email}</p>
       <Button variant="outline" onClick={() => navigator.clipboard.writeText(query.data.link)}>Copier le lien individuel</Button>
       <p className="text-sm text-muted-foreground">Aucun envoi automatique. Nouvelle page disponible dans l’aperçu ; publication nécessaire pour le lien du site.</p>
+      <ParcoursFormateurAdmin documentId={doc.id} token={query.data.token} declarationStatut={doc.statut} declarationSignedAt={doc.signed_at ?? null} />
       {doc.statut !== "signe" ? <p>Déclaration de l’intervenant non remise.</p> : <>
         {COMPETENCES_CHAMPS.map(champ => <div key={champ.id}><h3 className="font-semibold">{champ.label}</h3><p className="whitespace-pre-wrap">{doc.reponses[champ.id]}</p></div>)}
         {query.data.fichiers.map((file: { nom: string; url: string }) => <p key={file.url}><a href={file.url} target="_blank" rel="noreferrer" className="text-primary underline">{file.nom}</a></p>)}
