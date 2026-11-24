@@ -4543,6 +4543,31 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   {vtcList.length} VTC ({joursVTC}j) + {taxiList.length} TAXI ({joursTAXI}j)
                 </p>
               </div>
+              {(() => {
+                const horsListe = (apprenants || []).filter(a =>
+                  !(a as any).deleted_at &&
+                  hasEligibleTheoryStatus((a as any).resultat_examen) &&
+                  !tousAFormer.some(r => r.id === a.id)
+                );
+                if (horsListe.length === 0) return null;
+                return (
+                  <details className="mt-3 p-4 rounded-lg border bg-muted/30">
+                    <summary className="cursor-pointer text-sm font-semibold">
+                      Réussis à l'examen non inclus dans les candidats à former : {horsListe.length}
+                    </summary>
+                    <ul className="mt-2 space-y-1 text-sm">
+                      {horsListe.map(a => (
+                        <li key={a.id} className="flex justify-between gap-2 border-b py-1">
+                          <span>{a.nom} {a.prenom} <span className="text-muted-foreground">({a.type_apprenant})</span></span>
+                          <span className="text-muted-foreground">
+                            {dejaFormesSet.has(a.id) ? 'Pratique déjà effectuée (présent)' : removedFormationSet.has(a.id) ? 'Retiré manuellement' : 'Filière hors VTC/TAXI'}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                );
+              })()}
             </CardContent>
           </Card>
         );
