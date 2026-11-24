@@ -1,5 +1,7 @@
 # Nouvelle version du règlement SERVICES PRO — information à préparer
 
+> **Décision du dirigeant du 24/11/2026 à 16:41 UTC : projet d’information ci-dessous abandonné.** L’article 21 s’applique uniquement aux futures inscriptions. Aucun mail ou notification, aucune nouvelle signature ou confirmation ne sont demandés aux inscrits actuels. Le texte préparatoire ci-dessous reste conservé pour l’historique, pas pour exécution. Aucune diffusion n’est présumée.
+
 Version : services-pro-ri-2026-11-24-v2, datée du 24 novembre 2026.
 
 ## Message proposé — NON ENVOYÉ

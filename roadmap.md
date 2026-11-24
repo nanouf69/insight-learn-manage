@@ -1,4 +1,7 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Règlement prospectif — décision 24/11 16:41 UTC
+- [x] Décision consignée, projet d’information abandonné et conservé ; aucun mail/notification/nouvelle confirmation aux inscrits actuels. Version selon création du dossier, ancien non signé = vingt articles ; 11 tests PASS. I12 réévalué À compléter, réserve de mise en œuvre effective et aucune nouvelle signature obligatoire.
+- [ ] Mise en ligne du filtre prospectif : publication contrôlée requise, publication globale non autorisée ; aucune modification de l’autorisation Albert.
 ## Demandes annuelles de compétences formateurs (24/11 16:30)
 - [x] Moteur préparé : 12 mois calendaires après validation responsable, première demande sans validation, contrats tous couverts, inactifs/inconnus exclus ; 13 tests Vitest PASS.
 - [x] Suivi annuel CRM aperçu lecture seule, modèle mail + transport injecté, SQL candidat atomique/append-only non appliqué ; 8 tests PostgreSQL jetable et PC/mobile fictifs PASS, aucune écriture réelle/envoi/publication.
@@ -8,7 +11,7 @@
 - [x] RI v2 avec article 21 seul, vingt articles/CGV exactement conservés ; snapshot et relecture nouveaux formulaires, anciens inchangés, message non envoyé. 133 acceptations/MD5 identiques, 8 tests règlement et PC/mobile fictifs PASS.
 - [x] Preuve f1c4cfc9 rattachée et relue indicateur 12 ; manque documentaire levé, À compléter maintenu faute de publication/diffusion, sources intactes.
 - [x] Invitation Albert AKONO créée sans mail, service dédié actif, token expirant 25/12 00h Paris, fichiers privés, CAS/remise et avis responsable séparé. 12 Deno + 33 signatures régression PASS ; GET réel 200, refus 400/401/404, vrai formulaire PC/mobile chargé. Aucun dossier rempli ni compétence validée, rapport docs/reglement-services-pro-albert-2026-11-24.md.
-- [ ] Publication page Albert/RI et information des inscrits : attend accord explicite ; site non publié, diffusion non présumée.
+- [x] Information des inscrits annulée par décision 24/11 16:41 UTC ; projet conservé mais non exécutable, aucune diffusion présumée. Page Albert vérifiée sur site publié au tour précédent, autorisation mail individuelle conservée (aucun envoi réalisé).
 - [ ] Dépôt/remise Albert et décision responsable réels : attend déclaration/pièces réelles et session administrateur existante ; compte disponible rôle user, accès refusé, aucun droit élargi.
 ## Actualisation des fiches élèves (24/11)
 - [x] Fiche et indicateurs relus après invalidation/enregistrement confirmé, reprise et événements existants ; rafales regroupées, ancien dossier ignoré, saisie modules conservée. 9 tests PASS, build OK, fiche réelle Mohamed HAMID ARGA PC/mobile : retour écran → nouvelles lectures HTTP 200, zéro erreur ni débordement. Aucun dossier écrit ni publication ; changement réel inter-appareils non testé.

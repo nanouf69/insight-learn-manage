@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
-import { RI_SERVICES_PRO_V2, RI_SERVICES_PRO_VERSION, snapshotReglementServicesPro } from "@/lib/reglementServicesPro";
+import { RI_SERVICES_PRO_V1, RI_SERVICES_PRO_V2, RI_SERVICES_PRO_VERSION, snapshotReglementServicesPro, versionReglementPourInscription } from "@/lib/reglementServicesPro";
 
 interface CGVReglementFormProps {
   apprenantId?: string;
@@ -211,7 +211,6 @@ Enfin, FTRANSPORT s'engage a effacer a l'issue des exercices toute image qui y a
 ];
 
 // ── REGLEMENT INTERIEUR ────────────────────────────────────
-const RI_ARTICLES = RI_SERVICES_PRO_V2;
 
 export default function CGVReglementForm({
   apprenantId,
@@ -232,6 +231,23 @@ export default function CGVReglementForm({
   const [saving, setSaving] = useState(false);
   const [alreadyCompleted, setAlreadyCompleted] = useState(completed || false);
   const [acceptedVersion, setAcceptedVersion] = useState<string | null>(null);
+  const [inscriptionVersion, setInscriptionVersion] = useState<string | null>(null);
+  const [versionLoading, setVersionLoading] = useState(Boolean(apprenantId));
+  const RI_ARTICLES = inscriptionVersion === RI_SERVICES_PRO_VERSION ? RI_SERVICES_PRO_V2 : RI_SERVICES_PRO_V1;
+
+  useEffect(() => {
+    let active = true;
+    setInscriptionVersion(null);
+    setVersionLoading(Boolean(apprenantId));
+    if (!apprenantId) return;
+    supabase.from("apprenants").select("created_at").eq("id", apprenantId).maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        setInscriptionVersion(!error ? versionReglementPourInscription(data?.created_at) : null);
+        setVersionLoading(false);
+      });
+    return () => { active = false; };
+  }, [apprenantId]);
 
   useEffect(() => {
     if (!apprenantId) return;
@@ -257,6 +273,7 @@ export default function CGVReglementForm({
   }, [apprenantNom, apprenantPrenom, apprenantAdresse]);
 
   const handleSubmit = async () => {
+    if (apprenantId && (!inscriptionVersion || versionLoading)) return;
     if (!cgvAccepted || !riAccepted) {
       toast.error("Vous devez cocher les deux cases (CGV et Reglement interieur) pour continuer.");
       return;
@@ -272,7 +289,7 @@ export default function CGVReglementForm({
         typeDocument: "cgv-ri-acceptation",
         titre: "CGV et Reglement Interieur - Signature",
         donnees: {
-          ...snapshotReglementServicesPro(),
+          ...snapshotReglementServicesPro(inscriptionVersion ?? "services-pro-ri-historique-v1"),
           cgv_sections: CGV_SECTIONS.map(section => ({ ...section })),
           cgv_accepted: true,
           ri_accepted: true,
@@ -292,7 +309,7 @@ export default function CGVReglementForm({
       if (ok) {
         const { data: confirmed, error: readError } = await supabase.from("apprenant_documents_completes" as any)
           .select("id, donnees").eq("apprenant_id", apprenantId).eq("type_document", "cgv-ri-acceptation")
-          .contains("donnees", { ri_version: RI_SERVICES_PRO_VERSION, signed_at: payload.donnees.signed_at }).limit(1);
+          .contains("donnees", { ri_version: payload.donnees.ri_version, signed_at: payload.donnees.signed_at }).limit(1);
         const articles = (confirmed?.[0] as any)?.donnees?.ri_articles;
         ok = !readError && Array.isArray(articles) && articles.length === payload.donnees.ri_articles.length
           && articles.every((article: any, index: number) => article.num === payload.donnees.ri_articles[index].num
@@ -310,7 +327,7 @@ export default function CGVReglementForm({
     }
     setSaving(false);
     setAlreadyCompleted(true);
-    setAcceptedVersion(RI_SERVICES_PRO_VERSION);
+    setAcceptedVersion(inscriptionVersion);
     toast.success("CGV et Reglement interieur signes avec succes !");
     sendAdminNotification({
       type_document: "cgv-ri-acceptation",
@@ -338,6 +355,9 @@ export default function CGVReglementForm({
       </Card>
     );
   }
+
+  if (apprenantId && versionLoading) return <p>Chargement du règlement applicable…</p>;
+  if (apprenantId && !inscriptionVersion) return <p role="alert">La version applicable à votre inscription n’a pas pu être vérifiée. Aucun nouvel accord n’est demandé.</p>;
 
   return (
     <div className="space-y-6">
@@ -379,7 +399,7 @@ export default function CGVReglementForm({
       <Card>
         <CardContent className="p-6 space-y-4">
           <h3 className="text-xl font-bold text-center">Reglement Interieur</h3>
-          <p className="text-xs text-muted-foreground text-center">SERVICES PRO — Version du 24 novembre 2026</p>
+          <p className="text-xs text-muted-foreground text-center">{inscriptionVersion === RI_SERVICES_PRO_VERSION ? "SERVICES PRO — Version du 24 novembre 2026" : "SERVICES PRO — Règlement historique"}</p>
           <p className="text-xs text-muted-foreground text-center italic">
             Etabli conformement aux articles L.6352-3 a L.6352-5 et R.6352-1 a R.6352-15 du Code du travail.
           </p>

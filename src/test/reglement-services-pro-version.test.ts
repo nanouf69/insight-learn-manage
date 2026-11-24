@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { RI_SERVICES_PRO_V1, RI_SERVICES_PRO_V2, snapshotReglementServicesPro } from "@/lib/reglementServicesPro";
+import { RI_SERVICES_PRO_V1, RI_SERVICES_PRO_V2, snapshotReglementServicesPro, versionReglementPourInscription } from "@/lib/reglementServicesPro";
 import { COMPETENCES_CHAMPS, validerCompetences, validerJustificatif } from "@/lib/competencesIntervenant";
 
 describe("Règlement versionné SERVICES PRO", () => {
+  it("future inscriptions only, strict decision boundary and unknown date excluded", () => {
+    expect(versionReglementPourInscription("2026-11-24T16:41:00Z")).toBe("services-pro-ri-historique-v1");
+    expect(versionReglementPourInscription("2026-11-24T16:41:01Z")).toBe("services-pro-ri-2026-11-24-v2");
+    expect(versionReglementPourInscription(null)).toBeNull();
+  });
   it("retains twenty original articles and appends only article 21 without mutating the original version", () => {
     expect(RI_SERVICES_PRO_V1).toHaveLength(20);
     expect(RI_SERVICES_PRO_V2).toHaveLength(21);

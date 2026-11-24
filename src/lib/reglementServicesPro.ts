@@ -1,5 +1,11 @@
 export const RI_SERVICES_PRO_VERSION = "services-pro-ri-2026-11-24-v2";
 export const RI_SERVICES_PRO_DATE = "2026-11-24";
+export const RI_SERVICES_PRO_FUTURES_DEPUIS = "2026-11-24T16:41:00Z";
+export function versionReglementPourInscription(createdAt: string | null | undefined) {
+  const date = createdAt ? Date.parse(createdAt) : NaN;
+  if (!Number.isFinite(date)) return null;
+  return date > Date.parse(RI_SERVICES_PRO_FUTURES_DEPUIS) ? RI_SERVICES_PRO_VERSION : "services-pro-ri-historique-v1";
+}
 
 export const RI_SERVICES_PRO_V1 = [
   { num: 1, titre: "Personnes concernees", contenu: "Le present reglement s'applique a toutes les personnes inscrites a une action de formation organisee par FTRANSPORT - Services Pro." },
@@ -31,10 +37,11 @@ export const RI_ARTICLE_21 = {
 };
 export const RI_SERVICES_PRO_V2 = [...RI_SERVICES_PRO_V1, RI_ARTICLE_21];
 
-export function snapshotReglementServicesPro() {
+export function snapshotReglementServicesPro(version = RI_SERVICES_PRO_VERSION) {
+  const actuelle = version === RI_SERVICES_PRO_VERSION;
   return {
-    ri_version: RI_SERVICES_PRO_VERSION,
-    ri_date_version: RI_SERVICES_PRO_DATE,
-    ri_articles: RI_SERVICES_PRO_V2.map(article => ({ ...article })),
+    ri_version: version,
+    ri_date_version: actuelle ? RI_SERVICES_PRO_DATE : null,
+    ri_articles: (actuelle ? RI_SERVICES_PRO_V2 : RI_SERVICES_PRO_V1).map(article => ({ ...article })),
   };
 }
