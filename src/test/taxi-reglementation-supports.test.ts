@@ -1,13 +1,21 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { projeterSupportTaxi, SUPPORTS_TAXI_REGLEMENTATION } from "@/lib/taxiReglementationSupports";
 
 const cours = (id: number) => ({ id, titre: `T${id}`, slidesKey: "nationale-partie1", quiz: [{ q: 1 }], fichiers: [{ nom: "PDF", url: "/cours/vtc/F_Locale_1.pdf" }] });
 
+const taille = (fichier: string) => JSON.parse(readFileSync(`src/assets/cours-taxi/${fichier}`, "utf8")).size as number;
+
 describe("Supports Réglementation TAXI (module 10)", () => {
   it("chaque partie reçoit son fichier", () => {
-    const attendu: Record<number, string> = { 10014: "F_Nationale_1_TAXI", 10015: "F_Nationale_2_TAXI", 10016: "F_Locale_1_TAXI", 10017: "F_Locale_2_TAXI", 10018: "F_Locale_3_TAXI" };
+    const attendu: Record<number, string> = {
+      10014: "F_Nationale_1_TAXI",
+      10015: "F_Nationale_2_TAXI",
+      10016: "F_Locale_1_TAXI_20261124",
+      10017: "F_Locale_2_TAXI_20261124",
+      10018: "F_Locale_3_TAXI_20261124",
+    };
     for (const [id, nom] of Object.entries(attendu)) {
       const p = projeterSupportTaxi(10, cours(Number(id)));
       expect(p.fichiers.map((f) => f.url).every((u) => u.includes(nom))).toBe(true);
@@ -29,6 +37,22 @@ describe("Supports Réglementation TAXI (module 10)", () => {
   it("les pointeurs désignent des fichiers versionnés distincts", () => {
     const urls = Object.values(SUPPORTS_TAXI_REGLEMENTATION).flatMap((s) => [s.pdf, s.pptx]);
     expect(new Set(urls).size).toBe(10);
-    expect(JSON.parse(readFileSync("src/assets/cours-taxi/F_Locale_1_TAXI_20261027.pptx.asset.json", "utf8")).size).toBe(1650480);
+  });
+  it("les supports Locale du 24/11/2026 sont les corrigés fournis (17/15/17 diapositives)", () => {
+    expect(taille("F_Locale_1_TAXI_20261124.pptx.asset.json")).toBe(1650480);
+    expect(taille("F_Locale_2_TAXI_20261124.pptx.asset.json")).toBe(152090);
+    expect(taille("F_Locale_3_TAXI_20261124.pptx.asset.json")).toBe(85004);
+    // PDF = conversion fidèle : une page par diapositive.
+    expect(taille("F_Locale_1_TAXI_20261124.pdf.asset.json")).toBe(719890);
+    expect(taille("F_Locale_2_TAXI_20261124.pdf.asset.json")).toBe(537963);
+    expect(taille("F_Locale_3_TAXI_20261124.pdf.asset.json")).toBe(453330);
+  });
+  it("les supports du 27/10/2026 restent conservés (historique non écrasé)", () => {
+    for (const f of [
+      "F_Locale_1_TAXI_20261027.pptx.asset.json", "F_Locale_1_TAXI_20261027.pdf.asset.json",
+      "F_Locale_2_TAXI_20261027b.pptx.asset.json", "F_Locale_2_TAXI_20261027b.pdf.asset.json",
+      "F_Locale_3_TAXI_20261027.pptx.asset.json", "F_Locale_3_TAXI_20261027.pdf.asset.json",
+    ]) expect(existsSync(`src/assets/cours-taxi/${f}`), f).toBe(true);
+    expect(SUPPORTS_TAXI_REGLEMENTATION[10016].pptx).not.toContain("20261027");
   });
 });

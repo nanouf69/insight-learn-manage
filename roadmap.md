@@ -1,4 +1,6 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Supports TAXI — Cours et exercices, partie Locale (24/11)
+- [x] Trois PowerPoint « corrigé » Locale 1/2/3 (17/15/17 diapositives) remplacés en affichage module 10 (cours 10016–10018), PDF régénérés fidèles une page par diapositive, pointeurs 20261124 ; fichiers du 27/10 conservés. 19 tests PASS, build OK, six fichiers relus en HTTP 200, vue apprenant réelle controlée sur les trois parties ; aucune publication.
 ## Sécurité — cinq alertes RLS (23/11)
 - [x] Revue transversale complémentaire : écrans/services et 34 fonctions directes + chaîne replay/import relus ; écarts graves publication/finalisation/import/purge/replay signalés, aucune opération dangereuse appelée, rapport sécurité actualisé.
 - [x] Migration 0281 réellement appliquée après tests : propriétaire QRC/colonnes, audit serveur, refus admin/colonnes, flags minimaux, version admin ; 10 tests RLS + 15 EB3 PASS, lectures API réelles, cinq empreintes avant/après identiques, cinq alertes absentes, aucune publication. Rapport docs/securite-cinq-alertes-rls-2026-11-23.md.
