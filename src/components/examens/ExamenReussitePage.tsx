@@ -3781,6 +3781,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 <span className="flex items-center gap-2">
                   <GraduationCap className="h-5 w-5 text-indigo-600" />
                   Candidats à former
+                  <span className="ml-2 rounded-full bg-emerald-100 px-2.5 py-0.5 text-sm font-semibold text-emerald-700">
+                    {reussis.length} réussi{reussis.length > 1 ? "s" : ""} à l'examen
+                  </span>
                 </span>
                 <div className="flex items-center gap-2">
                   {fsCandidats.button}
