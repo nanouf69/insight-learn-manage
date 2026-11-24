@@ -85,7 +85,7 @@ Merci de nous appeler au 04 28 29 60 91 ou de répondre directement à ce mail �
 Si vous ne pouvez pas nous joindre immédiatement, merci de nous indiquer vos disponibilités afin que nous puissions convenir d'un échange.
 
 Cordialement,
-L'équipe FTRANSPORT`,
+L'équipe FTRANSPORT`.replace(/\n/g, '<br>'),
   },
   {
     id: 'bienvenue',
