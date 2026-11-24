@@ -31,4 +31,19 @@ class Contract(unittest.TestCase):
  def test_07_contract_unique_only_for_new_model(self):
   self.assertNotEqual(self.sql("INSERT INTO public.documents_a_signer VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',null,'contrat_cadre_prestation_intervenant','11111111-1111-1111-1111-111111111111','v1')",False).returncode,0)
   self.sql("INSERT INTO public.documents_a_signer VALUES ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',null,'autre_modele','11111111-1111-1111-1111-111111111111','v1')")
+ def test_08_satisfaction_unique_only_for_new_model(self):
+  self.sql("INSERT INTO public.documents_a_signer VALUES ('cccccccc-cccc-cccc-cccc-cccccccccccc',null,'enquete_satisfaction_formateur','11111111-1111-1111-1111-111111111111','v1')")
+  self.assertNotEqual(self.sql("INSERT INTO public.documents_a_signer VALUES ('dddddddd-dddd-dddd-dddd-dddddddddddd',null,'enquete_satisfaction_formateur','11111111-1111-1111-1111-111111111111','v1')",False).returncode,0)
+  self.sql("INSERT INTO public.documents_a_signer VALUES ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',null,'autre_enquete','11111111-1111-1111-1111-111111111111','v1')")
+ def test_09_independent_restore_preserves_sources_and_permissions(self):
+  backup=self.d+'/signature-restauration-complete.sql'
+  before=self.sql("SELECT (SELECT md5(string_agg(id::text,',' ORDER BY id::text)) FROM public.documents_a_signer)||'|'||(SELECT count(*) FROM public.intervenant_signature_preuves)").stdout.strip()
+  subprocess.run(['pg_dump','-h',self.d,'-p','55524','-U','postgres','-f',backup],env=self.env,check=True,capture_output=True)
+  subprocess.run(['createdb','-h',self.d,'-p','55524','-U','postgres','signature_restauration'],env=self.env,check=True,capture_output=True)
+  subprocess.run(['psql','-X','-At','-h',self.d,'-p','55524','-U','postgres','-d','signature_restauration','-v','ON_ERROR_STOP=1','-f',backup],env=self.env,check=True,capture_output=True)
+  restored=subprocess.run(['psql','-X','-At','-h',self.d,'-p','55524','-U','postgres','-d','signature_restauration','-c',"SELECT (SELECT md5(string_agg(id::text,',' ORDER BY id::text)) FROM public.documents_a_signer)||'|'||(SELECT count(*) FROM public.intervenant_signature_preuves)"],env=self.env,text=True,capture_output=True,check=True).stdout.strip()
+  self.assertEqual(restored,before)
+  out=subprocess.run(['psql','-X','-At','-h',self.d,'-p','55524','-U','postgres','-d','signature_restauration','-c',"SET ROLE authenticated; SET request.uid='99999999-9999-9999-9999-999999999999'; SELECT count(*) FROM public.intervenant_signature_preuves"],env=self.env,text=True,capture_output=True,check=True).stdout.strip().splitlines()[-1]
+  self.assertEqual(out,'0')
+  subprocess.run(['dropdb','-h',self.d,'-p','55524','-U','postgres','signature_restauration'],env=self.env,check=True,capture_output=True)
 if __name__=='__main__': unittest.main(verbosity=2)

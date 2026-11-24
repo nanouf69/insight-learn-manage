@@ -1,7 +1,10 @@
 export const CONTRAT_MODELE = "contrat_cadre_prestation_intervenant";
 export const CONTRAT_VERSION = "services-pro-contrat-cadre-intervenant-2026-11-24-v1";
+export const SATISFACTION_MODELE = "enquete_satisfaction_formateur";
+export const SATISFACTION_VERSION = "services-pro-satisfaction-formateur-2026-11-24-v1";
+export const TITRE_SATISFACTION = "ENQUÊTE DE SATISFACTION FORMATEUR — I30";
 
-export type TypeDocumentIntervenant = "competences" | "contrat";
+export type TypeDocumentIntervenant = "competences" | "contrat" | "satisfaction";
 
 export const IDENTITES_CONTRAT = {
   centre: {
@@ -21,7 +24,6 @@ export const IDENTITES_CONTRAT = {
   },
 } as const;
 
-/** Projet soumis à validation humaine. Aucune date de signature ni heure historique n'y est déduite. */
 export const CONTRAT_SECTIONS = [
   {
     titre: "1. Objet et cadre des missions",
@@ -95,12 +97,44 @@ export const CONTRAT_SECTIONS = [
   },
 ] as const;
 
+export const SATISFACTION_NOTES = [
+  { id: "clarte_consignes", label: "Clarté des consignes et des objectifs de mission" },
+  { id: "organisation", label: "Organisation, planification et information avant la mission" },
+  { id: "moyens_supports", label: "Moyens, supports et conditions mis à disposition" },
+  { id: "accompagnement", label: "Disponibilité et accompagnement de l'équipe SERVICES PRO" },
+  { id: "relation_professionnelle", label: "Qualité de la relation professionnelle et du respect mutuel" },
+] as const;
+
+export const SATISFACTION_TEXTES = [
+  { id: "points_positifs", label: "Quels points vous ont semblé les plus satisfaisants ?", obligatoire: true },
+  { id: "ameliorations", label: "Quelles améliorations proposez-vous ? Vous pouvez répondre « aucune ».", obligatoire: true },
+  { id: "commentaire_libre", label: "Commentaire libre (facultatif)", obligatoire: false },
+] as const;
+
+export const SATISFACTION_INTRODUCTION = "Cette enquête recueille votre appréciation en tant que formateur intervenant auprès de SERVICES PRO. Vos réponses servent au suivi de la satisfaction des parties prenantes et à l'amélioration de l'organisation. Elles ne constituent ni une attestation de présence ou d'heures, ni une validation automatique de l'indicateur Qualiopi 30.";
+export const SATISFACTION_DECLARATION = "Je confirme que ces réponses reflètent sincèrement mon expérience et mes appréciations. Je comprends qu'elles seront examinées par SERVICES PRO sans déduire automatiquement une conformité Qualiopi.";
+
+export function validerReponsesSatisfaction(input: unknown, declaration: unknown): string | null {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return "Réponses absentes";
+  const reponses = input as Record<string, unknown>;
+  for (const question of SATISFACTION_NOTES) {
+    const note = reponses[question.id];
+    if (typeof note !== "number" || !Number.isInteger(note) || note < 1 || note > 5) return `Note de 1 à 5 requise : ${question.label}`;
+  }
+  for (const champ of SATISFACTION_TEXTES) {
+    const value = reponses[champ.id];
+    if (!champ.obligatoire && (value === undefined || value === null)) continue;
+    if (typeof value !== "string" || value.length > 4_000 || (champ.obligatoire && !value.trim())) return `Champ à renseigner : ${champ.label}`;
+  }
+  if (declaration !== true) return "Confirmation de sincérité obligatoire";
+  return null;
+}
+
 export const CONSENTEMENTS_INTERVENANT: Record<TypeDocumentIntervenant, string> = {
   competences: "J'ai relu ma déclaration de compétences et la liste de mes justificatifs. Je demande à la signer manuscritement. Je comprends que cette signature atteste de ma déclaration, sans valoir validation de mes compétences par SERVICES PRO.",
   contrat: "J'ai relu le contrat-cadre. Je confirme que la collaboration avec SERVICES PRO a débuté courant 2021 et j'accepte les stipulations du contrat. Je signe à la date réelle enregistrée par le serveur, sans antidatation ni attestation d'heures historiques.",
+  satisfaction: "J'ai relu mes réponses à l'enquête de satisfaction formateur. Je demande à les signer manuscritement. Je comprends que cette signature atteste de mes réponses, sans valoir validation automatique de l'indicateur Qualiopi 30.",
 };
-
-export const MESSAGE_TROISIEME_DOCUMENT = "Troisième document non généré : son intitulé exact doit être confirmé par SERVICES PRO. Aucun contenu n'a été inventé.";
 
 export function texteContratFige(etat: "projet_a_valider" | "valide_pour_signature" = "projet_a_valider") {
   return {
@@ -111,6 +145,19 @@ export function texteContratFige(etat: "projet_a_valider" | "valide_pour_signatu
     sections: CONTRAT_SECTIONS,
     debut_collaboration: { declare_par_centre: "courant 2021", confirmation_intervenant_requise: true },
     heures_historiques_attestees: false,
+  };
+}
+
+export function texteSatisfactionFige(etat: "projet_a_valider" | "valide_pour_reponse" = "projet_a_valider") {
+  return {
+    version: SATISFACTION_VERSION,
+    titre: TITRE_SATISFACTION,
+    etat,
+    introduction: SATISFACTION_INTRODUCTION,
+    echelle: "1 = très insatisfait · 2 = insatisfait · 3 = ni satisfait ni insatisfait · 4 = satisfait · 5 = très satisfait",
+    notes: SATISFACTION_NOTES,
+    textes: SATISFACTION_TEXTES,
+    declaration: SATISFACTION_DECLARATION,
   };
 }
 
@@ -130,5 +177,5 @@ export function statutDocumentIntervenant(input: { statut?: string | null; signe
 }
 
 export function libelleStatutDocument(statut: ReturnType<typeof statutDocumentIntervenant>) {
-  return { signe: "Signé", declaration_remise: "Déclaration remise — signature manuscrite à recueillir", a_completer: "À compléter", apercu: "Aperçu non signé" }[statut];
+  return { signe: "Signé", declaration_remise: "Réponses remises — signature manuscrite à recueillir", a_completer: "À compléter", apercu: "Aperçu non signé" }[statut];
 }

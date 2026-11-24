@@ -1,4 +1,4 @@
--- CANDIDAT NON APPLIQUÉ — validation du contenu et restauration indépendante requises.
+-- CANDIDAT — contenu des trois documents confirmé ; restauration indépendante requise avant application.
 -- Aucune donnée source n'est modifiée ; les signatures sont des preuves nouvelles append-only.
 CREATE TABLE public.intervenant_signature_preuves (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -37,4 +37,4 @@ COMMENT ON TABLE public.intervenant_signature_preuves IS 'Preuves nouvelles de s
 -- Anti-doublon limité au nouveau modèle : les autres modèles et leurs historiques ne changent pas.
 CREATE UNIQUE INDEX uq_documents_contrat_intervenant_source_version
 ON public.documents_a_signer(modele_code, cle_envoi, modele_version)
-WHERE apprenant_id IS NULL AND modele_code = 'contrat_cadre_prestation_intervenant';
+WHERE apprenant_id IS NULL AND modele_code IN ('contrat_cadre_prestation_intervenant', 'enquete_satisfaction_formateur');

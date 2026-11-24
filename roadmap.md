@@ -1,6 +1,6 @@
 # Roadmap — chantiers ouverts (13/11/2026)
-## Parcours de signature Albert AKONO — 24/11 18:59
-- [ ] Bloquant : confirmer l’intitulé exact du troisième document ; aucun troisième contenu inventé.
+## Parcours de signature Albert AKONO — 24/11 19:15
+- [x] Troisième document confirmé : enquête de satisfaction formateur (I30), sans validation automatique de l’indicateur.
 - [x] Réutiliser le lien sécurisé existant sans écraser la justification déjà envoyée ni les signatures ; aucun doublon d’email Outlook.
 - [x] Préparer le contrat-cadre avec identités/tarif/clauses confirmés, collaboration depuis 2021 à confirmer et aucune heure historique attestée.
 - [x] Préparer signatures manuscrites séparées, consentements, horodatage serveur, PDF immuables, intégrité, audit, statuts et accès privé/idempotent.

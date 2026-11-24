@@ -35,8 +35,8 @@ export function CompetencesFormateurDialog({ formateurId, onClose }: { formateur
     {doc && <div className="space-y-4">
       <p>{doc.destinataire_nom} · {doc.destinataire_email}</p>
       <Button variant="outline" onClick={() => navigator.clipboard.writeText(query.data.link)}>Copier le lien individuel</Button>
-      <p className="text-sm text-muted-foreground">Aucun envoi automatique. Nouvelle page disponible dans l’aperçu ; publication nécessaire pour le lien du site.</p>
-      <ParcoursFormateurAdmin documentId={doc.id} token={query.data.token} declarationStatut={doc.statut} declarationSignedAt={doc.signed_at ?? null} />
+      <p className="text-sm text-muted-foreground">Lien individuel unique pour les compétences, le contrat-cadre et l’enquête de satisfaction.</p>
+      <ParcoursFormateurAdmin documentId={doc.id} token={query.data.token} declarationStatut={doc.statut} declarationSignedAt={doc.signed_at ?? null} destinataireEmail={doc.destinataire_email} />
       {doc.statut !== "signe" ? <p>Déclaration de l’intervenant non remise.</p> : <>
         {COMPETENCES_CHAMPS.map(champ => <div key={champ.id}><h3 className="font-semibold">{champ.label}</h3><p className="whitespace-pre-wrap">{doc.reponses[champ.id]}</p></div>)}
         {query.data.fichiers.map((file: { nom: string; url: string }) => <p key={file.url}><a href={file.url} target="_blank" rel="noreferrer" className="text-primary underline">{file.nom}</a></p>)}

@@ -6236,6 +6236,68 @@ export type Database = {
         }
         Relationships: []
       }
+      intervenant_signature_preuves: {
+        Row: {
+          charge_utile: Json
+          consentement_texte: string
+          created_at: string
+          document_empreinte: string
+          document_id: string
+          id: string
+          operation_id: string
+          pdf_empreinte: string
+          pdf_path: string
+          requete_empreinte: string
+          signature_data_url: string
+          signature_empreinte: string
+          signe_le_paris: string
+          signed_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          charge_utile: Json
+          consentement_texte: string
+          created_at?: string
+          document_empreinte: string
+          document_id: string
+          id?: string
+          operation_id: string
+          pdf_empreinte: string
+          pdf_path: string
+          requete_empreinte: string
+          signature_data_url: string
+          signature_empreinte: string
+          signe_le_paris: string
+          signed_at: string
+          user_agent?: string | null
+        }
+        Update: {
+          charge_utile?: Json
+          consentement_texte?: string
+          created_at?: string
+          document_empreinte?: string
+          document_id?: string
+          id?: string
+          operation_id?: string
+          pdf_empreinte?: string
+          pdf_path?: string
+          requete_empreinte?: string
+          signature_data_url?: string
+          signature_empreinte?: string
+          signe_le_paris?: string
+          signed_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervenant_signature_preuves_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "documents_a_signer"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       justificatifs: {
         Row: {
           categorie: string | null
