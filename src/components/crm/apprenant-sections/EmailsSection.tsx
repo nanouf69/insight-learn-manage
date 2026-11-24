@@ -72,6 +72,22 @@ interface EmailTemplate {
 
 const EMAIL_TEMPLATES: EmailTemplate[] = [
   {
+    id: 'urgent-recontacter',
+    label: '🚨 Urgent — Nous recontacter',
+    icon: '🚨',
+    getSubject: () => 'URGENT — Merci de recontacter FTRANSPORT',
+    getBody: (a) => `Bonjour ${a.prenom},
+
+Nous vous demandons de nous recontacter dans les plus brefs délais concernant votre dossier de formation.
+
+Merci de nous appeler au 04 28 29 60 91 ou de répondre directement à ce mail à contact@ftransport.fr.
+
+Si vous ne pouvez pas nous joindre immédiatement, merci de nous indiquer vos disponibilités afin que nous puissions convenir d'un échange.
+
+Cordialement,
+L'équipe FTRANSPORT`,
+  },
+  {
     id: 'bienvenue',
     label: '📄 Document de bienvenue',
     icon: '📄',
