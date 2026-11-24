@@ -859,10 +859,12 @@ export function FactureForm() {
       ? `<div style="margin-top:20px;padding:15px;background:#eff6ff;border:2px solid #2563eb;border-radius:8px;font-size:12px;"><h4 style="margin:0 0 10px 0;color:#1e40af;font-size:13px;">Mentions France Travail</h4><p style="margin:4px 0;"><strong>Nom et prénom du stagiaire :</strong> ${ftStagiaireNom}</p><p style="margin:4px 0;"><strong>Dates de formation :</strong> du ${ftDateDebut} au ${ftDateFin}</p><p style="margin:4px 0;"><strong>Nombre d'heures-stagiaire effectivement réalisé :</strong> ${Number(ftHeures).toFixed(2)} h</p><p style="margin:4px 0;"><strong>Montant total HT :</strong> ${ftMontantHT.toFixed(2)} €</p><p style="margin:4px 0;"><strong>Montant total à payer TTC :</strong> ${ftMontantTTC.toFixed(2)} €</p></div>`
       : '';
 
-    const acquitteHTML = data.acquittee
+    // Brouillon (numéro non attribué) : jamais de mention « Acquittée ».
+    const estBrouillon = !data.numero || data.numero === NUMERO_PLACEHOLDER;
+    const acquitteHTML = data.acquittee && !estBrouillon
       ? `<div style="margin-top:20px;padding:15px;background:#d1fae5;border:2px solid #059669;border-radius:8px;text-align:center;"><div style="font-size:18px;font-weight:bold;color:#065f46;">✓ FACTURE ACQUITTÉE</div><div style="margin-top:6px;font-size:12px;color:#065f46;">Payée le ${data.datePaiement ? formatDate(data.datePaiement) : '—'} par ${moyenLabels[data.moyenPaiement] || data.moyenPaiement}</div></div>`
       : '';
-    const acquitteStamp = data.acquittee
+    const acquitteStamp = data.acquittee && !estBrouillon
       ? `<div style="display:inline-block;margin-top:8px;padding:4px 12px;background:#059669;color:#fff;font-weight:bold;border-radius:4px;">✓ ACQUITTÉE</div>`
       : '';
 
@@ -1692,7 +1694,7 @@ export function FactureForm() {
             </div>
             <div className="text-right">
               <h2 className="text-xl font-bold">FACTURE {data.duplicata && <span className="text-orange-500">DUPLICATA</span>} N°{data.numero}</h2>
-              {data.acquittee && (
+              {data.acquittee && data.numero !== NUMERO_PLACEHOLDER && (
                 <div className="mt-2 inline-block bg-emerald-600 text-white px-3 py-1 rounded font-bold text-sm">
                   ✓ ACQUITTÉE
                 </div>
