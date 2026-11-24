@@ -512,6 +512,20 @@ function renderCGV(doc: jsPDF, donnees: any, y: number, margin: number, pw: numb
       y = renderQA(doc, getLabel(key), val, y, margin, pw);
     }
   }
+  // Only the recorded snapshot is printable; never retrofit today's regulation
+  // or CGV onto an older acceptance.
+  if (typeof donnees.ri_version === 'string' && Array.isArray(donnees.ri_articles)) {
+    y = renderQA(doc, 'Version du règlement acceptée', donnees.ri_version, y, margin, pw);
+    for (const article of donnees.ri_articles) {
+      y = renderQA(doc, `Article ${article.num} — ${article.titre}`, String(article.contenu), y, margin, pw);
+    }
+    if (Array.isArray(donnees.cgv_sections)) {
+      y = renderSectionHeader(doc, 'CGV CONSERVÉES AVEC L’ACCEPTATION', y, margin, pw);
+      for (const section of donnees.cgv_sections) {
+        y = renderQA(doc, String(section.titre), String(section.contenu), y, margin, pw);
+      }
+    }
+  }
   return y;
 }
 

@@ -40,6 +40,10 @@ serve(async (req) => {
 
     if (error) throw error;
     if (!doc) return json({ error: "Document introuvable ou lien expiré" }, 404);
+    // Competency tokens must never enter generic choice/signature handlers.
+    if (["justification_competences_intervenant", "validation_competences_responsable", "reglement_services_pro"].includes(doc.modele_code ?? "")) {
+      return json({ error: "Ce document relève de son formulaire individuel dédié." }, 404);
+    }
 
     // Rental must never fall through to generic choice/PDF submission before its own atomic circuit is installed.
     if (doc.modele_code === LOCATION_MODEL) return json({ error: "Signature des contrats de location non activée." }, 409);

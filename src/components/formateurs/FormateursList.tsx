@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { FormateurForm } from "./FormateurForm";
 import { FormateurEditForm } from "./FormateurEditForm";
+import { CompetencesFormateurDialog } from "./CompetencesFormateurDialog";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -42,6 +43,7 @@ interface Formateur {
 }
 
 export function FormateursList() {
+  const [competencesFormateurId, setCompetencesFormateurId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [syncing, setSyncing] = useState(false);
   const [bulkEmailOpen, setBulkEmailOpen] = useState(false);
@@ -308,6 +310,7 @@ export function FormateursList() {
                       </div>
 
                       {/* Spécialités */}
+                      <Button variant="outline" size="sm" onClick={() => setCompetencesFormateurId(formateur.id)}><GraduationCap className="mr-2 h-4 w-4" />Justification des compétences</Button>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {parseSpecialites(formateur.specialites).map((spec, idx) => (
                           <Badge key={idx} variant="secondary" className="text-xs">
@@ -349,6 +352,7 @@ export function FormateursList() {
       </AlertDialog>
 
       {/* Dialog d'édition */}
+      {competencesFormateurId && <CompetencesFormateurDialog formateurId={competencesFormateurId} onClose={() => setCompetencesFormateurId(null)} />}
       {editFormateur && (
         <FormateurEditForm
           formateur={editFormateur}

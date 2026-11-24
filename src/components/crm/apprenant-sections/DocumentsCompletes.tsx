@@ -35,6 +35,7 @@ import { ContexteFormulaire } from './ContexteFormulaire';
 import { TYPES_PEDAGOGIQUES, type ContextePedagogique } from '@/lib/formulairePedagogique';
 import { DevisFormulaires } from './DevisFormulaires';
 import { devisSignatureEvidence } from '@/lib/devisSignatureEvidence';
+import { ReglementServicesProInformation } from './ReglementServicesProInformation';
 
 interface Props {
   apprenant: any;
@@ -818,6 +819,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures, onOuv
   }
   return (
     <div className="space-y-4">
+      <ReglementServicesProInformation />
       <DevisFormulaires apprenant={apprenant} onOuvrirDevis={onOuvrirDevis} />
       <SignaturesPapierDossier apprenant={apprenant} />
       <CompteurHeuresNonSignees apprenantId={apprenant.id}/>

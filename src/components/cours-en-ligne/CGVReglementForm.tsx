@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { saveFormDocument } from "@/lib/saveFormDocument";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
+import { RI_SERVICES_PRO_V2, RI_SERVICES_PRO_VERSION, snapshotReglementServicesPro } from "@/lib/reglementServicesPro";
 
 interface CGVReglementFormProps {
   apprenantId?: string;
@@ -210,28 +211,7 @@ Enfin, FTRANSPORT s'engage a effacer a l'issue des exercices toute image qui y a
 ];
 
 // ── REGLEMENT INTERIEUR ────────────────────────────────────
-const RI_ARTICLES = [
-  { num: 1, titre: "Personnes concernees", contenu: "Le present reglement s'applique a toutes les personnes inscrites a une action de formation organisee par FTRANSPORT - Services Pro." },
-  { num: 2, titre: "Conditions generales", contenu: "Toute personne en stage doit respecter le present reglement pour toutes les questions relatives a l'hygiene et securite, aux regles generales et permanentes et aux dispositions relatives aux droits de la defense du stagiaire." },
-  { num: 3, titre: "Regles generales d'hygiene et de securite", contenu: "Chaque stagiaire doit veiller a sa securite personnelle et a celle des autres en respectant les consignes generales et particulieres de securite et d'hygiene en vigueur sur les lieux de stage." },
-  { num: 4, titre: "Produits illicites et boissons alcoolisees", contenu: "Il est interdit de penetrer dans les locaux de formation avec des produits illicites ou des boissons alcoolisees, ou de sejourner en etat d'ivresse dans l'etablissement." },
-  { num: 5, titre: "Consignes d'incendie", contenu: "Les consignes d'incendie et un plan de localisation des extincteurs et des issues de secours sont affiches dans les locaux. Tout stagiaire est tenu de respecter scrupuleusement les consignes relatives a la prevention des incendies." },
-  { num: 6, titre: "Interdiction de fumer", contenu: "Il est strictement interdit de fumer dans les lieux affectes a un usage collectif ainsi que dans les salles de formation." },
-  { num: 7, titre: "Tenue et comportement", contenu: "Les stagiaires sont invites a se presenter en tenue decente et a avoir un comportement correct. Il est formellement interdit de bavarder durant les heures de cours. L'usage du telephone portable est strictement interdit dans les salles de formation, sauf cas exceptionnel." },
-  { num: 8, titre: "Horaires, absences et retards", contenu: "Les stagiaires doivent respecter les horaires de stage. En cas d'absence ou de retard, les stagiaires doivent avertir le formateur. Les stagiaires sont tenus de signer obligatoirement l'attestation de presence." },
-  { num: 9, titre: "Entrees, sorties et deplacements", contenu: "Les stagiaires n'ont acces aux locaux que pour le deroulement des seances de formation. Sauf autorisation expresse, ils ne peuvent entrer ou demeurer dans l'etablissement a d'autres fins." },
-  { num: 10, titre: "Usage du materiel et connexion internet", contenu: "Chaque stagiaire a l'obligation de conserver en bon etat le materiel qui lui est confie. L'utilisation du materiel ou d'une connexion internet a des fins personnelles est interdite." },
-  { num: 11, titre: "Enregistrement et videosurveillance", contenu: "Il est formellement interdit d'enregistrer ou de filmer les seances de formation. L'etablissement est place sous videosurveillance pour la securite des personnes et des biens." },
-  { num: 12, titre: "Methode pedagogique et documentation", contenu: "Les methodes pedagogiques et la documentation diffusees sont protegees au titre des droits d'auteur et ne peuvent etre reutilisees que pour un strict usage personnel." },
-  { num: 13, titre: "Accident", contenu: "Tout accident ou incident survenu a l'occasion ou en cours de formation doit etre immediatement declare par le stagiaire accidente ou les temoins au responsable de la formation." },
-  { num: 14, titre: "Information", contenu: "La publicite commerciale, la propagande politique, syndicale ou religieuse sont interdites dans l'enceinte de l'organisme." },
-  { num: 15, titre: "Responsabilite en cas de vol", contenu: "L'organisme decline toute responsabilite en cas de perte, vol ou deterioration des objets personnels deposes par les stagiaires dans son enceinte." },
-  { num: 16, titre: "Sanctions", contenu: "Tout manquement aux prescriptions du present reglement pourra faire l'objet d'une sanction : avertissement oral, exclusion temporaire ou exclusion definitive. L'exclusion ne pourra en aucun cas donner lieu au remboursement des sommes payees." },
-  { num: 17, titre: "Procedure disciplinaire", contenu: "Aucune sanction ne peut etre infligee a un stagiaire sans que celui-ci ait ete informe au prealable des griefs retenus contre lui." },
-  { num: 18, titre: "Representation des stagiaires", contenu: "Dans les stages d'une duree superieure a 200 heures, il est procede a l'election d'un delegue titulaire et d'un delegue suppleant au scrutin uninominal a deux tours." },
-  { num: 19, titre: "Role des delegues", contenu: "Les delegues font toute suggestion pour ameliorer le deroulement des stages et les conditions de vie des stagiaires." },
-  { num: 20, titre: "Entree en application", contenu: "Du gel hydroalcoolique est mis a disposition. Le present reglement interieur entre en application a compter du premier jour de formation." },
-];
+const RI_ARTICLES = RI_SERVICES_PRO_V2;
 
 export default function CGVReglementForm({
   apprenantId,
@@ -251,17 +231,19 @@ export default function CGVReglementForm({
   const [dateSignature, setDateSignature] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const [alreadyCompleted, setAlreadyCompleted] = useState(completed || false);
+  const [acceptedVersion, setAcceptedVersion] = useState<string | null>(null);
 
   useEffect(() => {
     if (!apprenantId) return;
     supabase
       .from("apprenant_documents_completes" as any)
-      .select("id")
+      .select("id, donnees")
       .eq("apprenant_id", apprenantId)
       .eq("type_document", "cgv-ri-acceptation")
       .limit(1)
       .then(({ data }) => {
         if (data && data.length > 0) {
+          setAcceptedVersion((data[0] as any).donnees?.ri_version ?? null);
           setAlreadyCompleted(true);
           onComplete();
         }
@@ -290,6 +272,8 @@ export default function CGVReglementForm({
         typeDocument: "cgv-ri-acceptation",
         titre: "CGV et Reglement Interieur - Signature",
         donnees: {
+          ...snapshotReglementServicesPro(),
+          cgv_sections: CGV_SECTIONS.map(section => ({ ...section })),
           cgv_accepted: true,
           ri_accepted: true,
           nom,
@@ -305,6 +289,15 @@ export default function CGVReglementForm({
         await new Promise((r) => setTimeout(r, 1200));
         ok = await saveFormDocument(payload);
       }
+      if (ok) {
+        const { data: confirmed, error: readError } = await supabase.from("apprenant_documents_completes" as any)
+          .select("id, donnees").eq("apprenant_id", apprenantId).eq("type_document", "cgv-ri-acceptation")
+          .contains("donnees", { ri_version: RI_SERVICES_PRO_VERSION, signed_at: payload.donnees.signed_at }).limit(1);
+        const articles = (confirmed?.[0] as any)?.donnees?.ri_articles;
+        ok = !readError && Array.isArray(articles) && articles.length === payload.donnees.ri_articles.length
+          && articles.every((article: any, index: number) => article.num === payload.donnees.ri_articles[index].num
+            && article.titre === payload.donnees.ri_articles[index].titre && article.contenu === payload.donnees.ri_articles[index].contenu);
+      }
       if (!ok) {
         // 07/10/2026 (B11) : sans preuve serveur de la signature, on n'affiche
         // jamais « CGV signées » et le parcours ne continue pas.
@@ -317,6 +310,7 @@ export default function CGVReglementForm({
     }
     setSaving(false);
     setAlreadyCompleted(true);
+    setAcceptedVersion(RI_SERVICES_PRO_VERSION);
     toast.success("CGV et Reglement interieur signes avec succes !");
     sendAdminNotification({
       type_document: "cgv-ri-acceptation",
@@ -337,7 +331,9 @@ export default function CGVReglementForm({
       <Card className="border-green-300 bg-green-50">
         <CardContent className="p-6 flex items-center gap-3">
           <CheckCircle2 className="h-6 w-6 text-green-600" />
-          <p className="font-semibold text-green-800">CGV et Reglement Interieur signes</p>
+          <div><p className="font-semibold text-green-800">CGV et Reglement Interieur signes</p>
+            <p className="text-xs text-muted-foreground">{acceptedVersion === RI_SERVICES_PRO_VERSION ? "Version du 24 novembre 2026 — 21 articles" : "Acceptation historique conservée — aucune acceptation du nouvel article 21 déduite"}</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -383,6 +379,7 @@ export default function CGVReglementForm({
       <Card>
         <CardContent className="p-6 space-y-4">
           <h3 className="text-xl font-bold text-center">Reglement Interieur</h3>
+          <p className="text-xs text-muted-foreground text-center">SERVICES PRO — Version du 24 novembre 2026</p>
           <p className="text-xs text-muted-foreground text-center italic">
             Etabli conformement aux articles L.6352-3 a L.6352-5 et R.6352-1 a R.6352-15 du Code du travail.
           </p>

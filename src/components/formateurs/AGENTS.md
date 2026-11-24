@@ -1,0 +1,1 @@
+- Competency invitations and responsible reviews use separate immutable model documents; token access is scoped to the invitation, files stay in private storage and reviews require a server-checked admin plus explicit actual examination. Why: an intervenant declaration never proves responsible validation or grants access to CRM data.

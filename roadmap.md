@@ -1,4 +1,10 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Règlement SERVICES PRO article 21 / compétences Albert (24/11)
+- [x] RI v2 avec article 21 seul, vingt articles/CGV exactement conservés ; snapshot et relecture nouveaux formulaires, anciens inchangés, message non envoyé. 133 acceptations/MD5 identiques, 8 tests règlement et PC/mobile fictifs PASS.
+- [x] Preuve f1c4cfc9 rattachée et relue indicateur 12 ; manque documentaire levé, À compléter maintenu faute de publication/diffusion, sources intactes.
+- [x] Invitation Albert AKONO créée sans mail, service dédié actif, token expirant 25/12 00h Paris, fichiers privés, CAS/remise et avis responsable séparé. 12 Deno + 33 signatures régression PASS ; GET réel 200, refus 400/401/404, vrai formulaire PC/mobile chargé. Aucun dossier rempli ni compétence validée, rapport docs/reglement-services-pro-albert-2026-11-24.md.
+- [ ] Publication page Albert/RI et information des inscrits : attend accord explicite ; site non publié, diffusion non présumée.
+- [ ] Dépôt/remise Albert et décision responsable réels : attend déclaration/pièces réelles et session administrateur existante ; compte disponible rôle user, accès refusé, aucun droit élargi.
 ## Actualisation des fiches élèves (24/11)
 - [x] Fiche et indicateurs relus après invalidation/enregistrement confirmé, reprise et événements existants ; rafales regroupées, ancien dossier ignoré, saisie modules conservée. 9 tests PASS, build OK, fiche réelle Mohamed HAMID ARGA PC/mobile : retour écran → nouvelles lectures HTTP 200, zéro erreur ni débordement. Aucun dossier écrit ni publication ; changement réel inter-appareils non testé.
 - [ ] Actualisation immédiate des signatures/informations depuis un autre appareil : tables absentes de la publication temps réel ; activation serveur bloquée par la restauration indépendante non vérifiée, aucune migration automatique.
