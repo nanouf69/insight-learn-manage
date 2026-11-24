@@ -1,4 +1,7 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Actualisation des fiches élèves (24/11)
+- [x] Fiche et indicateurs relus après invalidation/enregistrement confirmé, reprise et événements existants ; rafales regroupées, ancien dossier ignoré, saisie modules conservée. 9 tests PASS, build OK, fiche réelle Mohamed HAMID ARGA PC/mobile : retour écran → nouvelles lectures HTTP 200, zéro erreur ni débordement. Aucun dossier écrit ni publication ; changement réel inter-appareils non testé.
+- [ ] Actualisation immédiate des signatures/informations depuis un autre appareil : tables absentes de la publication temps réel ; activation serveur bloquée par la restauration indépendante non vérifiée, aucune migration automatique.
 ## Supports TAXI — Cours et exercices, partie Locale (24/11)
 - [x] Trois PowerPoint « corrigé » Locale 1/2/3 (17/15/17 diapositives) remplacés en affichage module 10 (cours 10016–10018), PDF régénérés fidèles une page par diapositive, pointeurs 20261124 ; fichiers du 27/10 conservés. 19 tests PASS, build OK, six fichiers relus en HTTP 200, vue apprenant réelle controlée sur les trois parties ; aucune publication.
 ## Sécurité — cinq alertes RLS (23/11)

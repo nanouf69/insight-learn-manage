@@ -1,0 +1,1 @@
+- CRM dossier refresh rereads learner-scoped queries on confirmed cache/mutation signals, resume and already-published small-table events; never poll, remount editors, write evidence or enable tables silently. Why: indicators must catch up without losing drafts or pretending unpublished sources stream across devices.

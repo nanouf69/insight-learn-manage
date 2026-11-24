@@ -54,6 +54,7 @@ import { getAvatarUrl } from "@/lib/avatarUrl";
 import { FinancementApprenantCard } from "@/components/crm/apprenant-sections/FinancementApprenantCard";
 import { useApprenantTauxRealisation } from "@/hooks/useApprenantTauxRealisation";
 import { useCandidatModules } from "@/hooks/useCandidatModules";
+import { useCrmDossierRefresh } from "@/hooks/useCrmDossierRefresh";
 import { HeuresPresentielValidees } from "@/components/crm/apprenant-sections/HeuresPresentielValidees";
 import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPonderesCard";
 import { formatLearningHours } from "@/lib/elearningRequiredHours";
@@ -75,10 +76,14 @@ const ORDERED_FORMATION_MODULES = Object.fromEntries(
 function CoursAttribution({ apprenant, apprenantId, effectiveModules, activeFormationType, selectedFormationForModules, setSelectedFormationForModules, queryClient }: any) {
   const [localModules, setLocalModules] = useState<number[]>(effectiveModules);
   const [saving, setSaving] = useState(false);
+  const moduleBaseline = useRef({ apprenantId, modules: effectiveModules.join(",") });
 
   useEffect(() => {
-    setLocalModules(effectiveModules);
-  }, [effectiveModules.join(",")]);
+    const previous = moduleBaseline.current;
+    setLocalModules((current) => previous.apprenantId !== apprenantId || current.join(",") === previous.modules
+      ? effectiveModules : current);
+    moduleBaseline.current = { apprenantId, modules: effectiveModules.join(",") };
+  }, [apprenantId, effectiveModules.join(",")]);
 
   const toggleModule = (id: number) => {
     setLocalModules((prev: number[]) =>
@@ -307,6 +312,7 @@ const FORMATION_TO_TYPE: Record<string, string> = {
 
 export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDetailPageProps) {
   const queryClient = useQueryClient();
+  useCrmDossierRefresh(apprenantId);
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("infos");
