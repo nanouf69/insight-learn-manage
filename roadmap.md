@@ -1,12 +1,13 @@
 # Roadmap — chantiers ouverts (13/11/2026)
 ## Parcours de signature Albert AKONO — 24/11 19:15
 - [x] Troisième document confirmé : enquête de satisfaction formateur (I30), sans validation automatique de l’indicateur.
-- [x] Réutiliser le lien sécurisé existant sans écraser la justification déjà envoyée ni les signatures ; aucun doublon d’email Outlook.
+- [x] Réutiliser le lien sécurisé existant sans écraser la justification ni les signatures ; un seul nouvel email regroupant les trois documents, sans doublon de justificatif isolé.
 - [x] Préparer le contrat-cadre avec identités/tarif/clauses confirmés, collaboration depuis 2021 à confirmer et aucune heure historique attestée.
 - [x] Préparer signatures manuscrites séparées, consentements, horodatage serveur, PDF immuables, intégrité, audit, statuts et accès privé/idempotent.
-- [x] Préparer remontée CRM Albert et rattachements Qualiopi 21/27 pertinents sans conformité automatique.
+- [x] Préparer remontée CRM Albert et rattachements Qualiopi 21/27/30 pertinents sans conformité automatique.
 - [x] Tester mobile/souris, erreurs, idempotence et immuabilité ; fournir lien/aperçu avant envoi, sans nouvelle publication ni modification cours/élèves.
-- [ ] Après validation du contenu et du troisième document : restauration indépendante, activation SQL/fonction, publication et envoi uniquement sur accord explicite.
+- [x] Contenu validé ; 9 règles Vitest, 8 scénarios Deno, 12 tests compétences, 6 tests email et 9 protections SQL/restauration indépendante jetable PASS ; parcours fictif PC/mobile et reprise après erreur PASS. Migration 0282 appliquée, fonction déployée, trois documents réels préparés sans signature, invitation inchangée.
+- [x] Publication vérifiée PC/mobile : trois documents actifs, aucun envoi de test. Un seul email fournisseur confirmé le 24/11 à 19:32 UTC ; CRM et audit vérifiés. Aucune signature créée par les tests.
 ## Audit Qualiopi I27–I29 — 24/11 17:58
 - [x] Guide officiel V10 et décret relus : I27 sous-traitance/portage, I28 réseau pour périodes en situation de travail, I29 insertion/poursuite d’études spécifique CFA ; décalage des libellés CRM confirmé, aucun code modifié.
 - [x] I27 À compléter : intervenants externes et affectations vérifiés, contrats/traçabilité RNQ et pilotage manquants ; franchise non assimilée, original non relu, 15 preuves distinctes.

@@ -1,56 +1,44 @@
-# Parcours de signature Albert AKONO — préparation du 24/11/2026
+# Parcours des trois documents Albert AKONO — 24/11/2026
 
-## État : APERÇU NON ACTIVÉ
+## Contenu confirmé et activation
 
-- Aucun email, aucune publication, aucun déploiement de fonction et aucune migration appliquée.
-- Le lien individuel de justification des compétences déjà transmis est conservé. Aucun doublon d’email n’est prévu.
-- La déclaration source `8b944d42-aa7d-4f19-83d9-bc4ef10c0b07` n’est pas réécrite. Les signatures sont prévues dans des preuves nouvelles.
-- Le troisième document n’a pas été identifié dans l’existant : aucun intitulé ni contenu n’a été inventé. Confirmation humaine indispensable.
+1. **Bilan et justification des compétences** : invitation d'origine `8b944d42-aa7d-4f19-83d9-bc4ef10c0b07`, toujours brouillon, réponses vides, aucune date de remise. La signature manuscrite sera une preuve nouvelle et ne validera pas automatiquement les compétences ou I21.
+2. **Contrat-cadre de prestation de formation — anglais** : document `0fe55aff-a06b-4e8d-97e0-51b965b98356`, version figée `services-pro-contrat-cadre-intervenant-2026-11-24-v1`, empreinte `33b2b6347781e40cf922310694e89c029b649f48a16bcb9e6972086feff6817f`. Identités, 50 € TTC/h, missions libres sans minimum/exclusivité, durée indéterminée, préavis de 30 jours, clauses qualité/confidentialité/indépendance/facturation/CPF. Début courant 2021 à confirmer expressément ; aucune heure historique attestée ; signature SERVICES PRO non présumée.
+3. **Enquête de satisfaction formateur — I30** : document `c85e72cd-8089-4d75-8605-8f806758756a`, version figée `services-pro-satisfaction-formateur-2026-11-24-v1`, empreinte `d398a6649d3e8022e3bc59041e36b084e64871a73d071470460e2b982afe58fb`. Cinq notes entières de 1 à 5, points positifs et améliorations obligatoires, commentaire facultatif réellement facultatif, déclaration de sincérité puis signature distincte. Aucune validation automatique de I30.
 
-## Documents préparés
+Les deux documents nouveaux sont en brouillon, sans réponses ni date de remise. Les trois documents utilisent le lien individuel existant. Aucun cours, apprenant, contrat historique, réponse ou signature existante n'a été modifié.
 
-1. **Bilan et justification des compétences** : signature possible seulement après remise de la déclaration et de ses justificatifs. La signature atteste de la déclaration, sans validation automatique des compétences.
-2. **Contrat-cadre de prestation de formation — anglais** : aperçu PDF non signé joint aux livrables. Identités et conditions demandées intégrées : SERVICES PRO SAS, SIRET 82346156100016, 86 route de Genas 69003 Lyon, Naoufal GUENICHI ; Albert AKONO (DJIOFACK), EI, SIRET 83881665000017, 27 rue Joseph Brenier 38200 Vienne ; 50 € TTC/h ; missions ponctuelles libres, sans minimum ni exclusivité ; durée indéterminée ; préavis de 30 jours ; qualité, confidentialité, indépendance, facturation et vérification CPF par mission.
-   - « Courant 2021 » reste une déclaration du centre à confirmer expressément par Albert.
-   - Aucune heure historique n’est attestée et aucune date n’est antidatée.
-   - La signature de SERVICES PRO n’est pas recueillie ni présumée ; elle devra être réalisée séparément par une personne habilitée.
-3. **Troisième document** : non généré, intitulé exact à confirmer.
+## Protections actives
 
-## Protections préparées
-
-- Consentement et signature manuscrite distincts pour chaque document ; confirmation 2021 séparée pour le contrat.
-- Empreinte du texte relu et contrôle de l’intégrité du texte source avant signature ; refus si le contenu change.
-- PNG manuscrit validé côté serveur ; date et heure réelles du serveur ; PDF privé avec empreinte SHA-256.
-- Relecture du fichier stocké avant confirmation ; preuve append-only ; une preuve par document et une opération UUID par tentative.
-- Reprise après erreur avec la même opération ; aucune confirmation si le PDF ou la preuve n’est pas confirmé.
-- Lien individuel avec expiration conservée ; aucune action par simple identifiant de document hors du lien.
-- Actions de préparation et de rattachement réservées à un administrateur vérifié côté serveur.
-- Remontée dans la fiche formateur et rattachement manuel à I21 pour les compétences ou I27 pour le contrat après signature et relecture ; aucun statut Qualiopi modifié automatiquement.
-- Aucun bouton ni appel d’envoi dans ce circuit.
-
-## Fichiers de préparation
-
-- `supabase/functions/intervenant-signature/index.ts`
-- `supabase/functions/_shared/parcoursIntervenant.ts`
-- `supabase/functions/_shared/parcoursIntervenantPdf.ts`
-- `src/components/documents/ParcoursSignatureIntervenant.tsx`
-- `src/components/formateurs/ParcoursFormateurAdmin.tsx`
-- `docs/sql-revue/2026-11-24-parcours-signature-intervenant.sql` — **candidat non appliqué**.
+- Migration `0282_activer_signatures_trois_documents_intervenants` appliquée : table privée append-only, une preuve par document et par opération, empreintes SHA-256, droits admin en lecture seule et service role, aucun accès anonyme.
+- Service isolé `intervenant-signature` déployé, source SHA-256 annoncée `d22789f8093b0de6e3cd86e0a487652788a165f6438f866d733d9d508866937a`.
+- Texte figé stocké comme chaîne JSON et contrôlé avant chaque signature ; réponses de l'enquête liées à la preuve par empreinte.
+- Consentement et signature manuscrite séparés pour chacun des trois documents ; confirmation 2021 supplémentaire pour le contrat.
+- PDF privés relus octet par octet après stockage ; horodatage réel du serveur ; audit append-only ; idempotence avec le même UUID après erreur.
+- CRM : statut, réponses et PDF privé par document ; rattachement humain possible à I21, I27 ou I30 seulement après signature, relecture et vérification du PDF, sans changement automatique de statut.
+- Envoi : seul destinataire `contact@speakenglish4real.com`, trois documents obligatoires, vérification du site de production, réservation atomique, unicité et résultat inconnu jamais rejoué automatiquement.
 
 ## Tests réellement exécutés
 
-- **PASS — 17/17 scénarios Deno** : 12 tests du formulaire historique et 5 nouveaux scénarios fictifs ; préparation admin, absence de troisième document, refus non admin, déclaration obligatoire, altération du texte, deux signatures séparées, PDF privés, intégrité, idempotence et rattachement sans doublon.
-- **PASS — 8/8 règles Vitest** : identités, tarif, clauses, 2021, consentements, aperçu/final et UUID.
-- **PASS — 7/7 contrats SQL sur PostgreSQL jetable** : droits minimaux, lecture admin seule, anonyme refusé, modification/suppression refusées, unicité et absence d’effet sur les autres modèles.
-- **PASS — aperçu local réel en lecture seule** : formulaire et contrat visibles, signatures désactivées tant que le service n’est pas activé. La prévisualisation externe demande une connexion Lovable et n’a pas été contrôlée au-delà de cette redirection.
-- **PASS — souris et mobile tactile avec transport entièrement fictif** : tracé, erreur visible, nouvel essai avec le même identifiant, statut signé simulé et absence de débordement horizontal. Ces tests ne prouvent pas une signature en production.
-- **PASS — compilation Deno et TypeScript**.
-- PDF d’aperçu : 2 pages A4, texte extrait et rendu visuel contrôlés ; filigrane et mentions « non signé » présents.
+- **PASS — 9 règles Vitest** : identités, tarif, clauses, 2021, trois consentements, cinq notes, champs obligatoires/facultatifs, aperçu/version et UUID.
+- **PASS — 8 scénarios Deno du parcours** : trois documents, préparation admin, enquête complète, altération refusée, trois signatures/PDF/idempotence, rattachement I30, envoi unique et panne inconnue non rejouée.
+- **PASS — 12 scénarios Deno compétences** : jeton/expiration, fichiers, remise CAS/relecture, admin et preuves séparées.
+- **PASS — 6 règles email** : signature commune sans doublon.
+- **PASS — 9 contrats PostgreSQL jetables** : droits minimaux, anonyme refusé, immuabilité, unicité contrat/enquête et restauration complète dans une seconde base jetable avec sources et permissions identiques.
+- **PASS — PC fictif** : trois signatures, enquête complète, première erreur contrat visible puis reprise avec le même identifiant, aucune erreur page.
+- **PASS — mobile tactile fictif** : tracé au doigt, bouton actif et aucun débordement horizontal.
+- **PASS — vrai dossier en local PC/mobile** : trois documents réels et service actif, aucune soumission.
+- **PASS — compilation TypeScript/Deno et diff** ; journal de build `build OK`.
 
-## Reste avant activation
+## Publication et envoi — résultat confirmé à 19:33 UTC
 
-1. Confirmer l’intitulé et le contenu du troisième document.
-2. Faire relire et valider le contrat et le parcours par SERVICES PRO.
-3. Vérifier une restauration indépendante, puis appliquer le schéma candidat et déployer la fonction isolée.
-4. Vérifier en environnement publié les droits, le lien réel et les parcours sans signature de test réelle.
-5. Publier et envoyer uniquement après accord explicite ; aucun renvoi automatique à Albert.
+- Troisième publication terminée : `gestion.ftransport.fr` sert `assets/index-DCkm6ZN_.js` avec le nouveau parcours.
+- **PASS — production PC et mobile** : les trois documents réels, l'enquête complète, les zones de signature et le service actif sont visibles ; aucune erreur navigateur ni soumission de test.
+- **UN SEUL EMAIL ENVOYÉ** à `contact@speakenglish4real.com` après ces contrôles. Confirmation fournisseur : accusé `64aa18a5-f200-41ea-bea1-4b92785cf3db`, message `01a20f0b-8648-7b84-86fb-fabdca689751`. CRM `envoye`, daté `2026-11-24 19:32:23.427+00`.
+- La relecture d'audit utilisait par erreur la colonne inexistante `id` au lieu de `event_id`. La preuve d'envoi a été ajoutée manuellement une fois, événement `11201`, avec les trois identifiants de documents et l'accusé ; aucun email supplémentaire. Le code serveur est corrigé pour les opérations futures.
+- Aucune signature réelle n'a été créée par les tests. Les trois documents restent à compléter/signer par Albert ; aucun statut Qualiopi n'a changé.
+
+## Reste à vérifier après Albert
+
+- Remise réelle de sa déclaration et de ses justificatifs, trois signatures réelles et leurs PDF privés.
+- Relecture CRM par une session administrateur existante et rattachements pertinents ; aucune compétence, heure historique, signature du centre ou conformité ne doit être déduite automatiquement.

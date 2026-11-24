@@ -1,4 +1,4 @@
--- CANDIDAT — contenu des trois documents confirmé ; restauration indépendante requise avant application.
+-- APPLIQUÉE par la migration 0282 après restauration indépendante sur base jetable.
 -- Aucune donnée source n'est modifiée ; les signatures sont des preuves nouvelles append-only.
 CREATE TABLE public.intervenant_signature_preuves (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

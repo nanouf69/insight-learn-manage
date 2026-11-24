@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
       };
     };
     const audit = async (admin: string | null, operation: string, cibleId: string, cible: string, charge: Record<string, unknown>) => {
-      const { data: existant, error: lecture } = await db.from("audit_journal").select("id").eq("operation", operation).eq("cible_id", cibleId).maybeSingle();
+      const { data: existant, error: lecture } = await db.from("audit_journal").select("event_id").eq("operation", operation).eq("cible_id", cibleId).maybeSingle();
       if (lecture) return false;
       if (existant) return true;
       const { error } = await db.from("audit_journal").insert({ operation, cible_type: cible, cible_id: cibleId, auteur: admin, apres: charge, origine: "parcours-intervenant" });
