@@ -3236,7 +3236,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         };
 
         const aFormerLettre = aFormerLettreRef.current.filter(a => !selectedIds.has(a.id) && getCategorieCMA(a.type_apprenant));
-        const aFormerIds = new Set(aFormerLettre.map(a => a.id));
+        // Toute personne à former apparaît en rouge dans la lettre, même déjà confirmée ou à représenter.
+        const aFormerIds = new Set(aFormerLettreRef.current.map(a => a.id));
+        const aFormerHorsListeCMA = aFormerLettreRef.current.filter(a => !candidatsAffichesCMA.some(r => r.candidat.id === a.id));
         const reussisLettre = [...reussisLettreBase, ...aFormerLettre];
         const taxiReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'TAXI');
         const vtcReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'VTC');
@@ -3245,7 +3247,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         const generateLettreHTML = (notes = candidateNotes.query.data, other = candidateNotes.otherQuery.data) => {
           const nameHTML = (a: { id: string; nom: string; prenom: string }) => pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, candidateNotes.noteFor(a.id, notes, other)) + `<br/><small>${representedIds.has(a.id) ? 'Ajourné à représenter — inscription à confirmer' : 'Confirmé pour cette session'}</small>`;
           const rowHTML = (a: { id: string; nom: string; prenom: string }) => aFormerIds.has(a.id)
-            ? `<tr><td style="padding:4px 8px;border:1px solid #ccc;color:#dc2626;font-weight:bold;">${pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, candidateNotes.noteFor(a.id, notes, other))}<br/><small>À former — épreuve pratique</small></td></tr>`
+            ? `<tr><td style="padding:4px 8px;border:1px solid #ccc;color:#dc2626;font-weight:bold;">${pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, candidateNotes.noteFor(a.id, notes, other))}<br/><small>À former — épreuve pratique${selectedIds.has(a.id) ? (representedIds.has(a.id) ? ' · Ajourné à représenter' : ' · Confirmé pour cette session') : ''}</small></td></tr>`
             : `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${nameHTML(a)}</td></tr>`;
           const taxiRows = taxiReussis.map(rowHTML).join('');
           const vtcRows = vtcReussis.map(rowHTML).join('');
@@ -3607,16 +3609,17 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               <div className="space-y-4">
                 {(['TAXI', 'VTC', 'Filière à vérifier'] as const).map(categorie => {
                   const lignes = candidatsAffichesCMA.filter(({ candidat }) => (categorieCma(candidat.type_apprenant) ?? 'Filière à vérifier') === categorie);
+                  const lignesAFormer = categorie === 'Filière à vérifier' ? [] : aFormerHorsListeCMA.filter(a => categorieCma(a.type_apprenant) === categorie);
                   if (categorie === 'Filière à vérifier' && lignes.length === 0) return null;
                   return (
                     <section key={categorie} aria-label={`Liste CMA ${categorie}`}>
-                      <h4 className="mb-2 border-b pb-2 text-sm font-semibold">{categorie} ({lignes.length})</h4>
+                      <h4 className="mb-2 border-b pb-2 text-sm font-semibold">{categorie} ({lignes.length + lignesAFormer.length})</h4>
                       <div className="divide-y">
                         {lignes.map(({ candidat: a, statut }) => (
                           <div key={a.id} className="flex items-start justify-between gap-2 py-2 text-sm">
                             <div className="min-w-0 flex-1">
-                              <span className="break-words font-medium">{a.nom} {a.prenom}</span>
-                              <p className="break-words text-xs text-muted-foreground">{statut}</p>
+                              <span className={`break-words font-medium ${aFormerIds.has(a.id) ? 'font-bold text-destructive' : ''}`}>{a.nom} {a.prenom}</span>
+                              <p className="break-words text-xs text-muted-foreground">{aFormerIds.has(a.id) ? 'À former — épreuve pratique · ' : ''}{statut}</p>
                               <PratiqueCandidateNote candidateId={a.id} candidateName={`${a.nom} ${a.prenom}`} notes={candidateNotes} />
                             </div>
                             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive" aria-label={`Retirer ${a.nom} ${a.prenom} de la liste CMA`} title="Retirer ce candidat de la liste CMA" onClick={() => {
@@ -3625,7 +3628,13 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             }}><X className="h-4 w-4" /></Button>
                           </div>
                         ))}
-                        {lignes.length === 0 && <p className="py-2 text-sm text-muted-foreground">Aucun candidat</p>}
+                        {lignesAFormer.map(a => (
+                          <div key={`af-${a.id}`} className="py-2 text-sm">
+                            <span className="break-words font-bold text-destructive">{a.nom} {a.prenom}</span>
+                            <p className="text-xs text-destructive">À former — épreuve pratique</p>
+                          </div>
+                        ))}
+                        {lignes.length + lignesAFormer.length === 0 && <p className="py-2 text-sm text-muted-foreground">Aucun candidat</p>}
                       </div>
                     </section>
                   );
