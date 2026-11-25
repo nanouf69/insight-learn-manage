@@ -68,11 +68,11 @@ export function maskPasswords(text: string): string {
   if (!text) return text;
   return text
     // "Mot de passe : xxxx" (avec ou sans accents/majuscules)
-    .replace(/(mot\s*de\s*passe\s*[:\-]?\s*)([^\s<>"']{3,})/gi, "$1••••••••")
+    .replace(/(mot\s*de\s*passe\s*[:=]\s*)([^\s<>"']{3,})/gi, "$1••••••••")
     // "Password: xxxx"
-    .replace(/(password\s*[:\-]?\s*)([^\s<>"']{3,})/gi, "$1••••••••")
+    .replace(/(password\s*[:=]\s*)([^\s<>"']{3,})/gi, "$1••••••••")
     // "Pwd: xxxx"
-    .replace(/(\bpwd\s*[:\-]?\s*)([^\s<>"']{3,})/gi, "$1••••••••");
+    .replace(/(\bpwd\s*[:=]\s*)([^\s<>"']{3,})/gi, "$1••••••••");
 }
 
 function fmtDate(d?: string | null): string {

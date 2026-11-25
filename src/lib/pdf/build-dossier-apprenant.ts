@@ -1,3 +1,5 @@
+import { requiredElearningHours } from "@/lib/elearningRequiredHours";
+import { chargerJalonsReleve } from "@/lib/pdf/releveJalonsOption";
 import { supabase } from "@/integrations/supabase/client";
 import JSZip from "jszip";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear, addWeeks, isBefore, parseISO } from "date-fns";
@@ -331,11 +333,10 @@ export async function buildDossierApprenantIntoZip(
       const enrichedRows = enrichConnexionRows(cnxRawRows as any[], acts as any[], quizzes as any[], exos as any[]);
 
 
-      const reqElearning =
-        Number((apprenant as any).heures_elearning) ||
-        Math.max(0, (Number((apprenant as any).heures_totales) || 0) - (Number((apprenant as any).heures_presentiel) || 0));
+      const reqElearning = requiredElearningHours((apprenant as any));
       const reqPresentiel = Number((apprenant as any).heures_presentiel) || 0;
-      const reqTotal = Number((apprenant as any).heures_totales) || reqElearning + reqPresentiel;
+      const reqTotal = Math.max(Number((apprenant as any).heures_totales) || 0, reqElearning + reqPresentiel);
+      const jalonsReleve = await chargerJalonsReleve((apprenant as any));
       const relevePdf = generateReleveConnexionsPdf(apprenant, enrichedRows, {
         returnBlob: true,
         tempsEnLearning: fmtDur(onlineSec),
@@ -348,6 +349,7 @@ export async function buildDossierApprenantIntoZip(
         heuresFaitesElearning: onlineSec / 3600,
         heuresFaitesPresentiel: presentielTotalSec / 3600,
         journeesPresentiel,
+        jalons: jalonsReleve,
       }) as { blob: Blob; fileName: string } | undefined;
       if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
     } catch (e) { console.error("[dossier] releve PDF failed", e); }

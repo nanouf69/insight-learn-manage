@@ -1,3 +1,5 @@
+import { requiredElearningHours } from "@/lib/elearningRequiredHours";
+import { chargerJalonsReleve } from "@/lib/pdf/releveJalonsOption";
 import { useQuery } from "@tanstack/react-query";
 import { apercuTexteEmail } from "@/lib/apercuTexteEmail";
 import { supabase } from "@/integrations/supabase/client";
@@ -747,13 +749,11 @@ export async function construireDossierControleZip(apprenant: any, formateur: st
             );
 
 
-            const reqElearning =
-              Number(apprenant.heures_elearning) ||
-              Math.max(0, (Number(apprenant.heures_totales) || 0) - (Number(apprenant.heures_presentiel) || 0));
-            const reqPresentiel = Number(apprenant.heures_presentiel) || 0;
-            const reqTotal = Number(apprenant.heures_totales) || reqElearning + reqPresentiel;
-
-            const relevePdf = generateReleveConnexionsPdf(apprenant, enrichedRows, {
+            const reqElearning = requiredElearningHours(apprenant);
+      const reqPresentiel = Number(apprenant.heures_presentiel) || 0;
+      const reqTotal = Math.max(Number(apprenant.heures_totales) || 0, reqElearning + reqPresentiel);
+      const jalonsReleve = await chargerJalonsReleve(apprenant);
+      const relevePdf = generateReleveConnexionsPdf(apprenant, enrichedRows, {
               returnBlob: true,
               tempsEnLearning: fmtDur(onlineSec),
               tempsPresentielTheorie: fmtDur(theorieSec),
@@ -765,6 +765,7 @@ export async function construireDossierControleZip(apprenant: any, formateur: st
               heuresFaitesElearning: onlineSec / 3600,
               heuresFaitesPresentiel: presentielTotalSec / 3600,
               journeesPresentiel,
+              jalons: jalonsReleve,
             }) as { blob: Blob; fileName: string } | undefined;
             if (relevePdf?.blob) {
               releveFolder.file(relevePdf.fileName, relevePdf.blob);

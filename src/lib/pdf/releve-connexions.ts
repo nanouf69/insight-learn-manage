@@ -126,6 +126,8 @@ export function generateReleveConnexionsPdf(
     heuresFaitesPresentiel?: number;
     /** Journees realisees en presentiel (theorie + pratique) */
     journeesPresentiel?: { date: string; label?: string }[];
+    /** Jalons pondérés (dossiers depuis leur mise en place) : remplacent le taux e-learning. */
+    jalons?: { taux: number; mention?: string; lignes: { libelle: string; poids: number; progression: number; valide: boolean }[] } | null;
   },
 ): { blob: Blob; fileName: string } | void {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
@@ -207,7 +209,9 @@ export function generateReleveConnexionsPdf(
     );
     const pct = (d: number, r: number) => (r > 0 ? Math.min(100, Math.round((d / r) * 100)) : 0);
     tauxLine =
-      `Taux e-learning : ${pct(doneEl, reqEl)}% (${doneEl.toFixed(1)}h / ${reqEl}h)` +
+      (opts?.jalons
+        ? `Taux de jalons : ${opts.jalons.taux.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%`
+        : `Taux e-learning : ${pct(doneEl, reqEl)}% (${doneEl.toFixed(1)}h / ${reqEl}h)`) +
       `   |   Taux presentiel : ${pct(donePr, reqPr)}% (${donePr.toFixed(1)}h / ${reqPr}h)` +
       `   |   TAUX TOTAL : ${pct(doneEl + donePr, reqTot)}% (${(doneEl + donePr).toFixed(1)}h / ${reqTot}h)`;
     doc.setTextColor(13, 37, 64);
@@ -341,6 +345,25 @@ export function generateReleveConnexionsPdf(
     });
   }
 
+
+  // ── Détail des jalons pondérés ──
+  if (opts?.jalons && opts.jalons.lignes.length > 0) {
+    const startY = ((doc as any).lastAutoTable?.finalY ?? 90) + 10;
+    const y0 = startY > ph - 50 ? (doc.addPage(), 20) : startY;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(13, 37, 64);
+    doc.text(`Detail des jalons pedagogiques - taux ${opts.jalons.taux.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%${opts.jalons.mention ? ` (${opts.jalons.mention})` : ""}`, margin, y0);
+    doc.setFont("helvetica", "normal");
+    autoTable(doc, {
+      startY: y0 + 3,
+      head: [["Jalon", "Poids", "Progression", "Statut"]],
+      body: opts.jalons.lignes.map((l) => [sanitize(l.libelle), l.poids > 0 ? `${l.poids.toLocaleString("fr-FR", { maximumFractionDigits: 1 })}%` : "obligatoire", `${Math.round(l.progression)}%`, l.valide ? "Valide" : "Non valide"]),
+      styles: { fontSize: 8, cellPadding: 1.5 },
+      headStyles: { fillColor: [13, 37, 64], textColor: 255 },
+      margin: { left: margin, right: margin },
+    });
+  }
 
   // ── Signature + cachet (dernière page) ──
   {
