@@ -815,6 +815,44 @@ const ChangePasswordDialog = () => {
   );
 };
 
+// SIGNED_IN est aussi réémis au retour d'onglet : seule une nouvelle session
+// impose une nouvelle confirmation. Rien n'est enregistré hors de React.
+function useLoginIdentityConfirmation(embedded: boolean) {
+  const [confirmed, setConfirmed] = useState(false);
+  const sessionKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (embedded) return;
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") {
+        sessionKeyRef.current = null;
+        setConfirmed(false);
+        return;
+      }
+      if (!session || !["INITIAL_SESSION", "SIGNED_IN", "TOKEN_REFRESHED"].includes(event)) return;
+
+      let sessionId: string | null = null;
+      try {
+        const payload = session.access_token.split(".")[1];
+        if (payload) {
+          const claims = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+          if (typeof claims.session_id === "string") sessionId = claims.session_id;
+        }
+      } catch {
+        // Repli en mémoire uniquement ; un renouvellement met la référence à jour.
+      }
+      const key = `${session.user.id}:${sessionId ?? session.access_token}`;
+      if (event === "SIGNED_IN" && key !== sessionKeyRef.current) {
+        setConfirmed(false);
+      }
+      sessionKeyRef.current = key;
+    });
+    return () => data.subscription.unsubscribe();
+  }, [embedded]);
+
+  return [confirmed, setConfirmed] as const;
+}
+
 const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -957,7 +995,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [emargementProchaineOuverture, setEmargementProchaineOuverture] = useState<number | null>(null);
   const [forceDisconnecting, setForceDisconnecting] = useState(false);
   // Confirmation d'identité (déclarée tôt : l'ouverture auto de l'émargement en dépend).
-  const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  const [identityConfirmed, setIdentityConfirmed] = useLoginIdentityConfirmation(!!embedded);
   const [sessionAccessWindow, setSessionAccessWindow] = useState<SessionAccessWindow | null>(null);
   const emargementStatusRef = useRef(emargementFCStatus);
   const lastQuizActivityAtRef = useRef(0);
