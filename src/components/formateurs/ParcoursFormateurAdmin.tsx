@@ -10,6 +10,7 @@ import { libelleStatutDocument, statutDocumentIntervenant, texteContratFige, tex
 import { appelIntervenantSignature } from "@/lib/parcoursIntervenantClient";
 import { ContresignatureCentre } from "./ContresignatureCentre";
 import { OrdreMissionCpfApercu } from "./OrdreMissionCpfApercu";
+import { CertificatQualiopiPrestataire, ndaDepuisCertificat } from "./CertificatQualiopiPrestataire";
 
 export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, declarationSignedAt, destinataireEmail, formateurId }: { formateurId?: string; documentId: string; token: string; declarationStatut: string; declarationSignedAt: string | null; destinataireEmail: string }) {
   const [confirme, setConfirme] = useState(false);
@@ -53,6 +54,14 @@ export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, d
     const { data, error } = await supabase.from("intervenant_contresignatures_centre").select("id, signe_le_paris").eq("document_id", contrat!.document_id).maybeSingle();
     if (error) throw error; return data;
   } });
+  const certificat = useQuery({ queryKey: ["certificat-qualiopi-prestataire", formateurId], enabled: !!formateurId, queryFn: async () => {
+    const { data, error } = await supabase.from("qualiopi_preuves")
+      .select("titre, description, ce_que_demontre, date_preuve, valide_du, valide_au, fichiers")
+      .eq("source_table", "formateurs").eq("source_id", formateurId!)
+      .eq("ref_key", "i27-akono-certificat-certifopac-98912-3").eq("archivee", false).maybeSingle();
+    if (error) throw error;
+    return data;
+  } });
   return <Card className="border-primary/30">
     <CardHeader><CardTitle className="text-base">Parcours unique des trois documents formateur</CardTitle></CardHeader>
     <CardContent className="space-y-4">
@@ -79,8 +88,10 @@ export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, d
           </>}
         </div>;
       })}
+      {certificat.isError && <p className="text-sm text-destructive">Le certificat Qualiopi du prestataire est illisible ; son NDA n’est pas présumé vérifié.</p>}
+      {certificat.data && <CertificatQualiopiPrestataire preuve={{ ...certificat.data, fichiers: Array.isArray(certificat.data.fichiers) ? certificat.data.fichiers as any : [] }} />}
       {query.data?.actif && contrat?.signature && <ContresignatureCentre documentCompetencesId={documentId} />}
-      {formateurId && <OrdreMissionCpfApercu formateurId={formateurId} contratPrestataireSigne={!!contrat?.signature} contratCentreSigne={!!centre.data} />}
+      {formateurId && <OrdreMissionCpfApercu formateurId={formateurId} contratPrestataireSigne={!!contrat?.signature} contratCentreSigne={!!centre.data} ndaPrestataire={ndaDepuisCertificat(certificat.data)} />}
       <div className="space-y-2 rounded-md bg-muted/40 p-3">
         <h3 className="font-semibold">Aperçu du contrat-cadre</h3>
         <p className="text-sm">50 € TTC/heure · missions d’anglais ponctuelles · durée indéterminée · préavis de 30 jours · aucune exclusivité ni heure historique attestée.</p>

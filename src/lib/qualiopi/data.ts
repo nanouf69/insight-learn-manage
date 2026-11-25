@@ -207,6 +207,7 @@ export type AlerteType =
   | "aucune_preuve"
   | "preuves_anciennes"
   | "preuve_expiree"
+  | "preuve_expiration_proche"
   | "maj_annuelle"
   | "preuve_archivee"
   | "a_completer";
@@ -215,6 +216,7 @@ export const ALERTE_LABELS: Record<AlerteType, string> = {
   aucune_preuve: "Aucune preuve",
   preuves_anciennes: "Preuves anciennes (> 12 mois)",
   preuve_expiree: "Document expiré",
+  preuve_expiration_proche: "Expiration dans moins de 90 jours",
   maj_annuelle: "Mise à jour annuelle requise",
   preuve_archivee: "Contient une preuve archivée",
   a_completer: "Marqué « À compléter »",
@@ -232,6 +234,11 @@ export function alertesPourIndicateur(etat: QualiopiEtat, preuves: QualiopiPreuv
     const dates = actives.map((p) => new Date(p.date_preuve || p.created_at));
     if (dates.every((d) => d < oneYearAgo)) out.push("preuves_anciennes");
     if (actives.some((p) => p.valide_au && new Date(p.valide_au) < today)) out.push("preuve_expiree");
+    if (actives.some((p) => {
+      if (!p.valide_au) return false;
+      const delai = new Date(p.valide_au).getTime() - today.getTime();
+      return delai >= 0 && delai <= 90 * 24 * 60 * 60 * 1000;
+    })) out.push("preuve_expiration_proche");
   }
   if (etat.maj_annuelle) {
     const last = etat.date_verification ? new Date(etat.date_verification) : null;

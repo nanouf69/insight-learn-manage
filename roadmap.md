@@ -220,3 +220,8 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 
 ## Candidats à former — progression et relance (25/11)
 - [x] VTC/TAXI agrandis, taux et pourcentage du calcul partagé sur tous les parcours, relance pratique individuelle avec aperçu FTRANSPORT modifiable et confirmation ; exclusion du seul jalon physique ; 26 tests PASS, contrôle réel PC/mobile avec 70 progressions et 49 relances, aperçu puis annulation sans aucun envoi ni erreur ; aucune annulation automatique ni donnée pédagogique modifiée.
+
+## Certificat CERTIFOPAC Albert AKONO — I27 (25/11)
+- [x] PDF original Adobe récupéré et deux pages relues : identité, SIREN, NDA 84380722238, certificat 98912-3, validité et adresses concordent avec la déclaration du dirigeant.
+- [x] Original de 154942 octets archivé en stockage privé, empreinte SHA-256 enregistrée ; preuve unique I27 et fiche formateur rattachées, ancienne réserve NDA historisée, statut À compléter conservé.
+- [x] Rappel Qualiopi à J-90 (22/12/2027) et expiration au 21/03/2028 ; NDA transmis à l’aperçu d’ordre de mission sans lever les autres blocages ; 7 tests PASS, aperçu build OK. Fiche réelle non contrôlée visuellement : session demandeur apprenant expiré. Aucun envoi externe ni publication.

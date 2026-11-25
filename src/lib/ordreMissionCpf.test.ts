@@ -13,4 +13,16 @@ describe("ordre de mission CPF", () => {
     expect(b).toContain("Contrat-cadre non signé par SERVICES PRO");
     expect(b).toContain("Financement CPF non confirmé pour la session");
   });
+  it("accepte le NDA 84380722238 vérifié sur le certificat CERTIFOPAC", () => {
+    const b = blocagesOrdre({
+      contratPrestataireSigne: true,
+      contratCentreSigne: true,
+      financementCpfConfirme: true,
+      referenceDossierCpf: "CPF-TEST",
+      ndaPrestataire: "84380722238",
+      habilitationRequise: false,
+      creneaux: [{ date: "2027-01-15", debut: "14:00", fin: "15:00", formation: "TAXI", minutes: 60, etat: "prevu_futur" }],
+    });
+    expect(b).toEqual([]);
+  });
 });
