@@ -50,6 +50,7 @@ export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, d
   const contrat = docs.find((d: any) => d.type === "contrat");
   const satisfaction = docs.find((d: any) => d.type === "satisfaction");
   const prepares = !!contrat?.document_id && !!satisfaction?.document_id;
+  const tousRemis = prepares && docs.length === 3 && docs.every((d: any) => d.signature || d.statut_source === "signe");
   const centre = useQuery({ queryKey: ["contresignature-centre-statut", contrat?.document_id], enabled: !!contrat?.document_id, queryFn: async () => {
     const { data, error } = await supabase.from("intervenant_contresignatures_centre").select("id, signe_le_paris").eq("document_id", contrat!.document_id).maybeSingle();
     if (error) throw error; return data;
@@ -98,6 +99,7 @@ export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, d
         <h3 className="font-semibold">Enquête de satisfaction formateur — I30</h3>
         <p>Cinq appréciations de 1 à 5, points positifs, améliorations et commentaire libre. Réponses obligatoires avant signature ; aucune conformité automatique.</p>
       </div>
+      {tousRemis ? <p className="rounded-md border border-success/40 p-3 text-sm text-success" data-testid="parcours-tous-remis">Les trois documents ont été remis par l’intervenant (voir l’état de chacun ci-dessus). Aucune préparation ni aucun renvoi n’est proposé.{query.data?.envoye_le ? ` Lien envoyé le ${new Date(query.data.envoye_le).toLocaleString("fr-FR")}.` : ""}</p> : <>
       <label className="flex items-start gap-2 text-sm"><Checkbox className="mt-1 flex-none" checked={confirme} disabled={!query.data?.actif || prepares || busy} onCheckedChange={v => setConfirme(v === true)} /><span>Je confirme avoir relu et validé le contrat et l’enquête avant leur préparation. Cette action n’envoie aucun email.</span></label>
       <Button variant="outline" disabled={!query.data?.actif || !confirme || prepares || busy} onClick={() => executer({ action: "prepare", document_id: documentId, confirmation_contenu: confirme })}>Préparer les trois documents sans envoi</Button>
       <div className="space-y-3 border-t pt-4">
@@ -107,6 +109,7 @@ export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, d
         <label className="flex items-start gap-2 text-sm"><Checkbox className="mt-1 flex-none" checked={confirmeEnvoi} disabled={!query.data?.actif || !prepares || !!query.data?.envoye_le || busy} onCheckedChange={v => setConfirmeEnvoi(v === true)} /><span>Je confirme l’envoi du lien unique des trois documents à ce seul destinataire.</span></label>
         <Button disabled={!query.data?.actif || !prepares || !confirmeEnvoi || !!query.data?.envoye_le || busy} onClick={envoyer}>Envoyer le lien unique</Button>
       </div>
+      </>}
       {message && <p role="status" className="text-sm">{message}</p>}
     </CardContent>
   </Card>;

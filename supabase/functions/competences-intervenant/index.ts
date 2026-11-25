@@ -121,6 +121,11 @@ Deno.serve(async req => {
           const preuveId = await rattacherI21(existing, proof);
           return json({ success: true, deja_enregistre: true, review: existing, preuve_i21_id: preuveId });
         }
+        if (body.nouvelle_evaluation !== true) {
+          const { data: deja, error: dejaError } = await db.from("documents_a_signer").select("id").eq("modele_code", REVIEW_MODEL).eq("cle_envoi", doc.id).not("signed_at", "is", null).limit(1);
+          if (dejaError) throw dejaError;
+          if ((deja ?? []).length > 0) return json({ error: "Une évaluation I21 signée existe déjà ; aucune nouvelle signature enregistrée.", deja_signee: true }, 409);
+        }
         if (body.confirme !== true || !criteresI21Valides(body.criteres)) return json({ error: "Les sept critères et la confirmation d’examen réel sont obligatoires" }, 400);
         if (typeof body.commentaire !== "string" || body.commentaire.length > 12_000) return json({ error: "Commentaire libre invalide" }, 400);
         const signatureValide = await validerSignaturePng(body.signature);

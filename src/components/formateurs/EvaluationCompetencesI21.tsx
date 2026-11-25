@@ -28,6 +28,8 @@ export function EvaluationCompetencesI21({ documentId, doc, fichiers, reviews, o
   const [operationId, setOperationId] = useState(() => crypto.randomUUID());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [succes, setSucces] = useState(false);
+  const [nouvelle, setNouvelle] = useState(false);
   const evaluations = reviews.filter(review => review.reponses?.evaluation_i21_version);
 
   const urlEvaluation = async (reviewId: string) => {
@@ -37,16 +39,23 @@ export function EvaluationCompetencesI21({ documentId, doc, fichiers, reviews, o
   };
 
   const signer = async () => {
-    setBusy(true); setMessage("");
+    setBusy(true); setMessage(""); setSucces(false);
     try {
       const result = await supabase.functions.invoke("competences-intervenant", { body: {
         action: "review_i21", document_id: documentId, operation_id: operationId,
-        criteres, commentaire, confirme, signature,
+        criteres, commentaire, confirme, signature, nouvelle_evaluation: nouvelle,
       } });
-      if (result.error || !result.data?.success) throw new Error(result.data?.error ?? "Validation non confirmée");
-      setMessage("Évaluation signée, PDF enregistré et preuve rattachée à I21. Le statut de l’indicateur n’a pas été modifié.");
+      let erreurServeur: string | undefined = result.data?.error;
+      if (!erreurServeur && result.error && "context" in result.error) {
+        try { erreurServeur = (await (result.error as any).context.json())?.error; } catch { /* corps illisible */ }
+      }
+      if (result.error || !result.data?.success || !result.data?.review?.id) throw new Error(erreurServeur ?? "Validation non confirmée par le serveur ; votre saisie est conservée.");
+      const relu: any = await onSaved();
+      const confirmeServeur = (relu?.data?.reviews ?? []).some((r: any) => r.id === result.data.review.id && r.signed_at);
+      if (!confirmeServeur) throw new Error("Signature transmise mais non relue côté serveur ; rechargez la fiche avant toute nouvelle tentative.");
+      setSucces(true); setNouvelle(false);
+      setMessage("Évaluation signée confirmée par le serveur : PDF enregistré et preuve rattachée à I21. Le statut de l’indicateur n’a pas été modifié.");
       setConfirme(false); setSignature(""); setOperationId(crypto.randomUUID());
-      await onSaved();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Enregistrement impossible ; votre saisie est conservée.");
     } finally { setBusy(false); }
@@ -88,6 +97,13 @@ export function EvaluationCompetencesI21({ documentId, doc, fichiers, reviews, o
         </div>)}
       </section>}
 
+      {message && succes && <p role="status" className="rounded-md border border-success/40 p-2 text-sm text-success">{message}</p>}
+      {evaluations.length > 0 && !nouvelle && <div className="space-y-2 rounded-md bg-muted/40 p-3 text-sm">
+        <p>Évaluation déjà signée : aucun nouveau formulaire n’est proposé pour éviter une double signature.</p>
+        {evaluations.length > 1 && <p className="text-warning">{evaluations.length} évaluations signées sont conservées (aucune n’est supprimée ni écrasée).</p>}
+        <Button variant="outline" size="sm" className="h-auto whitespace-normal" onClick={() => { setNouvelle(true); setMessage(""); setSucces(false); }}>Faire volontairement une nouvelle évaluation (l’ancienne reste conservée)</Button>
+      </div>}
+      {(evaluations.length === 0 || nouvelle) && <>
       <section className="space-y-3 rounded-md border border-warning/50 bg-warning/5 p-3" aria-label="Brouillon de l’évaluation">
         <div>
           <h3 className="font-semibold">Brouillon déclaré par le responsable — non signé</h3>
@@ -124,8 +140,10 @@ export function EvaluationCompetencesI21({ documentId, doc, fichiers, reviews, o
         </label>
         <SignaturePad value={signature} onChange={setSignature} disabled={busy} />
         <Button className="h-auto w-full whitespace-normal text-center" disabled={busy || !confirme || !signature || doc.statut !== "signe"} onClick={signer}>Signer manuscritement et enregistrer l’évaluation I21</Button>
-        {message && <p role="status" className="text-sm">{message}</p>}
+        {!signature && <p className="text-xs text-muted-foreground">Le bouton s’active après la case de déclaration et un tracé dans le cadre.</p>}
+        {message && !succes && <p role="alert" className="text-sm text-destructive">{message}</p>}
       </section>
+      </>}
     </CardContent>
   </Card>;
 }
