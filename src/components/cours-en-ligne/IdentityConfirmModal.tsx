@@ -28,9 +28,14 @@ export function IdentityConfirmModal({
   onConfirm,
   onDeny,
 }: IdentityConfirmModalProps) {
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const photoUrl = photoUrls[photoIndex] ?? null;
 
   useEffect(() => {
+    // Réinitialisation à chaque changement de compte ou fermeture
+    setPhotoUrls([]);
+    setPhotoIndex(0);
     if (!show || !apprenantId) return;
     let cancelled = false;
     (async () => {
@@ -40,25 +45,37 @@ export function IdentityConfirmModal({
         .eq("apprenant_id", apprenantId)
         .eq("type_document", "photo_identite")
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(10);
       if (cancelled) return;
       if (error) {
         console.error("[IdentityConfirmModal] photo fetch error:", error);
         return;
       }
-      const row = (data || []).find(
-        (d: any) =>
-          d?.url &&
-          !(d.nom_fichier?.toLowerCase().endsWith(".pdf") ||
-            d.url.toLowerCase().endsWith(".pdf"))
-      );
-      if (!row) return;
-      let fullUrl = row.url as string;
-      if (!fullUrl.startsWith("http")) {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        fullUrl = `${supabaseUrl}/storage/v1/object/public/documents-inscription/${fullUrl}`;
+      const rows = (data || []).filter((d: any) => {
+        const statut = String(d?.statut ?? "").toLowerCase();
+        if (statut !== "valid" && statut !== "recu") return false;
+        const url = String(d?.url ?? "");
+        if (!url) return false;
+        const isPdf =
+          String(d?.nom_fichier ?? "").toLowerCase().endsWith(".pdf") ||
+          url.split("?")[0].toLowerCase().endsWith(".pdf");
+        return !isPdf;
+      });
+      const signed: string[] = [];
+      for (const row of rows) {
+        const path = extraireCheminObjet(String(row.url));
+        if (!path) continue;
+        try {
+          const { data: s, error: e } = await supabase.storage
+            .from("documents-inscription")
+            .createSignedUrl(path, 600);
+          if (!e && s?.signedUrl) signed.push(s.signedUrl);
+        } catch {
+          /* essayer la suivante */
+        }
+        if (cancelled) return;
       }
-      setPhotoUrl(fullUrl);
+      if (!cancelled) setPhotoUrls(signed);
     })();
     return () => {
       cancelled = true;
@@ -98,6 +115,7 @@ export function IdentityConfirmModal({
                   src={photoUrl}
                   alt={`Photo de ${fullName}`}
                   className="h-full w-full object-cover"
+                  onError={() => setPhotoIndex((i) => i + 1)}
                 />
               ) : initials ? (
                 <span className="text-2xl sm:text-3xl font-bold text-blue-700">
@@ -143,6 +161,22 @@ export function IdentityConfirmModal({
       </div>
     </div>
   );
+}
+
+/** Chemin d'objet dans documents-inscription (chemin brut ou ancienne URL HTTP). */
+function extraireCheminObjet(valeur: string): string | null {
+  const v = valeur.trim();
+  if (!v) return null;
+  if (!/^https?:\/\//i.test(v)) return v.replace(/^\/+/, "").replace(/^documents-inscription\//, "");
+  const marqueur = "/documents-inscription/";
+  const idx = v.indexOf(marqueur);
+  if (idx < 0) return null;
+  const chemin = v.slice(idx + marqueur.length).split("?")[0];
+  try {
+    return decodeURIComponent(chemin) || null;
+  } catch {
+    return chemin || null;
+  }
 }
 
 export default IdentityConfirmModal;
