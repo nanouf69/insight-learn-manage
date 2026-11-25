@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { PDFDocument, StandardFonts, rgb } from "npm:pdf-lib@1.17.1";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { validerSignaturePng } from "../_shared/signaturePng.ts";
 import { sendBrandedEmail } from "../_shared/send-branded-email.ts";
@@ -45,7 +46,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json();
     const action = body?.action;
-    const adminActions = ["admin_get", "prepare", "attach_qualiopi"];
+    const adminActions = ["admin_get", "prepare", "attach_qualiopi", "admin_contresigne_get", "admin_contresigner", "admin_contresigne_pdf"];
     let adminId: string | null = null;
     if (adminActions.includes(action)) {
       const token = req.headers.get("Authorization")?.replace("Bearer ", "");
@@ -111,6 +112,85 @@ Deno.serve(async (req) => {
       const { error } = await db.from("audit_journal").insert({ operation, cible_type: cible, cible_id: cibleId, auteur: admin, apres: charge, origine: "parcours-intervenant" });
       return !error;
     };
+
+    const CONSENTEMENT_CENTRE = "Je, Naoufal GUENICHI, Président de SERVICES PRO, signe personnellement ce contrat-cadre, dans la version exacte déjà signée par le prestataire, sans en modifier le contenu. Ma signature est horodatée par le serveur à l'instant de ce geste.";
+    const contratEtPreuve = async () => {
+      const original = await originalParId(body?.document_competences_id);
+      if (!original) return { erreur: "Parcours intervenant introuvable" };
+      const contrat = await documentLiePour(original, CONTRAT_MODELE);
+      if (!contrat) return { erreur: "Contrat non préparé" };
+      const preuve = await preuvePour(contrat.id);
+      const { data: contre, error } = await db.from("intervenant_contresignatures_centre").select("id, document_id, operation_id, signataire_nom, signataire_qualite, signature_empreinte, pdf_intervenant_empreinte, pdf_path, pdf_empreinte, signed_at, signe_le_paris").eq("document_id", contrat.id).maybeSingle();
+      if (error) throw new Error(error.message);
+      return { original, contrat, preuve, contre };
+    };
+    if (action === "admin_contresigne_get") {
+      const r: any = await contratEtPreuve();
+      if (r.erreur) return J({ error: r.erreur }, 404);
+      return J({ ok: true, contrat_id: r.contrat.id, statut_crm: r.contrat.statut, prestataire: preuveVue(r.preuve), centre: r.contre, consentement: CONSENTEMENT_CENTRE });
+    }
+    if (action === "admin_contresigne_pdf") {
+      const r: any = await contratEtPreuve();
+      if (r.erreur) return J({ error: r.erreur }, 404);
+      const chemin = body?.version === "contresigne" ? r.contre?.pdf_path : r.preuve?.pdf_path;
+      if (!chemin) return J({ error: "PDF indisponible" }, 404);
+      const { data, error } = await db.storage.from(BUCKET).createSignedUrl(chemin, 300);
+      if (error || !data?.signedUrl) return J({ error: "Lien privé impossible" }, 500);
+      return J({ ok: true, url: data.signedUrl });
+    }
+    if (action === "admin_contresigner") {
+      if (!operationIdValide(body?.operation_id)) return J({ error: "Identifiant d'opération invalide" }, 400);
+      const r: any = await contratEtPreuve();
+      if (r.erreur) return J({ error: r.erreur }, 404);
+      if (r.contre) return J({ ok: true, deja_signe: true, centre: r.contre });
+      if (!r.preuve) return J({ error: "Le prestataire n'a pas encore signé ce contrat" }, 409);
+      if (body?.consentement !== true) return J({ error: "Le consentement explicite est obligatoire" }, 400);
+      if (body?.empreinte_pdf_vue !== r.preuve.pdf_empreinte) return J({ error: "Le PDF du prestataire affiché ne correspond pas à la version signée : rechargez" }, 409);
+      const signatureValide = await validerSignaturePng(body?.signature);
+      if (!signatureValide.ok) return J({ error: `Signature manuscrite invalide (${signatureValide.raison})` }, 400);
+      const source = await db.storage.from(BUCKET).download(r.preuve.pdf_path);
+      if (source.error) return J({ error: "PDF signé par le prestataire illisible : signature refusée" }, 500);
+      const octets = new Uint8Array(await source.data.arrayBuffer());
+      if (await sha256(octets) !== r.preuve.pdf_empreinte) return J({ error: "Intégrité du PDF prestataire non confirmée : signature refusée" }, 409);
+      const signeLe = new Date().toISOString();
+      const signeLeParis = paris(signeLe);
+      const pdfDoc = await PDFDocument.load(octets);
+      const page = pdfDoc.addPage([595.28, 841.89]);
+      const f = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const fb = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const bleu = rgb(0.05, 0.15, 0.25);
+      let y = 790;
+      const ligne = (t: string, font = f, size = 10) => { for (const morceau of t.match(/.{1,95}(\s|$)/g) ?? [t]) { page.drawText(morceau.trim(), { x: 50, y, size, font, color: bleu }); y -= size + 5; } };
+      ligne("SIGNATURE DE SERVICES PRO - CONTRAT-CADRE", fb, 14); y -= 8;
+      ligne("Les pages précédentes sont reproduites sans aucune modification depuis le PDF signé par le prestataire.");
+      ligne(`Empreinte SHA-256 du PDF prestataire : ${r.preuve.pdf_empreinte}`, f, 8);
+      ligne(`Signature du prestataire enregistrée le ${r.preuve.signe_le_paris}.`); y -= 8;
+      ligne("Pour SERVICES PRO, SAS, SIRET 82346156100016, 86 route de Genas, 69003 Lyon", fb);
+      ligne("Naoufal GUENICHI, Président"); y -= 4;
+      ligne(CONSENTEMENT_CENTRE, f, 9); y -= 6;
+      ligne(`Signé le ${signeLeParis} (horodatage serveur).`, fb);
+      const png = await pdfDoc.embedPng(body.signature);
+      const dims = png.scaleToFit(220, 110);
+      page.drawImage(png, { x: 50, y: y - dims.height - 10, width: dims.width, height: dims.height });
+      page.drawText(`Opération ${body.operation_id}`, { x: 50, y: 40, size: 7, font: f, color: rgb(0.4, 0.4, 0.4) });
+      const pdf = await pdfDoc.save();
+      const pdfEmpreinte = await sha256(pdf);
+      const formateurId = r.original.identite_figee?.formateur_id;
+      const pdfPath = `intervenants/${formateurId}/${r.contrat.id}/centre-${body.operation_id}.pdf`;
+      const up = await db.storage.from(BUCKET).upload(pdfPath, pdf, { contentType: "application/pdf", upsert: false });
+      if (up.error) return J({ error: "PDF contresigné non enregistré ; aucune confirmation" }, 500);
+      const relu = await db.storage.from(BUCKET).download(pdfPath);
+      if (relu.error || await sha256(new Uint8Array(await relu.data.arrayBuffer())) !== pdfEmpreinte) return J({ error: "Contrôle d'intégrité du PDF contresigné échoué" }, 500);
+      const { data: contre, error } = await db.from("intervenant_contresignatures_centre").insert({
+        document_id: r.contrat.id, preuve_intervenant_id: r.preuve.id, operation_id: body.operation_id, admin_user_id: adminId,
+        signataire_nom: "Naoufal GUENICHI", signataire_qualite: "Président de SERVICES PRO", consentement_texte: CONSENTEMENT_CENTRE,
+        signature_data_url: body.signature, signature_empreinte: await sha256(body.signature), pdf_intervenant_empreinte: r.preuve.pdf_empreinte,
+        pdf_path: pdfPath, pdf_empreinte: pdfEmpreinte, signed_at: signeLe, signe_le_paris: signeLeParis, user_agent: String(req.headers.get("user-agent") || "").slice(0, 500),
+      }).select("id, document_id, operation_id, signataire_nom, signataire_qualite, pdf_path, pdf_empreinte, signed_at, signe_le_paris").single();
+      if (error) { const a: any = await contratEtPreuve(); if (a.contre) return J({ ok: true, deja_signe: true, centre: a.contre }); return J({ error: "Preuve non enregistrée" }, 500); }
+      await audit(adminId, "intervenant.contrat.contresigne_centre", contre.id, "contresignature_centre", { document_id: r.contrat.id, operation_id: body.operation_id, pdf_empreinte: pdfEmpreinte, pdf_prestataire_empreinte: r.preuve.pdf_empreinte });
+      return J({ ok: true, centre: contre });
+    }
 
     if (action === "get") {
       const original = await originalParToken();

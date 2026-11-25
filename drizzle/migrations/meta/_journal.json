@@ -1996,6 +1996,13 @@
       "when": 1795622128998,
       "tag": "0284_reconcilier_inscriptions_pratique_toutes_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 285,
+      "version": "7",
+      "when": 1795626253959,
+      "tag": "0285_contresignature_centre_intervenant",
+      "breakpoints": true
     }
   ]
 }

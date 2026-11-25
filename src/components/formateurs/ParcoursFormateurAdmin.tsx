@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { libelleStatutDocument, statutDocumentIntervenant, texteContratFige, texteSatisfactionFige } from "@/lib/parcoursIntervenant";
 import { appelIntervenantSignature } from "@/lib/parcoursIntervenantClient";
+import { ContresignatureCentre } from "./ContresignatureCentre";
 
 export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, declarationSignedAt, destinataireEmail }: { documentId: string; token: string; declarationStatut: string; declarationSignedAt: string | null; destinataireEmail: string }) {
   const [confirme, setConfirme] = useState(false);
@@ -68,6 +69,7 @@ export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, d
           </>}
         </div>;
       })}
+      {query.data?.actif && contrat?.signature && <ContresignatureCentre documentCompetencesId={documentId} />}
       <div className="space-y-2 rounded-md bg-muted/40 p-3">
         <h3 className="font-semibold">Aperçu du contrat-cadre</h3>
         <p className="text-sm">50 € TTC/heure · missions d’anglais ponctuelles · durée indéterminée · préavis de 30 jours · aucune exclusivité ni heure historique attestée.</p>

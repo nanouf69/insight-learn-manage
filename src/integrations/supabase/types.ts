@@ -6236,6 +6236,81 @@ export type Database = {
         }
         Relationships: []
       }
+      intervenant_contresignatures_centre: {
+        Row: {
+          admin_user_id: string
+          consentement_texte: string
+          created_at: string
+          document_id: string
+          id: string
+          operation_id: string
+          pdf_empreinte: string
+          pdf_intervenant_empreinte: string
+          pdf_path: string
+          preuve_intervenant_id: string
+          signataire_nom: string
+          signataire_qualite: string
+          signature_data_url: string
+          signature_empreinte: string
+          signe_le_paris: string
+          signed_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          admin_user_id: string
+          consentement_texte: string
+          created_at?: string
+          document_id: string
+          id?: string
+          operation_id: string
+          pdf_empreinte: string
+          pdf_intervenant_empreinte: string
+          pdf_path: string
+          preuve_intervenant_id: string
+          signataire_nom: string
+          signataire_qualite: string
+          signature_data_url: string
+          signature_empreinte: string
+          signe_le_paris: string
+          signed_at: string
+          user_agent?: string | null
+        }
+        Update: {
+          admin_user_id?: string
+          consentement_texte?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          operation_id?: string
+          pdf_empreinte?: string
+          pdf_intervenant_empreinte?: string
+          pdf_path?: string
+          preuve_intervenant_id?: string
+          signataire_nom?: string
+          signataire_qualite?: string
+          signature_data_url?: string
+          signature_empreinte?: string
+          signe_le_paris?: string
+          signed_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intervenant_contresignatures_centre_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "documents_a_signer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intervenant_contresignatures_centre_preuve_intervenant_id_fkey"
+            columns: ["preuve_intervenant_id"]
+            isOneToOne: false
+            referencedRelation: "intervenant_signature_preuves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intervenant_signature_preuves: {
         Row: {
           charge_utile: Json
