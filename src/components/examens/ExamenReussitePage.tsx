@@ -3632,6 +3632,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                           <div key={`af-${a.id}`} className="py-2 text-sm">
                             <span className="break-words font-bold text-destructive">{a.nom} {a.prenom}</span>
                             <p className="text-xs text-destructive">À former — épreuve pratique</p>
+                            <PratiqueCandidateNote candidateId={a.id} candidateName={`${a.nom} ${a.prenom}`} notes={candidateNotes} />
                           </div>
                         ))}
                         {lignes.length + lignesAFormer.length === 0 && <p className="py-2 text-sm text-muted-foreground">Aucun candidat</p>}
