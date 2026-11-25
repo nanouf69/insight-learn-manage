@@ -56,6 +56,9 @@ import { appliquerCapacitePratique, joursFormationPratique, ecartsJoursPratique,
 import { confirmerChoixPlanning } from '@/lib/planningChoixConfirmation';
 import { CapacitePratiqueSelect } from './CapacitePratiqueSelect';
 import { MailTestPratiqueDialog } from './MailTestPratiqueDialog';
+import { DateExamenTheoriqueSelect } from './DateExamenTheoriqueSelect';
+import { idsPratiquesEffectueesSignees } from '@/lib/candidatsFormationPreuves';
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows';
 
 // Conteneur compact : le tableau tient dans la largeur disponible sans barre horizontale.
 function TopScrollContainer({ children }: { children: React.ReactNode }) {
@@ -1786,18 +1789,51 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     },
   });
 
-  // Fetch apprenants déjà formés (présents dans une session pratique)
-  const { data: dejaFormesPratique } = useQuery({
+  // Pratique effectuée = présence pratique + signature valide à la date de cette session.
+  // Une présence administrative, une réservation ou une signature d'un autre jour ne suffisent pas.
+  const { data: dejaFormesPratique, error: erreurPreuvesPratique } = useQuery({
     queryKey: ['deja-formes-pratique'],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: inscriptions, error } = await supabase
         .from('session_apprenants')
-        .select('apprenant_id, presence_pratique, sessions!inner(type_session)')
+        .select('apprenant_id, presence_pratique, sessions!inner(type_session, date_debut, date_fin)')
         .in('sessions.type_session', PRATIQUE_TYPES)
         .eq('presence_pratique', 'present');
-      return [...new Set((data || []).map((d: any) => d.apprenant_id))];
+      if (error) throw error;
+
+      const presences = (inscriptions || []) as any[];
+      const apprenantIds = [...new Set(presences.map((row) => row.apprenant_id).filter(Boolean))];
+      const emargements: any[] = [];
+      for (let index = 0; index < apprenantIds.length; index += 100) {
+        const chunk = apprenantIds.slice(index, index + 100);
+        const rows = await fetchAllRows<any>((from, to) => supabase
+          .from('emargements_fc')
+          .select('id, apprenant_id, date_emargement, signature_data_url, absent, masque')
+          .in('apprenant_id', chunk)
+          .order('id')
+          .range(from, to));
+        emargements.push(...rows);
+      }
+      return idsPratiquesEffectueesSignees(presences, emargements);
     },
   });
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const refresh = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => queryClient.invalidateQueries({ queryKey: ['deja-formes-pratique'] }), 500);
+    };
+    const channel = supabase
+      .channel('pratiques-effectuees-preuves-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'emargements_fc' }, refresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'session_apprenants' }, refresh)
+      .subscribe();
+    return () => {
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   // Fetch reservations pratique
   const { data: reservationsPratique } = useQuery({
@@ -3861,7 +3897,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               <div className="mb-5">
                 <CapacitePratiqueSelect id="capacite-candidats-formation" value={maxPerDay} disabled={loadedPlanningKey !== `${selectedExamDate}::${selectedDatePratique}`} onChange={handleCapacityChange} />
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 {/* VTC */}
                 <div className="space-y-3">
                   <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC)</h4>
@@ -4018,13 +4054,14 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                       ) : null;
                     })()}
                   </div>
-                  <div className="rounded-md border">
+                  <div className="overflow-x-auto rounded-md border">
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-8">#</TableHead>
                           <TableHead>Nom Prénom</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead>Examen théorique</TableHead>
                           <TableHead className="text-center w-20">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -4054,6 +4091,18 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                <Badge className="bg-blue-100 text-blue-800 text-xs">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <DateExamenTheoriqueSelect
+                                apprenantId={a.id}
+                                candidatNom={`${a.prenom} ${a.nom}`}
+                                value={a.date_examen_theorique}
+                                dates={datesExamenTheorique.map((exam) => exam.date)}
+                                onSaved={() => {
+                                  queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                                  queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+                                }}
+                              />
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-1">
@@ -4355,13 +4404,14 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                       ) : null;
                     })()}
                   </div>
-                  <div className="rounded-md border">
+                  <div className="overflow-x-auto rounded-md border">
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-8">#</TableHead>
                           <TableHead>Nom Prénom</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead>Examen théorique</TableHead>
                           <TableHead className="text-center w-20">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -4387,10 +4437,22 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                <PratiqueCandidateNote candidateId={a.id} candidateName={`${a.nom} ${a.prenom}`} notes={candidateNotes} />
                              </TableCell>
 
-                             <TableCell>
+                              <TableCell>
                                <Badge className="bg-amber-100 text-amber-800 text-xs">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <DateExamenTheoriqueSelect
+                                apprenantId={a.id}
+                                candidatNom={`${a.prenom} ${a.nom}`}
+                                value={a.date_examen_theorique}
+                                dates={datesExamenTheorique.map((exam) => exam.date)}
+                                onSaved={() => {
+                                  queryClient.invalidateQueries({ queryKey: ['apprenants-examen'] });
+                                  queryClient.invalidateQueries({ queryKey: ['all-apprenants'] });
+                                }}
+                              />
                             </TableCell>
                             <TableCell className="text-center">
                               <div className="flex items-center justify-center gap-1">
@@ -4537,6 +4599,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 </div>
               </div>
 
+              {erreurPreuvesPratique && (
+                <p role="alert" className="mt-4 rounded-lg border border-destructive/40 p-3 text-sm text-destructive">
+                  Les signatures pratiques n'ont pas pu être relues. Rechargez la page avant de classer ou contacter les candidats.
+                </p>
+              )}
               <div className="mt-4 p-4 bg-muted/50 rounded-lg flex items-center justify-between">
                 <p className="text-sm font-semibold">Total général : {tousAFormer.length} candidat(s) à former</p>
                 <p className="text-sm text-muted-foreground">
@@ -4564,7 +4631,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <li key={a.id} className="flex justify-between gap-2 border-b py-1">
                           <span>{a.nom} {a.prenom} <span className="text-muted-foreground">({a.type_apprenant})</span></span>
                           <span className="text-muted-foreground">
-                            {dejaFormesSet.has(a.id) ? 'Pratique déjà effectuée (présent)' : removedFormationSet.has(a.id) ? 'Retiré manuellement' : 'Filière hors VTC/TAXI'}
+                            {dejaFormesSet.has(a.id) ? 'Pratique déjà effectuée (signée)' : removedFormationSet.has(a.id) ? 'Retiré manuellement' : 'Filière hors VTC/TAXI'}
                           </span>
                         </li>
                       ))}

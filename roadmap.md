@@ -1,4 +1,7 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Candidats à former — date théorique et pratique signée (25/11)
+- [x] Date d’examen théorique modifiable par candidat dans les tableaux VTC/TAXI, enregistrement relu ; 8 tests ciblés, 40 tests avec règles voisines et choix simulé connecté PASS, aucun dossier réel modifié.
+- [x] Pratique effectuée seulement avec signature d’émargement valide à la date de la session ; présence seule insuffisante. Session réelle relue PC/mobile : 70 à former, 1 pratique signée, aucune donnée historique modifiée ni publication.
 ## Parcours de signature Albert AKONO — 24/11 19:15
 - [x] Troisième document confirmé : enquête de satisfaction formateur (I30), sans validation automatique de l’indicateur.
 - [x] Réutiliser le lien sécurisé existant sans écraser la justification ni les signatures ; un seul nouvel email regroupant les trois documents, sans doublon de justificatif isolé.
