@@ -4,6 +4,7 @@ import { selectionLettreCma, listeCmaAffichee, categorieCma } from '@/lib/cmaLet
 import { EntrainementSansExamenAlerte } from "./EntrainementSansExamenAlerte";
 import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
 import { candidatsAPayer, tarifExamen } from "@/lib/candidatsAPayer";
+import { FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
 import { dateInscriptionAffichee, inscriptionRecente } from "@/lib/dateInscription";
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useLocation } from "react-router-dom";
@@ -2810,6 +2811,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                   tableApprenants as any[],
                   (a: any) => statutsSession?.[a.id]?.statut ?? a.statut_suivi ?? null,
                   (a: any) => a.type_apprenant,
+                  (a: any) => a.date_examen_theorique ?? (showAllExamDates ? null : selectedExamDate),
                 );
                 return (
                   <Popover>
@@ -2820,6 +2822,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                     </PopoverTrigger>
                     <PopoverContent className="w-96 max-h-96 overflow-auto p-3" align="start">
                       <p className="font-semibold mb-2">Candidats à payer ({r.nombre})</p>
+                      <p className="text-xs text-muted-foreground mb-2">{FRAIS_EXAMEN_CMA_INFORMATION} Estimation selon la date d’examen ; date inconnue : base 2026 à vérifier. Paiements enregistrés inchangés.</p>
                       {r.liste.length === 0 ? (
                         <p className="text-muted-foreground text-sm">Aucun candidat.</p>
                       ) : (
@@ -2827,7 +2830,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                           {r.liste.map((a: any) => (
                             <li key={a.id} className="flex justify-between gap-2 border-b border-border pb-1">
                               <PratiqueApprenantLink apprenant={a} onOuvrir={onNavigateToApprenant} />
-                              <span className="text-muted-foreground">{a.type_apprenant} — {tarifExamen(a.type_apprenant)} €</span>
+                              <span className="text-muted-foreground">{a.type_apprenant} — {tarifExamen(a.type_apprenant, a.date_examen_theorique ?? (showAllExamDates ? null : selectedExamDate))} €</span>
                             </li>
                           ))}
                         </ul>

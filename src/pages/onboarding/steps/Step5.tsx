@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeft, AlertTriangle, Calendar, ChevronDown, MapPin } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
+import { fraisExamenCma, FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
 
 // Dates centralisées
 import { ALL_DATES_EXAMEN_STEP5 } from '@/lib/examDatesConfig';
@@ -135,9 +136,10 @@ export default function Step5() {
               </div>
               <div className="text-right">
                 <p className="text-gray-500 text-sm mb-1">Tarif</p>
-                <p className="font-semibold text-green-600">241 €</p>
+                <p className="font-semibold text-green-600">{selectedExam ? `${fraisExamenCma(selectedExam.date)} €` : "Tarif selon la date"}</p>
               </div>
             </div>
+            <p className="text-sm text-gray-600 mt-2">{FRAIS_EXAMEN_CMA_INFORMATION}</p>
           </div>
         </div>
 

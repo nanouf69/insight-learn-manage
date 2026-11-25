@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, ArrowLeft, Info } from "lucide-react";
 import { OnboardingLayout } from "../OnboardingLayout";
 import step4Taxi from "@/assets/onboarding/step4-taxi.png";
+import { FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
 
 export default function Step4() {
   const [confirmed, setConfirmed] = useState(() => localStorage.getItem('onboarding_step4_confirmed') === 'true');
@@ -20,8 +21,9 @@ export default function Step4() {
             <img 
               src={step4Taxi} 
               alt="Type d'épreuve" 
-              className="max-w-lg mx-auto rounded-xl border border-gray-200"
+              className="w-full max-w-lg mx-auto rounded-xl border border-gray-200"
             />
+            <p className="text-sm text-gray-600 mt-2">Capture CMA 2026 : le montant 241 € figurant dans l’image correspond à 2026. Examen complet TAXI/VTC : 246 € à partir du 1er janvier 2027.</p>
           </div>
 
           <div className="space-y-4">
@@ -29,11 +31,12 @@ export default function Step4() {
             
             <div className="grid gap-4">
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
                   <h4 className="font-medium text-blue-600">Examen Complet - VTC</h4>
-                  <span className="text-green-600 font-semibold">241 €</span>
+                  <span className="text-green-600 font-semibold">241 € (2026) / 246 € (2027)</span>
                 </div>
                 <p className="text-sm text-gray-600">Épreuves écrites (7 sujets) et pratique</p>
+                <p className="text-sm text-gray-600 mt-2">{FRAIS_EXAMEN_CMA_INFORMATION}</p>
               </div>
               
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">

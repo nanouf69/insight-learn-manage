@@ -1,4 +1,5 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
+import { FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
 import { Bilan505Desactive, couperBilan505, remettreBilan505, useBilan505Active, type RevueItem } from '@/lib/bilan505Remise';
 import { Bilan505RevuePanel } from './Bilan505RevuePanel';
 import { FirstPassageProvider, QuestionFirstPassageRate } from './QuestionFirstPassageRate';
@@ -1387,7 +1388,9 @@ const INTRODUCTION_PRESENTIEL_DATA: ModuleData = {
 • L'épreuve d'admission (pratique) — minimum 12/20
 Le tout sans note éliminatoire.
 
-Vous avez à disposition : des cours, des exercices, des examens blancs et des bilans. L'accès à cette plateforme est limité.`,
+Vous avez à disposition : des cours, des exercices, des examens blancs et des bilans. L'accès à cette plateforme est limité.
+
+${FRAIS_EXAMEN_CMA_INFORMATION}`,
       actif: true,
     },
     {
@@ -1705,7 +1708,7 @@ const INTRODUCTION_ELEARNING_DATA: ModuleData = {
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 102, titre: "Conditions Générales de Vente", description: "Veuillez lire et accepter les CGV avant de continuer.", actif: true, checklistType: "cgv" },
-    { id: 1, titre: "Bienvenue sur la plateforme", description: "Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves :\n• L'épreuve d'admissibilité (théorie avec 7 matières) — minimum 10/20\n• L'épreuve d'admission (pratique) — minimum 12/20\nLe tout sans note éliminatoire.", actif: true },
+    { id: 1, titre: "Bienvenue sur la plateforme", description: `Cette plateforme est dédiée aux futurs chauffeurs VTC et TAXIS. Vous devez réussir deux épreuves :\n• L'épreuve d'admissibilité (théorie avec 7 matières) — minimum 10/20\n• L'épreuve d'admission (pratique) — minimum 12/20\nLe tout sans note éliminatoire.\n\n${FRAIS_EXAMEN_CMA_INFORMATION}`, actif: true },
     { id: 2, titre: "Informations importantes", description: "💰 Frais d'examen en cas d'échec (à votre charge) :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€\n\n📋 Les examens sont organisés par la CMA.\n📞 Contactez-nous le jour des résultats de l'examen théorique.", actif: true },
     { id: 3, titre: "Contenu de l'examen — Épreuves communes", description: `L'examen se compose d'épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
 

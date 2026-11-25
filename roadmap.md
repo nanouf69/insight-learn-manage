@@ -1,4 +1,9 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Frais CMA TAXI/VTC 2027 — 25/11
+- [x] Inventaire code/Cloud et 192 documents locaux ; 241 historiques/identifiants distingués, repassages environ 240 € non assimilés à l'examen complet.
+- [x] 246 € daté préparé introductions 1/26, étapes 4/5, estimation CRM et trois modèles mails ; cours bienvenue Cloud 1 ajouté avec journal avant/après ; aucun paiement/document signé/publication.
+- [x] 26 tests ciblés PASS, huit vues Introduction fictives PC/mobile, étapes 4/5 et build OK ; 62 modules comparés (seul 1 change), 383 versions inchangées. Bilan docs/cma-tarif-2027-2026-11-25.md.
+- [ ] Repassages environ 240 € : preuve d'application du tarif 246 € au repassage manquante ; aucun corrigé inventé. Vues CRM/apprenant réelles : session disponible expirée ; emails préparés non déployés, médias externes non exhaustivement OCRisés, aucune publication autorisée.
 ## Candidats à former — date théorique et pratique signée (25/11)
 - [x] Date d’examen théorique modifiable par candidat dans les tableaux VTC/TAXI, enregistrement relu ; 8 tests ciblés, 40 tests avec règles voisines et choix simulé connecté PASS, aucun dossier réel modifié.
 - [x] Pratique effectuée seulement avec signature d’émargement valide à la date de la session ; présence seule insuffisante. Session réelle relue PC/mobile : 70 à former, 1 pratique signée, aucune donnée historique modifiée ni publication.
