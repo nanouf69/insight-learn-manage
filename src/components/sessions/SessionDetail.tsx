@@ -1027,6 +1027,30 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     enabled: !!session?.id && open,
   });
 
+  // Une inscription ajoutée depuis le planning ou un autre onglet apparaît
+  // aussi dans la fiche déjà ouverte, sans rechargement manuel.
+  useEffect(() => {
+    if (!session?.id || !open) return;
+    const sessionId = session.id;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const refresh = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => { void refetchApprenants(); }, 400);
+    };
+    const channel = supabase
+      .channel(`session-pratique-apprenants-${sessionId}-${Math.random().toString(36).slice(2)}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'session_apprenants', filter: `session_id=eq.${sessionId}` }, refresh)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'session_apprenants', filter: `session_id=eq.${sessionId}` }, refresh)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'session_apprenants' }, (payload: any) => {
+        if (payload.old?.session_id === sessionId) refresh();
+      })
+      .subscribe();
+    return () => {
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [session?.id, open, refetchApprenants]);
+
   // Charger les infos financeur FC (saisies dans le portail Informations Financeur VTC/TAXI)
   const apprenantIdsForFinanceur = (apprenantsInSession || [])
     .map((sa: any) => sa.apprenant?.id)

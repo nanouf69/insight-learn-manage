@@ -173,6 +173,11 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [x] 17/11 — Avertissement CMA compact : lien vers la liste complète des personnes à vérifier et motifs dans une fenêtre défilante ; aucune règle de génération ni donnée modifiée, aperçu seul.
 - [x] 17/11 — Ajout candidat CMA/formation : ligne existante UPDATE avec liste retournée vérifiée, nouvelles lignes dates complètes ; état local après confirmation seulement, aperçu non publié.
 - [x] 17/11 — Candidats à former : menu de périodes datées lendemain du théorique → veille du premier jour pratique CMA ; 18/11–15/12 pour novembre. 5 tests réussis, menu connecté vérifié 1280 px / 894 px ; écritures bloquées pendant contrôle, aucune publication ni dossier modifié. Dates 2027 non inventées.
+
+## Planning pratique → sessions (25/11)
+- [x] Diagnostic lecture seule : compteurs lus avant synchronisation, anciennes sessions génériques non alimentées, réservation publique et fiche session à raccorder ; 11 ajouts manquants identifiés, aucun retrait autorisé.
+- [x] Migration 0284 : réconciliation additive dans chaque session compatible du jour, horaires planifiés alignés, Realtime sessions/inscriptions/configuration activé.
+- [x] Uniformiser liste, fiche, planning et réservation publique ; 2 tests PostgreSQL jetable + 24 tests interface réussis, aperçu sans erreur ; réconciliation réelle : 11 ajouts, 925 → 936 liens, 0 manquant et 0 doublon ; fiche et planning contrôlés, aucune suppression, aucun email de test ni publication.
 - [x] 17/11 — Généralisation FC VTC : formation choisie ou type FC/PA VTC prioritaire sur ancienne affectation initiale ; cours FC seuls en aperçu, aucune écriture réelle ni publication.
 - [x] 17/11 — Lucevic / Reziki : inscription FC VTC vérifiée par SELECT, ancien type/modules VTC initial identifiés ; projection partagée corrigée en aperçu, aucune affectation ni preuve réelle réécrite. Publication non effectuée.
 - [x] 16/11 — Candidats à former : menu des dates de formation du planning VTC/TAXI, confirmation avant attribution ; aucun résultat d’examen modifié, aperçu uniquement.

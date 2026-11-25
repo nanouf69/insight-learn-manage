@@ -161,6 +161,18 @@ export async function syncPratiqueSessionsFromPlanning(
     }
   }
 
+  // La règle serveur ajoute aussi les inscriptions dans les autres sessions
+  // pratiques compatibles du jour (anciennes sessions génériques comprises).
+  const { data: reconciled, error: reconcileError } = await (supabase.rpc as any)(
+    'reconcilier_inscriptions_pratique',
+    { p_depuis: fromDate ?? null },
+  );
+  if (reconcileError) {
+    result.errors.push(`Réconciliation serveur : ${reconcileError.message}`);
+  } else {
+    result.apprenantsAdded += (reconciled || []).length;
+  }
+
   return result;
 }
 

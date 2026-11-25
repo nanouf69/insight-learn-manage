@@ -155,6 +155,25 @@ export function PlanningCalendar({ onNavigateToApprenant }: { onNavigateToAppren
     return () => { cancelled = true; };
   }, [refreshKey]);
 
+  // Le planning et ses compteurs suivent aussi les changements faits depuis
+  // une autre page (réservation publique, Sessions ou fiche apprenant).
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const refresh = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setRefreshKey(k => k + 1), 600);
+    };
+    const channel = supabase.channel(`planning-pratique-live-${Math.random().toString(36).slice(2)}`);
+    for (const table of ['reservations_pratique', 'session_apprenants', 'sessions', 'planning_pratique_config']) {
+      channel.on('postgres_changes', { event: '*', schema: 'public', table }, refresh);
+    }
+    channel.subscribe();
+    return () => {
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
 
 
 

@@ -550,6 +550,16 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Le planning fait foi dans toutes les sessions compatibles du jour, pas
+    // seulement dans la session générique utilisée par ce portail. Cet appel
+    // est additif et ne déclenche aucun email supplémentaire.
+    const { error: reconciliationError } = await supabase.rpc("reconcilier_inscriptions_pratique", {
+      p_depuis: selectedDate,
+    });
+    if (reconciliationError) {
+      console.error("Réconciliation des sessions pratiques impossible:", reconciliationError);
+    }
+
     // 6. Format email content
     const dateStr = formatDateFR(selectedDate);
     const horaires = resolveHoraires(type, selectedDate, planningConfig);

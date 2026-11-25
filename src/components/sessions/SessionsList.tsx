@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +95,7 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
   const [filterType, setFilterType] = useState("tous");
   const { toast } = useToast();
 
-  const { data: sessions = [], isLoading, refetch } = useQuery({
+  const { data: sessions = [], isLoading, isFetched: sessionsFetched, refetch } = useQuery({
     queryKey: ['sessions'],
     queryFn: async () => {
       // Planning pratique = référence : ajoute côté serveur les inscrits du planning
@@ -111,8 +111,10 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
     },
   });
 
-  // Fetch pass rates, counts, and apprenant details per session
-  const { data: sessionApprenants = [] } = useQuery({
+  // Fetch pass rates, counts, and apprenant details per session.
+  // La première lecture attend la fin de la réconciliation : sinon les
+  // compteurs peuvent afficher l'ancienne liste malgré des sessions à jour.
+  const { data: sessionApprenants = [], refetch: refetchSessionApprenants } = useQuery({
     queryKey: ['session-apprenants-search'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -122,7 +124,34 @@ export function SessionsList({ onNavigateToApprenant }: { onNavigateToApprenant?
       if (error) throw error;
       return (data || []).filter((r: any) => r.apprenants?.abandonnee !== true);
     },
+    enabled: sessionsFetched,
   });
+
+  // Mise à jour en direct, sans interrogation périodique : chaque changement
+  // déclenche la réconciliation puis la relecture des sessions ET des compteurs.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let stopped = false;
+    const refresh = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        void (async () => {
+          await refetch();
+          if (!stopped) await refetchSessionApprenants();
+        })();
+      }, 600);
+    };
+    const channel = supabase.channel(`sessions-pratique-live-${Math.random().toString(36).slice(2)}`);
+    for (const table of ['reservations_pratique', 'session_apprenants', 'sessions', 'planning_pratique_config']) {
+      channel.on('postgres_changes', { event: '*', schema: 'public', table }, refresh);
+    }
+    channel.subscribe();
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [refetch, refetchSessionApprenants]);
 
   const sessionStats = useMemo(() => {
     const stats: Record<string, { inscrits: number; passed: number; failed: number; absent: number; total: number; pPassed: number; pFailed: number; gPassed: number; gTotal: number }> = {};
