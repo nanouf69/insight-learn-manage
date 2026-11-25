@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { COMPETENCES_CHAMPS, COMPETENCES_MODELE } from "@/lib/competencesIntervenant";
 import { ParcoursFormateurAdmin } from "./ParcoursFormateurAdmin";
+import { EvaluationCompetencesI21 } from "./EvaluationCompetencesI21";
 
 export function CompetencesFormateurDialog({ formateurId, onClose }: { formateurId: string; onClose: () => void }) {
   const [decision, setDecision] = useState("a_completer");
@@ -32,12 +33,13 @@ export function CompetencesFormateurDialog({ formateurId, onClose }: { formateur
     {query.isLoading && <p>Chargement…</p>}
     {query.isError && <p role="alert" className="text-destructive">Lecture impossible ; aucune compétence n’est réputée validée.</p>}
     {!query.isLoading && !query.isError && !doc && <p>Aucun formulaire individuel préparé.</p>}
-    {doc && <div className="space-y-4">
+    {doc && <div className="min-w-0 space-y-4">
       <p>{doc.destinataire_nom} · {doc.destinataire_email}</p>
       <Button variant="outline" onClick={() => navigator.clipboard.writeText(query.data.link)}>Copier le lien individuel</Button>
       <p className="text-sm text-muted-foreground">Lien individuel unique pour les compétences, le contrat-cadre et l’enquête de satisfaction.</p>
+      {formateurId === "6d0f9f9d-5380-4757-90ef-375e1179f811" && <EvaluationCompetencesI21 documentId={doc.id} doc={doc} fichiers={query.data.fichiers} reviews={query.data.reviews} onSaved={query.refetch} />}
       <ParcoursFormateurAdmin documentId={doc.id} token={query.data.token} declarationStatut={doc.statut} declarationSignedAt={doc.signed_at ?? null} destinataireEmail={doc.destinataire_email} formateurId={formateurId} />
-      {doc.statut !== "signe" ? <p>Déclaration de l’intervenant non remise.</p> : <>
+      {formateurId !== "6d0f9f9d-5380-4757-90ef-375e1179f811" && (doc.statut !== "signe" ? <p>Déclaration de l’intervenant non remise.</p> : <>
         {COMPETENCES_CHAMPS.map(champ => <div key={champ.id}><h3 className="font-semibold">{champ.label}</h3><p className="whitespace-pre-wrap">{doc.reponses[champ.id]}</p></div>)}
         {query.data.fichiers.map((file: { nom: string; url: string }) => <p key={file.url}><a href={file.url} target="_blank" rel="noreferrer" className="text-primary underline">{file.nom}</a></p>)}
         <h3 className="font-semibold">Historique des examens du responsable</h3>
@@ -57,7 +59,7 @@ export function CompetencesFormateurDialog({ formateurId, onClose }: { formateur
           } catch (e) { setError(e instanceof Error ? e.message : "Enregistrement impossible"); }
           finally { setSaving(false); }
         }}>Enregistrer l’examen du responsable</Button>
-      </>}
+      </>)}
       {error && <p role="alert" className="text-destructive">{error}</p>}
     </div>}
   </DialogContent></Dialog>;

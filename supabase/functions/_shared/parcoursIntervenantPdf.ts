@@ -9,7 +9,7 @@ export interface EntreePdfIntervenant {
   empreinteSource: string;
   operationId?: string;
   apercu: boolean;
-  signature?: { dataUrl: string; signeLeParis: string; consentement: string };
+  signature?: { dataUrl: string; signeLeParis: string; consentement: string; signataire?: string };
   noteFin?: string;
 }
 
@@ -89,7 +89,7 @@ export async function genererPdfIntervenant(entree: EntreePdfIntervenant): Promi
   if (entree.operationId) texte(`Opération de signature : ${entree.operationId}`, { taille: 8 });
   if (entree.signature && signature) {
     texte(`Consentement : ${entree.signature.consentement}`, { taille: 8.5 });
-    texte(`Signature manuscrite d'Albert AKONO — enregistrée par le serveur ${entree.signature.signeLeParis}`, { taille: 9, font: gras });
+    texte(`Signature manuscrite de ${entree.signature.signataire || "Albert AKONO"} — enregistrée par le serveur ${entree.signature.signeLeParis}`, { taille: 9, font: gras });
     const hauteur = 78, largeurSignature = Math.min(230, signature.width * hauteur / signature.height);
     espace(hauteur + 12);
     page.drawRectangle({ x: marge, y: y - hauteur, width: largeurSignature + 12, height: hauteur + 8, borderColor: rgb(0.70, 0.74, 0.78), borderWidth: 0.8 });

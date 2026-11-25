@@ -1,4 +1,4 @@
-import { ouvrirOngletPdf, afficherPdfDansOnglet } from "@/lib/ouvrirPdfPrive";
+import { PdfPriveActions } from "./PdfPriveActions";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,14 +76,11 @@ export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, d
             {(doc.texte_fige?.textes ?? []).map((q: any) => <p key={q.id} className="whitespace-pre-wrap"><strong>{q.label}</strong><br />{doc.reponses?.[q.id] || "—"}</p>)}
           </div>}
           {doc.signature && <><p className="text-sm">Signé {doc.signature.signe_le_paris}</p><p className="break-all text-xs text-muted-foreground">SHA-256 : {doc.signature.pdf_empreinte}</p>
-            <Button size="sm" variant="outline" onClick={async () => {
-              const w = ouvrirOngletPdf();
-              try {
-                const result = await appelIntervenantSignature(token, { action: "pdf", document_id: doc.document_id });
-                if (!(result.ok && result.json.url)) throw new Error(result.json.error ?? "PDF indisponible");
-                await afficherPdfDansOnglet(w, result.json.url);
-              } catch (e) { w?.close(); setMessage(e instanceof Error ? e.message : "PDF indisponible"); }
-            }}>Ouvrir le PDF privé</Button>
+            <PdfPriveActions titre={doc.titre} nomFichier={`${doc.type}-${doc.document_id}.pdf`} chargerUrl={async () => {
+              const result = await appelIntervenantSignature(token, { action: "pdf", document_id: doc.document_id });
+              if (!(result.ok && result.json.url)) throw new Error(result.json.error ?? "PDF indisponible");
+              return result.json.url as string;
+            }} ouvrirLabel="Ouvrir le PDF privé" />
             <Button size="sm" variant="outline" disabled={busy} onClick={() => executer({ action: "attach_qualiopi", document_competences_id: documentId, document_id: doc.document_id, confirmation_relecture: true })}>J’ai relu — rattacher à I{indicateur}</Button>
           </>}
         </div>;

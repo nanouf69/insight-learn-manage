@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SignaturePad } from "@/components/onboarding/SignaturePad";
-import { ouvrirOngletPdf, afficherPdfDansOnglet } from "@/lib/ouvrirPdfPrive";
+import { PdfPriveActions } from "./PdfPriveActions";
 
 export function ContresignatureCentre({ documentCompetencesId }: { documentCompetencesId: string }) {
   const [signature, setSignature] = useState("");
@@ -18,13 +18,10 @@ export function ContresignatureCentre({ documentCompetencesId }: { documentCompe
     if (r.error || !r.data?.ok) throw new Error(r.data?.error ?? "Lecture impossible");
     return r.data;
   } });
-  const ouvrir = async (version: string) => {
-    const w = ouvrirOngletPdf();
-    try {
-      const r = await appel({ action: "admin_contresigne_pdf", version });
-      if (!r.data?.url) throw new Error(r.data?.error ?? "PDF indisponible");
-      await afficherPdfDansOnglet(w, r.data.url);
-    } catch (e) { w?.close(); setMessage(e instanceof Error ? e.message : "PDF indisponible"); }
+  const urlPdf = async (version: string) => {
+    const r = await appel({ action: "admin_contresigne_pdf", version });
+    if (r.error || !r.data?.url) throw new Error(r.data?.error ?? "PDF indisponible");
+    return r.data.url as string;
   };
   const signer = async () => {
     setBusy(true); setMessage("");
@@ -40,10 +37,10 @@ export function ContresignatureCentre({ documentCompetencesId }: { documentCompe
   return <div className="space-y-3 rounded-md border border-primary/40 p-3">
     <h3 className="font-semibold">Signature SERVICES PRO du contrat-cadre</h3>
     {d.prestataire ? <p className="text-sm">Signé par le prestataire {d.prestataire.signe_le_paris}.</p> : <p className="text-sm text-warning">Le prestataire n’a pas encore signé.</p>}
-    {d.prestataire && <Button size="sm" variant="outline" onClick={() => ouvrir("prestataire")}>Relire le PDF signé par le prestataire</Button>}
+    {d.prestataire && <PdfPriveActions titre="Contrat-cadre signé par le prestataire" nomFichier="contrat-cadre-prestataire.pdf" chargerUrl={() => urlPdf("prestataire")} ouvrirLabel="Relire le PDF signé par le prestataire" />}
     {d.centre ? <>
       <p className="text-sm text-success">Signé par {d.centre.signataire_nom} ({d.centre.signataire_qualite}) {d.centre.signe_le_paris}.</p>
-      <Button size="sm" onClick={() => ouvrir("contresigne")}>Ouvrir le PDF signé par les deux parties</Button>
+      <PdfPriveActions titre="Contrat-cadre signé par les deux parties" nomFichier="contrat-cadre-deux-signatures.pdf" chargerUrl={() => urlPdf("contresigne")} ouvrirLabel="Ouvrir le PDF signé par les deux parties" variant="default" />
     </> : d.prestataire && <>
       <label className="flex items-start gap-2 text-sm"><Checkbox className="mt-1 flex-none" checked={consent} onCheckedChange={(v) => setConsent(v === true)} /><span>{d.consentement}</span></label>
       <SignaturePad value={signature} onChange={setSignature} disabled={busy} />
