@@ -94,13 +94,30 @@ Deno.serve(async req => {
         if (doc.statut !== "signe" || !doc.signed_at || !doc.reponses?.declaration_acceptee) return json({ error: "Aucune déclaration remise à examiner" }, 409);
         if (typeof body.operation_id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(body.operation_id)) return json({ error: "Identifiant d’opération invalide" }, 400);
         const sourceEmpreinte = await hash(new TextEncoder().encode(JSON.stringify(doc.reponses ?? {})));
-        const { data: existing, error: existingError } = await db.from("documents_a_signer").select("id,reponses,signed_at").eq("id", body.operation_id).eq("modele_code", REVIEW_MODEL).eq("cle_envoi", doc.id).maybeSingle();
+        const { data: existing, error: existingError } = await db.from("documents_a_signer").select("id,reponses,signed_at,file_path,texte_empreinte").eq("id", body.operation_id).eq("modele_code", REVIEW_MODEL).eq("cle_envoi", doc.id).maybeSingle();
         if (existingError) throw existingError;
         if (existing) {
           if (existing.reponses?.declaration_empreinte !== sourceEmpreinte) return json({ error: "Opération existante sur un autre contenu" }, 409);
           const { data: proof, error: proofError } = await db.from("intervenant_signature_preuves").select("*").eq("document_id", existing.id).maybeSingle();
           if (proofError) throw proofError;
-          if (!proof) return json({ error: "Évaluation existante à vérifier ; aucune nouvelle signature créée" }, 409);
+          if (!proof) {
+            const { data: stored, error: readError } = await db.storage.from(BUCKET).download(existing.file_path);
+            if (readError || !stored) return json({ error: "PDF signé existant illisible ; preuve non complétée" }, 409);
+            const pdfEmpreinte = await hash(new Uint8Array(await stored.arrayBuffer()));
+            const signeLeParis = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", dateStyle: "full", timeStyle: "long" }).format(new Date(existing.signed_at));
+            const { data: repaired, error: repairError } = await db.from("intervenant_signature_preuves").insert({
+              document_id: existing.id, operation_id: body.operation_id, document_empreinte: existing.texte_empreinte,
+              requete_empreinte: await hash(new TextEncoder().encode(JSON.stringify({ recuperation_preuve: true, document_id: existing.id, pdf_empreinte: pdfEmpreinte }))),
+              consentement_texte: existing.reponses.consentement_texte,
+              signature_data_url: `Signature manuscrite incorporée au PDF privé SHA-256 ${pdfEmpreinte}`,
+              signature_empreinte: existing.reponses.signature_empreinte, pdf_path: existing.file_path, pdf_empreinte: pdfEmpreinte,
+              charge_utile: { evaluation_i21_version: existing.reponses.evaluation_i21_version, signature_dans_pdf: true, recuperation_sans_nouvelle_signature: true },
+              signed_at: existing.signed_at, signe_le_paris: signeLeParis,
+            }).select("*").single();
+            if (repairError || !repaired) return json({ error: "Preuve existante non complétée" }, 500);
+            const preuveId = await rattacherI21(existing, repaired);
+            return json({ success: true, preuve_completee: true, review: existing, preuve_i21_id: preuveId });
+          }
           const preuveId = await rattacherI21(existing, proof);
           return json({ success: true, deja_enregistre: true, review: existing, preuve_i21_id: preuveId });
         }
@@ -160,7 +177,7 @@ Deno.serve(async req => {
         const { data: proof, error: proofError } = await db.from("intervenant_signature_preuves").insert({
           document_id: saved.id, operation_id: body.operation_id, document_empreinte: texteEmpreinte,
           requete_empreinte: requeteEmpreinte, consentement_texte: CONSENTEMENT_EVALUATION_I21,
-          signature_empreinte: review.signature_empreinte, pdf_path: pdfPath, pdf_empreinte: pdfEmpreinte,
+          signature_data_url: body.signature, signature_empreinte: review.signature_empreinte, pdf_path: pdfPath, pdf_empreinte: pdfEmpreinte,
           charge_utile: { signature_png: body.signature, evaluation_i21_version: EVALUATION_I21_VERSION },
           signed_at: signeLe, signe_le_paris: signeLeParis,
         }).select("*").single();
