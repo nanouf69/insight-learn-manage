@@ -4096,9 +4096,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                            const dateSessionPratiqueBrute = datesSessionPratique?.get(a.id);
                            const dateSessionPratique = dateSessionPratiqueBrute && dateSessionPratiqueBrute >= borneChoix ? dateSessionPratiqueBrute : undefined;
                            const hasReservation = !!reservation || !!dateSessionPratique;
+                           const surPlanning = (reservationsPratique || []).some(r => r.apprenant_id === a.id && !!r.date_choisie && (!planningStartDate || r.date_choisie >= planningStartDate) && (!planningEndDate || r.date_choisie <= planningEndDate));
                           const isDecale = (a as any).resultat_examen_pratique === 'deplace' || (deplacesSessionPratique || []).includes(a.id);
                           return (
-                          <TableRow key={a.id} className={!hasReservation ? "outline outline-2 -outline-offset-2 outline-destructive bg-destructive/5" : undefined}>
+                          <TableRow key={a.id} className={!surPlanning ? "outline outline-2 -outline-offset-2 outline-destructive bg-destructive/5" : undefined}>
                             <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
                             <TableCell className="font-medium">
                               <div className="flex items-center gap-2">
@@ -4448,9 +4449,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                            const dateSessionPratiqueBrute = datesSessionPratique?.get(a.id);
                            const dateSessionPratique = dateSessionPratiqueBrute && dateSessionPratiqueBrute >= borneChoix ? dateSessionPratiqueBrute : undefined;
                            const hasReservation = !!reservation || !!dateSessionPratique;
+                           const surPlanning = (reservationsPratique || []).some(r => r.apprenant_id === a.id && !!r.date_choisie && (!planningStartDate || r.date_choisie >= planningStartDate) && (!planningEndDate || r.date_choisie <= planningEndDate));
                           const isDecale = (a as any).resultat_examen_pratique === 'deplace' || (deplacesSessionPratique || []).includes(a.id);
                           return (
-                          <TableRow key={a.id} className={!hasReservation ? "outline outline-2 -outline-offset-2 outline-destructive bg-destructive/5" : undefined}>
+                          <TableRow key={a.id} className={!surPlanning ? "outline outline-2 -outline-offset-2 outline-destructive bg-destructive/5" : undefined}>
                             <TableCell className="text-muted-foreground text-xs">{i + 1}</TableCell>
                             <TableCell className="font-medium">
                               <div className="flex items-center gap-2">
