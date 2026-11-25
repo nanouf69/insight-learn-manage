@@ -4078,8 +4078,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                       </TableHeader>
                       <TableBody>
                          {vtcList.map((a, i) => {
-                           const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
-                           const dateSessionPratique = datesSessionPratique?.get(a.id);
+                           const borneChoix = planningStartDate || new Date().toISOString().slice(0, 10);
+                           const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id && !!r.date_choisie && r.date_choisie >= borneChoix);
+                           const dateSessionPratiqueBrute = datesSessionPratique?.get(a.id);
+                           const dateSessionPratique = dateSessionPratiqueBrute && dateSessionPratiqueBrute >= borneChoix ? dateSessionPratiqueBrute : undefined;
                            const hasReservation = !!reservation || !!dateSessionPratique;
                           const isDecale = (a as any).resultat_examen_pratique === 'deplace' || (deplacesSessionPratique || []).includes(a.id);
                           return (
@@ -4428,8 +4430,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                       </TableHeader>
                       <TableBody>
                          {taxiList.map((a, i) => {
-                           const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id);
-                           const dateSessionPratique = datesSessionPratique?.get(a.id);
+                           const borneChoix = planningStartDate || new Date().toISOString().slice(0, 10);
+                           const reservation = reservationsPratique?.find(r => r.apprenant_id === a.id && !!r.date_choisie && r.date_choisie >= borneChoix);
+                           const dateSessionPratiqueBrute = datesSessionPratique?.get(a.id);
+                           const dateSessionPratique = dateSessionPratiqueBrute && dateSessionPratiqueBrute >= borneChoix ? dateSessionPratiqueBrute : undefined;
                            const hasReservation = !!reservation || !!dateSessionPratique;
                           const isDecale = (a as any).resultat_examen_pratique === 'deplace' || (deplacesSessionPratique || []).includes(a.id);
                           return (
