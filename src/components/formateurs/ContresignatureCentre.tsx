@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SignaturePad } from "@/components/onboarding/SignaturePad";
+import { ouvrirOngletPdf, afficherPdfDansOnglet } from "@/lib/ouvrirPdfPrive";
 
 export function ContresignatureCentre({ documentCompetencesId }: { documentCompetencesId: string }) {
   const [signature, setSignature] = useState("");
@@ -18,8 +19,12 @@ export function ContresignatureCentre({ documentCompetencesId }: { documentCompe
     return r.data;
   } });
   const ouvrir = async (version: string) => {
-    const r = await appel({ action: "admin_contresigne_pdf", version });
-    if (r.data?.url) window.open(r.data.url, "_blank", "noopener,noreferrer"); else setMessage(r.data?.error ?? "PDF indisponible");
+    const w = ouvrirOngletPdf();
+    try {
+      const r = await appel({ action: "admin_contresigne_pdf", version });
+      if (!r.data?.url) throw new Error(r.data?.error ?? "PDF indisponible");
+      await afficherPdfDansOnglet(w, r.data.url);
+    } catch (e) { w?.close(); setMessage(e instanceof Error ? e.message : "PDF indisponible"); }
   };
   const signer = async () => {
     setBusy(true); setMessage("");
