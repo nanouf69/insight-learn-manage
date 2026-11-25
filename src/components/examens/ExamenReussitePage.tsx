@@ -1,3 +1,4 @@
+import { estCandidatElearning } from "@/lib/examenElearningRelance";
 import { EdofValideBadge } from "./EdofValideBadge";
 import { useCmaLettreSources } from '@/hooks/useCmaLettreSources';
 import { selectionLettreCma, listeCmaAffichee, categorieCma } from '@/lib/cmaLettreSelection';
@@ -4120,7 +4121,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
                             </TableCell>
-                            <TableCell><TauxElearningCell candidat={a} contexte="pratique" /></TableCell>
+                            <TableCell>{estCandidatElearning(a) ? <TauxElearningCell candidat={a} contexte="pratique" /> : <span className="text-xs text-muted-foreground">Présentiel</span>}</TableCell>
                             <TableCell>
                               <DateExamenTheoriqueSelect
                                 apprenantId={a.id}
@@ -4475,7 +4476,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
                             </TableCell>
-                            <TableCell><TauxElearningCell candidat={a} contexte="pratique" /></TableCell>
+                            <TableCell>{estCandidatElearning(a) ? <TauxElearningCell candidat={a} contexte="pratique" /> : <span className="text-xs text-muted-foreground">Présentiel</span>}</TableCell>
                             <TableCell>
                               <DateExamenTheoriqueSelect
                                 apprenantId={a.id}
