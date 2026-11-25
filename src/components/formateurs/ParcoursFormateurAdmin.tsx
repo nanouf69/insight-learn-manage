@@ -8,8 +8,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { libelleStatutDocument, statutDocumentIntervenant, texteContratFige, texteSatisfactionFige } from "@/lib/parcoursIntervenant";
 import { appelIntervenantSignature } from "@/lib/parcoursIntervenantClient";
 import { ContresignatureCentre } from "./ContresignatureCentre";
+import { OrdreMissionCpfApercu } from "./OrdreMissionCpfApercu";
 
-export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, declarationSignedAt, destinataireEmail }: { documentId: string; token: string; declarationStatut: string; declarationSignedAt: string | null; destinataireEmail: string }) {
+export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, declarationSignedAt, destinataireEmail, formateurId }: { formateurId?: string; documentId: string; token: string; declarationStatut: string; declarationSignedAt: string | null; destinataireEmail: string }) {
   const [confirme, setConfirme] = useState(false);
   const [confirmeEnvoi, setConfirmeEnvoi] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -47,6 +48,10 @@ export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, d
   const contrat = docs.find((d: any) => d.type === "contrat");
   const satisfaction = docs.find((d: any) => d.type === "satisfaction");
   const prepares = !!contrat?.document_id && !!satisfaction?.document_id;
+  const centre = useQuery({ queryKey: ["contresignature-centre-statut", contrat?.document_id], enabled: !!contrat?.document_id, queryFn: async () => {
+    const { data, error } = await supabase.from("intervenant_contresignatures_centre").select("id, signe_le_paris").eq("document_id", contrat!.document_id).maybeSingle();
+    if (error) throw error; return data;
+  } });
   return <Card className="border-primary/30">
     <CardHeader><CardTitle className="text-base">Parcours unique des trois documents formateur</CardTitle></CardHeader>
     <CardContent className="space-y-4">
@@ -55,7 +60,7 @@ export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, d
         const statut = statutDocumentIntervenant({ statut: doc.statut_source, signed_at: doc.signed_at_source, signature: doc.signature });
         const indicateur = doc.type === "contrat" ? 27 : doc.type === "satisfaction" ? 30 : 21;
         return <div key={doc.type} className="space-y-2 rounded-md border p-3">
-          <div className="flex flex-wrap items-center justify-between gap-2"><strong>{doc.titre}</strong><Badge variant="outline">{libelleStatutDocument(statut)}</Badge></div>
+          <div className="flex flex-wrap items-center justify-between gap-2"><strong>{doc.titre}</strong><Badge variant="outline">{doc.type === "contrat" && doc.signature ? (centre.isError ? "Signé par le prestataire — signature du centre illisible" : centre.data ? "Signé par les deux parties" : "Signé par le prestataire — en attente de signature SERVICES PRO") : libelleStatutDocument(statut)}</Badge></div>
           {doc.type === "satisfaction" && doc.statut_source === "signe" && <div className="space-y-2 text-sm">
             {(doc.texte_fige?.notes ?? []).map((q: any) => <p key={q.id}>{q.label} : <strong>{doc.reponses?.[q.id]}/5</strong></p>)}
             {(doc.texte_fige?.textes ?? []).map((q: any) => <p key={q.id} className="whitespace-pre-wrap"><strong>{q.label}</strong><br />{doc.reponses?.[q.id] || "—"}</p>)}
@@ -70,6 +75,7 @@ export function ParcoursFormateurAdmin({ documentId, token, declarationStatut, d
         </div>;
       })}
       {query.data?.actif && contrat?.signature && <ContresignatureCentre documentCompetencesId={documentId} />}
+      {formateurId && <OrdreMissionCpfApercu formateurId={formateurId} contratPrestataireSigne={!!contrat?.signature} contratCentreSigne={!!centre.data} />}
       <div className="space-y-2 rounded-md bg-muted/40 p-3">
         <h3 className="font-semibold">Aperçu du contrat-cadre</h3>
         <p className="text-sm">50 € TTC/heure · missions d’anglais ponctuelles · durée indéterminée · préavis de 30 jours · aucune exclusivité ni heure historique attestée.</p>
