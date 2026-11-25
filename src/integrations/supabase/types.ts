@@ -5916,6 +5916,7 @@ export type Database = {
       fournisseur_factures: {
         Row: {
           created_at: string
+          date_facture: string | null
           date_paiement: string | null
           description: string | null
           destinataire: string
@@ -5925,11 +5926,13 @@ export type Database = {
           montant: number | null
           moyen_paiement: string | null
           nom_fichier: string
+          numero_facture: string | null
           statut: string
           url: string
         }
         Insert: {
           created_at?: string
+          date_facture?: string | null
           date_paiement?: string | null
           description?: string | null
           destinataire: string
@@ -5939,11 +5942,13 @@ export type Database = {
           montant?: number | null
           moyen_paiement?: string | null
           nom_fichier: string
+          numero_facture?: string | null
           statut?: string
           url: string
         }
         Update: {
           created_at?: string
+          date_facture?: string | null
           date_paiement?: string | null
           description?: string | null
           destinataire?: string
@@ -5953,6 +5958,7 @@ export type Database = {
           montant?: number | null
           moyen_paiement?: string | null
           nom_fichier?: string
+          numero_facture?: string | null
           statut?: string
           url?: string
         }

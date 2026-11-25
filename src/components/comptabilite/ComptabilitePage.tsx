@@ -31,6 +31,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { parseExportCpf, rapprocher, estVente2026, beneficiaireDepuisReference, cleNom, STATUT_VALIDE, estCpf, type LigneExportCpf } from "@/lib/rapprochementExportCpf";
+import { dateEmissionFactureFournisseur } from "@/lib/comptabilite/factureFournisseur";
 
 interface Releve {
   id: string;
@@ -1091,7 +1092,7 @@ export function ComptabilitePage() {
     nom: f.fournisseurs?.nom || "Fournisseur",
     description: f.description || f.nom_fichier,
     montant: Number(f.montant) || 0,
-    date_emission: f.created_at,
+    date_emission: dateEmissionFactureFournisseur(f),
     statut: f.statut || "en_attente",
     date_paiement: f.date_paiement || null,
     moyen_paiement: f.moyen_paiement || null,

@@ -2003,6 +2003,13 @@
       "when": 1795626253959,
       "tag": "0285_contresignature_centre_intervenant",
       "breakpoints": true
+    },
+    {
+      "idx": 286,
+      "version": "7",
+      "when": 1795628993819,
+      "tag": "0286_identite_factures_fournisseurs",
+      "breakpoints": true
     }
   ]
 }
