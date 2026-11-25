@@ -5,7 +5,7 @@ const liste: DestinationAdmin = { page: 'crm', apprenantId: null };
 const ficheA: DestinationAdmin = { page: 'crm', apprenantId: 'apprenant-a' };
 const ficheB: DestinationAdmin = { page: 'crm', apprenantId: 'apprenant-b' };
 
- describe('Flèche Précédent du CRM', () => {
+describe('Flèche Précédent du CRM', () => {
   it('revient à la dernière fiche consultée plutôt qu’à la liste', () => {
     const historique = empilerDestinationPrecedente([liste], ficheA, ficheB);
     expect(retirerDestinationPrecedente(historique)).toEqual({ destination: ficheA, historique: [liste] });

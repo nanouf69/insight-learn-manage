@@ -92,9 +92,8 @@ export function CRMDashboard({ initialApprenantId, onApprenantOpened, onApprenan
   const [visibleLimit, setVisibleLimit] = useState(INITIAL_VISIBLE_APPRENANTS);
 
   useEffect(() => {
-    if (initialApprenantId) {
-      setSelectedApprenantId(initialApprenantId);
-    }
+    // La navigation parente peut aussi revenir à la liste (identifiant nul).
+    setSelectedApprenantId(initialApprenantId || null);
   }, [initialApprenantId]);
 
   const ouvrirApprenant = (id: string) => {
