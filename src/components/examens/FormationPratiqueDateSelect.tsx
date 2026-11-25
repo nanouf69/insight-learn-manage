@@ -12,12 +12,14 @@ export function FormationPratiqueDateSelect({ dates, value, nom, onConfirm }: {
   const [pending, setPending] = useState('');
   const [saving, setSaving] = useState(false);
   const prochaines = datesFormationProchaines(dates);
+  // La date déjà choisie reste toujours affichée, même hors calendrier (ex. samedi saisi par l'élève).
+  const options = value && !prochaines.includes(value) ? [value, ...prochaines].sort() : prochaines;
   return <>
-    <Select value={prochaines.includes(value ?? '') ? value : undefined} onValueChange={setPending} disabled={!prochaines.length || saving}>
+    <Select value={value || undefined} onValueChange={setPending} disabled={!options.length || saving}>
       <SelectTrigger className="h-8 w-44 text-xs" aria-label={`Date de formation pratique pour ${nom}`}>
         <CalendarPlus className="mr-1 h-3.5 w-3.5 shrink-0" /><SelectValue placeholder={prochaines.length ? 'Date de formation' : 'Aucune date à venir'} />
       </SelectTrigger>
-      <SelectContent>{prochaines.map(date => <SelectItem key={date} value={date}>{formatDateFR(date)}</SelectItem>)}</SelectContent>
+      <SelectContent>{options.map(date => <SelectItem key={date} value={date}>{formatDateFR(date)}</SelectItem>)}</SelectContent>
     </Select>
     <Dialog open={!!pending} onOpenChange={open => { if (!open && !saving) setPending(''); }}>
       <DialogContent>

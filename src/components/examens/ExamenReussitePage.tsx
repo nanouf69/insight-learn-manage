@@ -4092,7 +4092,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
                                 {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
                                  <a href={`/?section=crm&apprenant=${encodeURIComponent(String(a.id))}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" title="Ouvrir la fiche CRM">{a.nom} {a.prenom}</a>
-                                 {hasReservation && <span className="text-xs text-muted-foreground">({reservation?.date_choisie ?? dateSessionPratique})</span>}
+                                 {hasReservation && <span className="text-xs font-semibold text-emerald-700">({formatDateFR(String(reservation?.date_choisie ?? dateSessionPratique))})</span>}
                                </div>
                                {isDecale && (
                                  <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
@@ -4243,7 +4243,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 )}
                                 <FormationPratiqueDateSelect
                                   dates={vtcCalendarDates}
-                                  value={reservation?.date_choisie}
+                                  value={reservation?.date_choisie ?? dateSessionPratique}
                                   nom={`${a.prenom} ${a.nom}`}
                                   onConfirm={date => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, date, 'vtc')}
                                 />
@@ -4444,7 +4444,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
                                 {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
                                  <a href={`/?section=crm&apprenant=${encodeURIComponent(String(a.id))}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" title="Ouvrir la fiche CRM">{a.nom} {a.prenom}</a>
-                                 {hasReservation && <span className="text-xs text-muted-foreground">({reservation?.date_choisie ?? dateSessionPratique})</span>}
+                                 {hasReservation && <span className="text-xs font-semibold text-emerald-700">({formatDateFR(String(reservation?.date_choisie ?? dateSessionPratique))})</span>}
                                </div>
                                {isDecale && (
                                  <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
@@ -4595,7 +4595,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                 )}
                                 <FormationPratiqueDateSelect
                                   dates={taxiCalendarDates}
-                                  value={reservation?.date_choisie}
+                                  value={reservation?.date_choisie ?? dateSessionPratique}
                                   nom={`${a.prenom} ${a.nom}`}
                                   onConfirm={date => handleAssignDate(a.id, `${a.nom} ${a.prenom}`, date, 'taxi')}
                                 />
