@@ -4078,7 +4078,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               <div className="flex items-center gap-2">
                                 {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
                                 {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
-                                 {a.nom} {a.prenom}
+                                 <a href={`/?section=crm&apprenant=${encodeURIComponent(String(a.id))}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" title="Ouvrir la fiche CRM">{a.nom} {a.prenom}</a>
                                  {hasReservation && <span className="text-xs text-muted-foreground">({reservation?.date_choisie ?? dateSessionPratique})</span>}
                                </div>
                                {isDecale && (
@@ -4428,7 +4428,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                               <div className="flex items-center gap-2">
                                 {!hasReservation && <X className="h-4 w-4 text-red-500 shrink-0" />}
                                 {hasReservation && <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />}
-                                 {a.nom} {a.prenom}
+                                 <a href={`/?section=crm&apprenant=${encodeURIComponent(String(a.id))}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" title="Ouvrir la fiche CRM">{a.nom} {a.prenom}</a>
                                  {hasReservation && <span className="text-xs text-muted-foreground">({reservation?.date_choisie ?? dateSessionPratique})</span>}
                                </div>
                                {isDecale && (
