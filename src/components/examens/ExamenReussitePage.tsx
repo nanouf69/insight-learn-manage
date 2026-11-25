@@ -1078,6 +1078,10 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   // Note générale de la lettre CMA (distincte des notes par candidat), enregistrée par session/période.
   const [noteLettreCMA, setNoteLettreCMA] = useState("");
   const [lettreExclusIds, setLettreExclusIds] = useState<string[]>([]);
+  // Personnes « à former » (calculées dans le bloc Candidats à former) : toujours incluses en rouge dans la lettre CMA.
+  const aFormerLettreRef = useRef<ExamApprenant[]>([]);
+  const [, setAFormerLettreCle] = useState('');
+  useEffect(() => { const cle = aFormerLettreRef.current.map(a => a.id).join(','); setAFormerLettreCle(prev => prev === cle ? prev : cle); });
   // Identité exacte de la configuration chargée. Une ancienne configuration
   // ne doit jamais être sauvegardée sous une nouvelle session/période.
   const [loadedPlanningKey, setLoadedPlanningKey] = useState<string | null>(null);
@@ -3217,7 +3221,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         const cmaSelection = selectionLettreCma(cmaLettreSources.data?.candidats ?? [], cmaLettreSources.data?.preuves ?? [], cmaLettreSources.data?.confirmations ?? [], selectedExamDate, selectedDatePratique, '69', removedCandidatsCMA);
         const representedIds = new Set(cmaSelection.aRepresenter.map(a=>a.id));
         const selectedIds = new Set([...cmaSelection.confirmes,...cmaSelection.aRepresenter].map(a=>a.id));
-        const reussisLettre = (allApprenants ?? []).filter(a=>selectedIds.has(a.id));
+        const reussisLettreBase = (allApprenants ?? []).filter(a=>selectedIds.has(a.id));
         const cmaSearchResults = mergeApprenantSearchResults(allApprenants, cmaDirectSearchResults, searchCMA);
         const candidatsAffichesCMA = listeCmaAffichee(cmaLettreSources.data?.candidats ?? allApprenants ?? [], cmaSelection, extraCandidatsCMA, removedCandidatsCMA);
         const candidatsSansPreuveCMA = candidatsAffichesCMA.filter(({ candidat }) => !selectedIds.has(candidat.id));
@@ -3231,14 +3235,20 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           return null;
         };
 
+        const aFormerLettre = aFormerLettreRef.current.filter(a => !selectedIds.has(a.id) && getCategorieCMA(a.type_apprenant));
+        const aFormerIds = new Set(aFormerLettre.map(a => a.id));
+        const reussisLettre = [...reussisLettreBase, ...aFormerLettre];
         const taxiReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'TAXI');
         const vtcReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'VTC');
         const maxRows = Math.max(taxiReussis.length, vtcReussis.length);
 
         const generateLettreHTML = (notes = candidateNotes.query.data, other = candidateNotes.otherQuery.data) => {
           const nameHTML = (a: { id: string; nom: string; prenom: string }) => pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, candidateNotes.noteFor(a.id, notes, other)) + `<br/><small>${representedIds.has(a.id) ? 'Ajourné à représenter — inscription à confirmer' : 'Confirmé pour cette session'}</small>`;
-          const taxiRows = taxiReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${nameHTML(a)}</td></tr>`).join('');
-          const vtcRows = vtcReussis.map(a => `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${nameHTML(a)}</td></tr>`).join('');
+          const rowHTML = (a: { id: string; nom: string; prenom: string }) => aFormerIds.has(a.id)
+            ? `<tr><td style="padding:4px 8px;border:1px solid #ccc;color:#dc2626;font-weight:bold;">${pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, candidateNotes.noteFor(a.id, notes, other))}<br/><small>À former — épreuve pratique</small></td></tr>`
+            : `<tr><td style="padding:4px 8px;border:1px solid #ccc;">${nameHTML(a)}</td></tr>`;
+          const taxiRows = taxiReussis.map(rowHTML).join('');
+          const vtcRows = vtcReussis.map(rowHTML).join('');
           const padTaxi = taxiReussis.length < maxRows ? Array(maxRows - taxiReussis.length).fill('<tr><td style="padding:4px 8px;border:1px solid #ccc;">&nbsp;</td></tr>').join('') : '';
           const padVtc = vtcReussis.length < maxRows ? Array(maxRows - vtcReussis.length).fill('<tr><td style="padding:4px 8px;border:1px solid #ccc;">&nbsp;</td></tr>').join('') : '';
 
@@ -3735,6 +3745,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         );
         // tousAFormer inclut les déplacés et les échoués pratique
         const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
+        aFormerLettreRef.current = tousAFormer;
         const formationSearchResults = mergeApprenantSearchResults(allApprenants, formationDirectSearchResults, searchFormation);
 
         const vtcList = tousAFormer.filter(a => isPracticeVTCType(a.type_apprenant));
