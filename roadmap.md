@@ -1,4 +1,10 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Preuves Qualiopi I22/I32 — 25/11/2026 18:14 UTC
+- [x] Enregistrer sans doublon « 32.docx » (I32) et « CCF_000546(1).pdf » (I22) comme pièces reçues/inspectées dans ChatGPT, originaux binaires non transférés, avec réserves et métadonnées complètes.
+- [x] Rattacher uniquement des exemples CRM réels à I32, conserver les deux exemples existants et expliciter l'absence de preuve d'analyse ou d'efficacité lorsqu'elle n'est pas démontrée.
+- [x] Prévoir le dépôt privé append-only des deux originaux et le suivi trimestriel dans l'outil existant, sans date arbitraire ni changement automatique de conformité.
+- [x] Relire les enregistrements, tester les contrôles ciblés et fournir le bilan précis des preuves, réserves et limites : 19 tests PASS, build OK ; dépôt réel non effectué faute de binaires.
+- [ ] Dépôt réel des deux originaux et confirmation de la date manuscrite : bloqué par les binaires non transmis ; bilans trimestriels et justificatifs à enregistrer lorsqu'ils existeront.
 ## Frais CMA TAXI/VTC 2027 — 25/11
 - [x] Inventaire code/Cloud et 192 documents locaux ; 241 historiques/identifiants distingués, repassages environ 240 € non assimilés à l'examen complet.
 - [x] 246 € daté préparé introductions 1/26, étapes 4/5, estimation CRM et trois modèles mails ; cours bienvenue Cloud 1 ajouté avec journal avant/après ; aucun paiement/document signé/publication.

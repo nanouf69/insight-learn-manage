@@ -19,6 +19,33 @@ import { sourcesForIndicateur, type CrmSourceItem } from "@/lib/qualiopi/crm-sou
 import { PreuveFormDialog } from "./PreuveFormDialog";
 import { AdaptationsIndicateur6 } from "./AdaptationsIndicateur6";
 import { estEmploiDuTemps, joindreOriginal } from "./indicateur6";
+import { configOriginalRecu, joindreOriginalRecu } from "./originauxRecus";
+
+function OriginalRecuUpload({ preuve, uploadingId, setUploadingId, onChanged }: {
+  preuve: QualiopiPreuve;
+  uploadingId: string | null;
+  setUploadingId: (id: string | null) => void;
+  onChanged: () => void;
+}) {
+  const config = configOriginalRecu(preuve.ref_key);
+  if (!config) return null;
+  return <div className="space-y-1 border-t pt-2">
+    <Badge variant="outline">{preuve.fichiers.length ? "Original déposé — historique conservé" : "Original non archivé — à joindre"}</Badge>
+    <Label htmlFor={`original-recu-${preuve.id}`}>
+      Joindre {preuve.fichiers.length ? `un autre original ${config.nom} (les précédents sont conservés)` : `l’original ${config.nom}`}
+    </Label>
+    <Input id={`original-recu-${preuve.id}`} type="file" accept={config.accept} disabled={uploadingId !== null} onChange={async (event) => {
+      const file = event.currentTarget.files?.[0];
+      if (!file) return;
+      const input = event.currentTarget;
+      setUploadingId(preuve.id);
+      try { await joindreOriginalRecu(preuve, file); toast.success("Original déposé en privé et rattachement vérifié"); onChanged(); }
+      catch (e) { toast.error(e instanceof Error ? e.message : "Dépôt non confirmé"); }
+      finally { setUploadingId(null); input.value = ""; }
+    }} />
+    {uploadingId === preuve.id && <p className="text-sm text-muted-foreground">Dépôt privé et vérification…</p>}
+  </div>;
+}
 
 interface Props {
   indicateur: QualiopiIndicateur | null;
@@ -185,6 +212,7 @@ export function IndicateurDialog({ indicateur, etat, preuves, onOpenChange, onCh
                       ))}
                     </div>
                   )}
+                  <OriginalRecuUpload preuve={p} uploadingId={uploadingId} setUploadingId={setUploadingId} onChanged={onChanged} />
                   {estEmploiDuTemps(p) && <div className="space-y-1">
                     <Label htmlFor={`original-${p.id}`}>Joindre {p.fichiers.length ? "un autre original DOCX (les précédents sont conservés)" : "le DOCX original"}</Label>
                     <Input id={`original-${p.id}`} type="file" accept=".docx" disabled={uploadingId !== null} onChange={async (event) => {
