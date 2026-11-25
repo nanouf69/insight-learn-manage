@@ -50,6 +50,7 @@ const menuItems = [
   { id: "creneaux-25-mai", label: "Créneaux 25 mai", icon: CalendarClock },
   { id: "rdv-carte-vtc", label: "Planning RDV Carte VTC", icon: Truck },
   { id: "documents", label: "Documents", icon: FileText },
+  { id: "preuves-documents", label: "Preuves documents", icon: FileText },
   { id: "factures", label: "Factures", icon: Receipt },
   { id: "comptabilite", label: "Comptabilité", icon: Calculator },
   { id: "bpf", label: "BPF", icon: ClipboardList },

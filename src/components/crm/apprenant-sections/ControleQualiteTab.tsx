@@ -262,135 +262,23 @@ const CATEGORY_LABELS: Record<string, string> = {
   administratif: "📁 Documents administratifs",
 };
 
-export function ControleQualiteTab({ apprenant }: Props) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [bulkLoading, setBulkLoading] = useState(false);
-  const { toast } = useToast();
-  const { data: completedDocs = [] } = useQuery({
-    queryKey: ["apprenant-documents-completes", apprenant.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("apprenant_documents_completes" as any)
-        .select("*")
-        .eq("apprenant_id", apprenant.id)
-        .order("completed_at", { ascending: false });
-      if (error) throw error;
-      return data as any[];
-    },
-  });
-
-  // Fetch module completion for progress tracking
-  const { data: moduleCompletions = [] } = useQuery({
-    queryKey: ["apprenant-module-completion", apprenant.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("apprenant_module_completion")
-        .select("*")
-        .eq("apprenant_id", apprenant.id)
-        .eq("status", "completed");
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  // Fetch connexions for activity report tracking
-  const { data: connexions = [] } = useQuery({
-    queryKey: ["apprenant-connexions-qualite", apprenant.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("apprenant_connexions")
-        .select("id")
-        .eq("apprenant_id", apprenant.id)
-        .limit(1);
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  // Feuilles d'émargement pratique signées : émargements des journées pratiques
-  // (source de vérité = Planning pratique via fetchPratiqueSlotDetails)
-  const { data: pratiqueSheets = [] } = useQuery({
-    queryKey: ["apprenant-emargements-pratique", apprenant.id],
-    enabled: !!apprenant?.id,
-    queryFn: async () => {
-      const [emargRes, pratiqueDetails] = await Promise.all([
-        supabase
-          .from("emargements_fc" as any)
-          .select("date_emargement, demi_journee, absent, signature_data_url")
-          .filter("masque", "eq", false)
-          .eq("apprenant_id", apprenant.id),
-        fetchPratiqueSlotDetails(apprenant.id),
-      ]);
-      if (emargRes.error) throw emargRes.error;
-      const pratiqueDates = new Set((pratiqueDetails || []).map((d) => d.date));
-      return ((emargRes.data as any[]) || []).filter(
-        (e) =>
-          pratiqueDates.has(String(e.date_emargement || "").slice(0, 10)) &&
-          e.absent !== true &&
-          Boolean(e.signature_data_url?.trim()),
-      );
-    },
-  });
-
-  const getDocStatus = (doc: ControleDocument): { found: boolean; details?: any } => {
-    if (doc.isStatic) return { found: true };
-    if (doc.docType) {
-      const match = completedDocs.find((d: any) => d.type_document === doc.docType);
-      return { found: !!match, details: match };
-    }
-    if (doc.isProgress) {
-      return { found: moduleCompletions.length > 0 };
-    }
-    if (doc.isActivity) {
-      return { found: connexions.length > 0 };
-    }
-    if (doc.isPratique) {
-      return {
-        found: pratiqueSheets.length > 0,
-        details: { count: pratiqueSheets.length },
-      };
-    }
-    return { found: false };
+/** Construit le dossier de contrôle complet d'un apprenant (même contenu que « Tout télécharger »). */
+export async function construireDossierControleZip(apprenant: any, formateur: string) {
+  const escapeCsv = (v: any) => {
+    if (v === null || v === undefined) return "";
+    const s = String(v).replace(/"/g, '""');
+    return /[",;\n\r]/.test(s) ? `"${s}"` : s;
   };
-
-  const categories = ["formulaire", "suivi", "administratif"] as const;
-  const totalDocs = CONTROLE_DOCUMENTS.length;
-  const completedCount = CONTROLE_DOCUMENTS.filter(d => getDocStatus(d).found).length;
-  const pct = Math.round((completedCount / totalDocs) * 100);
-
-    const handleDownloadPdf = () => {
-      const pdfItems = CONTROLE_DOCUMENTS.map(doc => {
-        const status = getDocStatus(doc);
-        return {
-          label: doc.label,
-          category: doc.category,
-          found: status.found,
-          completedAt: status.details?.completed_at,
-          donnees: status.details?.donnees || null,
-        };
-      }).filter(i => i.found); // Ne pas afficher les documents manquants dans le PDF
-      generateControleQualitePdf(apprenant, pdfItems);
-    };
-
-    const escapeCsv = (v: any) => {
-      if (v === null || v === undefined) return "";
-      const s = String(v).replace(/"/g, '""');
-      return /[",;\n\r]/.test(s) ? `"${s}"` : s;
-    };
-    const toCsv = (rows: any[], columns: string[]) => {
-      const header = columns.join(";");
-      const lines = rows.map(r => columns.map(c => escapeCsv(r[c])).join(";"));
-      return "\uFEFF" + [header, ...lines].join("\r\n");
-    };
-
-    const handleDownloadAll = async () => {
-      setBulkLoading(true);
-      try {
-        const formateur = (window.prompt(
-          "Nom du formateur à indiquer sur les feuilles d'émargement :",
-          "GUENICHI Naoufal",
-        ) || "GUENICHI Naoufal").trim();
-
+  const toCsv = (rows: any[], columns: string[]) => {
+    const header = columns.join(";");
+    const lines = rows.map(r => columns.map(c => escapeCsv(r[c])).join(";"));
+    return "\uFEFF" + [header, ...lines].join("\r\n");
+  };
+  const { data: cdData, error: cdErr } = await supabase
+    .from("apprenant_documents_completes" as any).select("*").eq("apprenant_id", apprenant.id)
+    .order("completed_at", { ascending: false });
+  if (cdErr) throw cdErr;
+  const completedDocsQ = (cdData as any[]) || [];
         const zip = new JSZip();
         const slug = `${apprenant.prenom || ""}-${apprenant.nom || ""}`
           .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "apprenant";
@@ -403,7 +291,8 @@ export function ControleQualiteTab({ apprenant }: Props) {
         const pdfItems = CONTROLE_DOCUMENTS
           .filter(doc => doc.category === "formulaire")
           .map(doc => {
-            const status = getDocStatus(doc);
+            const match = doc.docType ? completedDocsQ.find((d: any) => d.type_document === doc.docType) : null;
+            const status = { found: doc.isStatic ? true : !!match, details: match as any };
             return {
               label: doc.label,
               category: doc.category,
@@ -1017,13 +906,146 @@ export function ControleQualiteTab({ apprenant }: Props) {
           console.error("[bulk-download] documents ajoutés failed:", libreErr);
         }
 
+  return { zip, slug, weeks: weekMap.size, connexions: cnxRows.length, emails: emailRows.length };
+}
+
+export function ControleQualiteTab({ apprenant }: Props) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const { toast } = useToast();
+  const { data: completedDocs = [] } = useQuery({
+    queryKey: ["apprenant-documents-completes", apprenant.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("apprenant_documents_completes" as any)
+        .select("*")
+        .eq("apprenant_id", apprenant.id)
+        .order("completed_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  // Fetch module completion for progress tracking
+  const { data: moduleCompletions = [] } = useQuery({
+    queryKey: ["apprenant-module-completion", apprenant.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("apprenant_module_completion")
+        .select("*")
+        .eq("apprenant_id", apprenant.id)
+        .eq("status", "completed");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Fetch connexions for activity report tracking
+  const { data: connexions = [] } = useQuery({
+    queryKey: ["apprenant-connexions-qualite", apprenant.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("apprenant_connexions")
+        .select("id")
+        .eq("apprenant_id", apprenant.id)
+        .limit(1);
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Feuilles d'émargement pratique signées : émargements des journées pratiques
+  // (source de vérité = Planning pratique via fetchPratiqueSlotDetails)
+  const { data: pratiqueSheets = [] } = useQuery({
+    queryKey: ["apprenant-emargements-pratique", apprenant.id],
+    enabled: !!apprenant?.id,
+    queryFn: async () => {
+      const [emargRes, pratiqueDetails] = await Promise.all([
+        supabase
+          .from("emargements_fc" as any)
+          .select("date_emargement, demi_journee, absent, signature_data_url")
+          .filter("masque", "eq", false)
+          .eq("apprenant_id", apprenant.id),
+        fetchPratiqueSlotDetails(apprenant.id),
+      ]);
+      if (emargRes.error) throw emargRes.error;
+      const pratiqueDates = new Set((pratiqueDetails || []).map((d) => d.date));
+      return ((emargRes.data as any[]) || []).filter(
+        (e) =>
+          pratiqueDates.has(String(e.date_emargement || "").slice(0, 10)) &&
+          e.absent !== true &&
+          Boolean(e.signature_data_url?.trim()),
+      );
+    },
+  });
+
+  const getDocStatus = (doc: ControleDocument): { found: boolean; details?: any } => {
+    if (doc.isStatic) return { found: true };
+    if (doc.docType) {
+      const match = completedDocs.find((d: any) => d.type_document === doc.docType);
+      return { found: !!match, details: match };
+    }
+    if (doc.isProgress) {
+      return { found: moduleCompletions.length > 0 };
+    }
+    if (doc.isActivity) {
+      return { found: connexions.length > 0 };
+    }
+    if (doc.isPratique) {
+      return {
+        found: pratiqueSheets.length > 0,
+        details: { count: pratiqueSheets.length },
+      };
+    }
+    return { found: false };
+  };
+
+  const categories = ["formulaire", "suivi", "administratif"] as const;
+  const totalDocs = CONTROLE_DOCUMENTS.length;
+  const completedCount = CONTROLE_DOCUMENTS.filter(d => getDocStatus(d).found).length;
+  const pct = Math.round((completedCount / totalDocs) * 100);
+
+    const handleDownloadPdf = () => {
+      const pdfItems = CONTROLE_DOCUMENTS.map(doc => {
+        const status = getDocStatus(doc);
+        return {
+          label: doc.label,
+          category: doc.category,
+          found: status.found,
+          completedAt: status.details?.completed_at,
+          donnees: status.details?.donnees || null,
+        };
+      }).filter(i => i.found); // Ne pas afficher les documents manquants dans le PDF
+      generateControleQualitePdf(apprenant, pdfItems);
+    };
+
+    const escapeCsv = (v: any) => {
+      if (v === null || v === undefined) return "";
+      const s = String(v).replace(/"/g, '""');
+      return /[",;\n\r]/.test(s) ? `"${s}"` : s;
+    };
+    const toCsv = (rows: any[], columns: string[]) => {
+      const header = columns.join(";");
+      const lines = rows.map(r => columns.map(c => escapeCsv(r[c])).join(";"));
+      return "\uFEFF" + [header, ...lines].join("\r\n");
+    };
+
+    const handleDownloadAll = async () => {
+      setBulkLoading(true);
+      try {
+        const formateur = (window.prompt(
+          "Nom du formateur à indiquer sur les feuilles d'émargement :",
+          "GUENICHI Naoufal",
+        ) || "GUENICHI Naoufal").trim();
+
+        const { zip, slug, weeks, connexions: nbCnx, emails: nbEmails } = await construireDossierControleZip(apprenant, formateur);
         const blob = await zip.generateAsync({ type: "blob" });
         const today = format(new Date(), "yyyy-MM-dd");
         saveAs(blob, `dossier-complet_${slug}_${today}.zip`);
 
         toast({
           title: "Téléchargement prêt",
-          description: `Contrôle qualité, ${weekMap.size} feuille(s) d'émargement, ${cnxRows.length} connexion(s), ${emailRows.length} email(s).`,
+          description: `Contrôle qualité, ${weeks} feuille(s) d'émargement, ${nbCnx} connexion(s), ${nbEmails} email(s).`,
         });
       } catch (err: any) {
         console.error("[bulk-download]", err);

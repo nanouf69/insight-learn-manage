@@ -1,3 +1,4 @@
+import { PreuvesDocuments } from "@/components/preuves/PreuvesDocuments";
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -469,6 +470,8 @@ const Index = () => {
         return <FormateursList />;
       case "organisations":
         return <OrganisationsList />;
+      case "preuves-documents":
+        return <PreuvesDocuments />;
       case "documents":
         return <DocumentsList />;
       case "factures":
