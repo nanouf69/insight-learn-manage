@@ -25,6 +25,7 @@ import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 import { Checkbox } from '@/components/ui/checkbox';
 import { useSeuilsElearningCRM } from '@/hooks/useSeuilsElearningCRM';
 import { filtrerSeuilsElearning } from '@/lib/seuilElearning';
+import { ExportContactsEleves } from './ExportContactsEleves';
 const typeLabels: Record<string, string> = {
   'vtc': 'VTC',
   'vtc-e': 'VTC E',
@@ -99,7 +100,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
     setVisibleLimit(searchQuery.trim() ? SEARCH_VISIBLE_APPRENANTS : INITIAL_VISIBLE_APPRENANTS);
   }, [searchQuery, formationFilter.join("|"), seuilFilter]);
 
-  const { data: apprenants = [], isLoading } = useQuery({
+  const { data: apprenants = [], isLoading, refetch: relireApprenants } = useQuery({
     queryKey: ['apprenants-crm'],
     queryFn: async () => {
       // Fetch ALL apprenants (backend caps each page at 1000 rows)
@@ -289,7 +290,14 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <ApprenantForm />
+        <div className="flex flex-col sm:flex-row gap-2">
+          <ExportContactsEleves charger={async () => {
+            const resultat = await relireApprenants();
+            if (resultat.error || !resultat.data) throw new Error('Lecture CRM impossible');
+            return resultat.data;
+          }} />
+          <ApprenantForm />
+        </div>
       </div>
 
       {/* Apprenants Grid */}
