@@ -18,6 +18,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { supabase } from "@/integrations/supabase/client";
 import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 import { generateDraftPDF, factureToDraftShape } from "@/lib/pdf/draft-facture";
+import { ouvrirPdfPriveUrl } from "@/lib/ouvrirPdfPrive";
 import { 
   Search, Euro, TrendingUp, Clock, CheckCircle, AlertTriangle,
   Download, Filter, Receipt, CreditCard, Banknote, BarChart3,
@@ -1370,7 +1371,8 @@ export function ComptabilitePage() {
                                       const filePath = fullPath.substring(bucketName.length + 1);
                                       const { data, error } = await supabase.storage.from(bucketName).createSignedUrl(filePath, 300);
                                       if (error || !data?.signedUrl) { toast.error("Impossible de générer le lien"); return; }
-                                      window.open(data.signedUrl, '_blank');
+                                      if (/\.pdf(\?|$)/i.test(filePath)) await ouvrirPdfPriveUrl(data.signedUrl);
+                                      else window.open(data.signedUrl, '_blank');
                                     } catch { toast.error("Erreur lors du téléchargement"); }
                                   }}
                                 >

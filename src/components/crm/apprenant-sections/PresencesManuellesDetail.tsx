@@ -5,6 +5,7 @@ import { lirePresencesAdministratives } from '@/lib/heuresValideesAdmin';
 import { BUCKET_JUSTIFICATIFS_PRESENCE, dureeLisible } from '@/lib/presenceCreneauTransport';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { ouvrirOngletPdf, afficherPdfDansOnglet } from '@/lib/ouvrirPdfPrive';
 
 /** Admin-only private evidence; never exposes storage paths to the learner. */
 export function PresencesManuellesDetail({apprenantId}:{apprenantId:string}) {
@@ -17,10 +18,10 @@ export function PresencesManuellesDetail({apprenantId}:{apprenantId:string}) {
     return liens.map(l=>({...l,annulee:rows.find(r=>r.id===l.validation_id)?.annulee===true,auteurNom:profiles.find(p=>p.user_id===l.auteur)?.full_name || 'Administrateur — nom indisponible'}));
   }});
   const preuve=async(chemin:string)=>{
-    const tab=window.open('','_blank');
+    const tab=ouvrirOngletPdf();
     const {data,error}=await supabase.storage.from(BUCKET_JUSTIFICATIFS_PRESENCE).createSignedUrl(chemin,300);
     if(error || !data?.signedUrl){tab?.close();toast.error('Lecture du justificatif refusée ou indisponible.');return;}
-    if(tab){tab.opener=null;tab.location.href=data.signedUrl;}
+    await afficherPdfDansOnglet(tab,data.signedUrl);
   };
   if(isError)return <p role="alert" className="text-sm text-destructive">Détail des validations manuelles indisponible.</p>;
   return <div className="w-full space-y-2">

@@ -37,6 +37,7 @@ import {
 import { genererPdfRempli, telechargerPdf } from "@/lib/documentSigneDownload";
 import { genererPreuveChoixPdf } from "@/lib/modeles/preuveChoixPdf";
 import { DocumentZoneEditor } from "@/components/documents/DocumentZoneEditor";
+import { pdfPriveDepuisUrlSignee } from "@/lib/ouvrirPdfPrive";
 import { chargerElementAdmin, DOCUMENT_ADMIN_ELEMENTS, type AdminElementId } from "@/lib/documentAdminElements";
 import { SignatureRevocationDialog, type CibleSignatureRevision } from './SignatureRevocationDialog';
 
@@ -128,8 +129,15 @@ export function DocumentsASigner() {
 
         const champsDoc = Array.isArray(doc.champs) ? doc.champs : [];
         const reponsesDoc = (doc.reponses || {}) as Record<string, string>;
-        const bytes = await genererPdfRempli(data.signedUrl, champsDoc, reponsesDoc,
-          doc.statut === "pre_rempli" ? { largeurEcranPx: PAGE_WIDTH, taillePoliceEcranPx: 10 } : undefined);
+        const prive = await pdfPriveDepuisUrlSignee(data.signedUrl);
+        const urlLocale = URL.createObjectURL(prive);
+        let bytes: Uint8Array;
+        try {
+          bytes = await genererPdfRempli(urlLocale, champsDoc, reponsesDoc,
+            doc.statut === "pre_rempli" ? { largeurEcranPx: PAGE_WIDTH, taillePoliceEcranPx: 10 } : undefined);
+        } finally {
+          URL.revokeObjectURL(urlLocale);
+        }
         const suffixe = doc.statut === "signe" ? "_signe" : doc.statut === "pre_rempli" ? "" : "_vierge";
         telechargerPdf(bytes, `${doc.nom}${doc.nom.endsWith("_rempli") ? "" : suffixe}.pdf`);
       } catch (e: any) {
@@ -177,7 +185,7 @@ export function DocumentsASigner() {
     const { data } = await supabase.storage
       .from("documents-a-signer")
       .createSignedUrl(doc.file_path, 3600);
-    setFileUrl(data?.signedUrl || null);
+    setFileUrl(data?.signedUrl ? URL.createObjectURL(await pdfPriveDepuisUrlSignee(data.signedUrl)) : null);
   };
 
   const handleUpload = async (file: File) => {

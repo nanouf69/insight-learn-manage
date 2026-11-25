@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { isImage, toPdf } from "@/lib/agrementPdf";
+import { pdfPriveDepuisUrlSignee } from "@/lib/ouvrirPdfPrive";
 
 /** Lien sécurisé vers un document d'agrément : connexion admin obligatoire. */
 export default function AgrementDocument() {
@@ -26,7 +27,8 @@ export default function AgrementDocument() {
       }
       const { data } = await supabase.storage.from("agrements").createSignedUrl(path, 300);
       if (!data) { setMsg("Lien indisponible."); return; }
-      window.location.replace(data.signedUrl);
+      const prive = await pdfPriveDepuisUrlSignee(data.signedUrl);
+      window.location.replace(URL.createObjectURL(prive));
     })();
   }, [id]);
 

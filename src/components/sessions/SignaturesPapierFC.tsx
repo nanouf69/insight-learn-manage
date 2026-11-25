@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { chargerPreuvesPapier } from '@/lib/fcSignaturesPapier';
 import { fcPapierSlots } from '@/lib/fcPapierSlots';
+import { ouvrirOngletPdf, afficherPdfDansOnglet } from '@/lib/ouvrirPdfPrive';
 
 export function SignaturesPapierFC({ inscriptions, sessionId, initialInscriptionId = '' }: { inscriptions: any[]; sessionId: string; initialInscriptionId?: string }) {
   const [id, setId] = useState(initialInscriptionId);
@@ -55,9 +56,9 @@ function DossierPapier({ inscription, sessionId }: { inscription: any; sessionId
   };
   const view=async()=>{
     const d=documents.data?.find(d=>d.id===doc); if(!d?.url) return;
-    const win=window.open('','_blank'); const path=d.url.split('/documents-inscription/').at(-1) ?? d.url;
+    const win=ouvrirOngletPdf(); const path=d.url.split('/documents-inscription/').at(-1) ?? d.url;
     const {data,error}=await supabase.storage.from('documents-inscription').createSignedUrl(path,300);
-    if(error || !data?.signedUrl){win?.close();return;} if(win) win.location.href=data.signedUrl;
+    if(error || !data?.signedUrl){win?.close();return;} await afficherPdfDansOnglet(win,data.signedUrl);
   };
   return <div className="space-y-4 max-w-2xl">
     <Label>Feuille signée dans le dossier</Label><Select value={doc} onValueChange={setDoc}><SelectTrigger><SelectValue placeholder="Choisir la feuille signée" /></SelectTrigger><SelectContent>{documents.data?.filter(d=>d.url).map(d=><SelectItem key={d.id} value={d.id}>{d.titre || d.nom_fichier}</SelectItem>)}</SelectContent></Select>

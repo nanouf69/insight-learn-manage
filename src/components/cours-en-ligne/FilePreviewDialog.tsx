@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import PdfSlideViewer from "./PdfSlideViewer";
+import { pdfPriveDepuisUrlSignee } from "@/lib/ouvrirPdfPrive";
 
 interface Props {
   url: string;
@@ -70,7 +71,9 @@ async function toDisplayableCourseUrl(fileUrl: string): Promise<string> {
       .createSignedUrl(storageObject.path, 60 * 60);
 
     if (error || !data?.signedUrl) return resolvedUrl;
-    return normalizeSignedStorageUrl(data.signedUrl);
+    const urlSignee = normalizeSignedStorageUrl(data.signedUrl);
+    if (/\.pdf(\?|$)/i.test(storageObject.path)) return URL.createObjectURL(await pdfPriveDepuisUrlSignee(urlSignee));
+    return urlSignee;
   } catch {
     return resolvedUrl;
   }
@@ -88,6 +91,7 @@ export async function telechargerFichierCours(fileUrl: string, nomFichier: strin
     const { data, error } = await supabase.storage.from(obj.bucket).createSignedUrl(obj.path, 120, { download: nomFichier });
     if (error || !data?.signedUrl) throw new Error(error?.message ?? "Lien de téléchargement indisponible");
     cible = normalizeSignedStorageUrl(data.signedUrl);
+    if (/\.pdf(\?|$)/i.test(obj.path)) cible = URL.createObjectURL(await pdfPriveDepuisUrlSignee(cible));
   }
   const a = document.createElement("a");
   a.href = cible; a.download = nomFichier; a.rel = "noopener";

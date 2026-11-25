@@ -10,6 +10,7 @@ import { generateDocumentIndividuelPdf } from '@/lib/pdf/document-individuel';
 import { ContratFormationSection } from './ContratFormationSection';
 import type { ContractLearner } from '@/lib/contratFormation/prefill';
 import { toast } from 'sonner';
+import { ouvrirPdfPriveUrl } from '@/lib/ouvrirPdfPrive';
 
 interface Quote {
   id: string; titre: string; evidence: DevisEvidenceSource; url?: string | null;
@@ -45,7 +46,7 @@ export function DevisFormulaires({ apprenant, onOuvrirDevis }: { apprenant: Cont
         const path = match ? decodeURIComponent(match[1]) : q.url;
         const { data, error } = await supabase.storage.from('devis').createSignedUrl(path, 300);
         if (error || !data?.signedUrl) throw new Error('Le fichier signé est indisponible.');
-        window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+        await ouvrirPdfPriveUrl(data.signedUrl);
       } else if (q.document) {
         generateDocumentIndividuelPdf({ ...apprenant, nom: apprenant.nom ?? '', prenom: apprenant.prenom ?? '' }, q.document);
       }

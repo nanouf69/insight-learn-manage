@@ -16,6 +16,7 @@ import { fetchHeuresValideesAdmin } from "@/lib/heuresValideesAdmin";
 import { buildJourneesPresentiel } from "@/lib/pdf/journees-presentiel";
 import { enrichConnexionRows } from "@/lib/reports/connexion-detail-rows";
 import { fetchAllRows } from "@/lib/supabase/fetch-all-rows";
+import { pdfPriveDepuisUrlSignee } from "@/lib/ouvrirPdfPrive";
 import { generateEmailsApprenantPdf, maskPasswords } from "@/lib/pdf/emails-apprenant";
 import { buildRapportActiviteHtml } from "@/lib/reports/rapport-activite-html";
 import { generateFicheProgression, type FicheProgressionData, type ProgressionModule } from "@/lib/pdf/fiche-progression";
@@ -437,10 +438,14 @@ export async function buildDossierApprenantIntoZip(
           .from("documents-inscription")
           .createSignedUrl(path, 3600);
         if (!signed?.signedUrl) continue;
-        const resp = await fetch(signed.signedUrl);
-        if (!resp.ok) continue;
-        const blob = await resp.blob();
         const ext = (d.nom_fichier || path).split(".").pop() || "pdf";
+        let blob: Blob;
+        if (ext.toLowerCase() === "pdf") blob = await pdfPriveDepuisUrlSignee(signed.signedUrl);
+        else {
+          const resp = await fetch(signed.signedUrl);
+          if (!resp.ok) continue;
+          blob = await resp.blob();
+        }
         const base = (d.titre || d.nom_fichier || "document").replace(/\.[^.]+$/, "");
         const safe = base.replace(/[^a-zA-Z0-9-_ ]+/g, "_").trim() || "document";
         libreFolder.file(`${safe}.${ext}`, blob);

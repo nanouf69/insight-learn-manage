@@ -20,6 +20,7 @@ import {
   saveDossier,
   uploadPiece,
 } from "@/lib/prestataires/data";
+import { ouvrirPdfPriveUrl } from "@/lib/ouvrirPdfPrive";
 import { exportDossierJustificatif } from "@/lib/prestataires/export";
 import { htmlToText } from "@/lib/prestataires/templates";
 import {
@@ -129,8 +130,9 @@ export function DossierDialog({ open, onOpenChange, dossier, onSaved }: Props) {
 
   const openPiece = async (p: PrestatairePiece) => {
     const url = await getPieceUrl(p.chemin);
-    if (url) window.open(url, "_blank");
-    else toast.error("Fichier indisponible");
+    if (!url) toast.error("Fichier indisponible");
+    else if (p.content_type === "application/pdf" || /\.pdf$/i.test(p.nom_fichier)) await ouvrirPdfPriveUrl(url);
+    else window.open(url, "_blank");
   };
 
   const cloturer = async () => {

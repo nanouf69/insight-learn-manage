@@ -71,6 +71,7 @@ import { ColoredTextField } from "./ColoredTextField";
 
 import SlideViewer from "./slides/SlideViewer";
 import PdfSlideViewer from "./PdfSlideViewer";
+import { pdfPriveDepuisUrlSignee } from "@/lib/ouvrirPdfPrive";
 import ImageCarouselViewer from "./ImageCarouselViewer";
 import { FICHE_IMAGE_SLIDES } from "./fiches-revision-slides";
 import LivreFormationViewer, { type FormationLivre } from "./LivreFormationViewer";
@@ -323,6 +324,7 @@ async function toDisplayableCourseUrl(fileUrl: string): Promise<string> {
       .createSignedUrl(storageObject.path, 60 * 60);
     return error || !data?.signedUrl ? null : normalizeSignedStorageUrl(data.signedUrl);
   });
+  if (signed && /\.pdf(\?|$)/i.test(storageObject.path)) return URL.createObjectURL(await pdfPriveDepuisUrlSignee(signed));
   return signed ?? resolvedUrl;
 }
 
@@ -332,6 +334,7 @@ function initialDisplayableCourseUrl(fileUrl?: string): string | null {
   if (!fileUrl) return null;
   const obj = courseStorageObjectOf(fileUrl);
   if (!obj) return resolveAppFileUrl(fileUrl);
+  if (/\.pdf(\?|$)/i.test(obj.path)) return null;
   return getCachedSignedUrl(obj.bucket, obj.path);
 }
 

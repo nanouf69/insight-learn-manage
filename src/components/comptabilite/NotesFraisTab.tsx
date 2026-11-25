@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { ouvrirPdfPriveUrl } from "@/lib/ouvrirPdfPrive";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -280,8 +281,9 @@ export function NotesFraisTab({ readOnly = false }: NotesFraisTabProps) {
     const bucketName = fullPath.split('/')[0];
     const filePath = fullPath.substring(bucketName.length + 1);
     const { data } = await supabase.storage.from(bucketName).createSignedUrl(filePath, 300);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-    else toast.error("Impossible de générer le lien");
+    if (!data?.signedUrl) toast.error("Impossible de générer le lien");
+    else if (/\.pdf(\?|$)/i.test(filePath)) await ouvrirPdfPriveUrl(data.signedUrl);
+    else window.open(data.signedUrl, '_blank');
   };
 
   const downloadJustificatif = async (note: NoteFrais) => {

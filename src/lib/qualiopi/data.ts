@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { INDICATEURS, QualiopiStatut } from "./referentiel";
 import { lirePagesQualiopi } from "./lectureComplete";
+import { ouvrirPdfPriveUrl } from "@/lib/ouvrirPdfPrive";
 
 export interface PreuveFichier {
   nom: string;
@@ -199,7 +200,8 @@ export async function uploadPreuveFichier(file: File): Promise<PreuveFichier> {
 export async function openPreuveFichier(fichier: PreuveFichier) {
   const { data, error } = await supabase.storage.from("qualiopi-preuves").createSignedUrl(fichier.path, 3600);
   if (error || !data?.signedUrl) throw error || new Error("URL indisponible");
-  window.open(data.signedUrl, "_blank");
+  if (fichier.type === "application/pdf" || /\.pdf$/i.test(fichier.path)) await ouvrirPdfPriveUrl(data.signedUrl);
+  else window.open(data.signedUrl, "_blank");
 }
 
 // ===== Alertes =====

@@ -11,6 +11,7 @@ import {
 import { Download, Upload, Database, HardDrive, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { pdfPriveDepuisUrlSignee } from "@/lib/ouvrirPdfPrive";
 
 type FileMeta = { path: string; size: number | null };
 type Manifest = {
@@ -101,9 +102,14 @@ export function BackupTab() {
               return;
             }
             try {
-              const resp = await fetch(f.signedUrl);
-              if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-              const blob = await resp.blob();
+              let blob: Blob;
+              if (/\.pdf$/i.test(f.path)) {
+                blob = await pdfPriveDepuisUrlSignee(f.signedUrl);
+              } else {
+                const resp = await fetch(f.signedUrl);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                blob = await resp.blob();
+              }
               bucketDir.file(f.path, blob);
             } catch (e: any) {
               setReport((r) => [...r, `⚠️ ${bucket}/${f.path}: ${e.message}`]);

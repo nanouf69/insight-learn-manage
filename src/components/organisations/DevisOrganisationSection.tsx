@@ -12,6 +12,7 @@ import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import { DEVIS_TEMPLATES } from "@/components/crm/apprenant-sections/DevisSection";
 import { PreuveConsentementFc } from "@/components/devis/PreuveConsentementFc";
+import { ouvrirPdfPriveUrl } from "@/lib/ouvrirPdfPrive";
 
 function formatDateFr(value: string): string {
   if (!value) return "";
@@ -344,7 +345,7 @@ ${signLink ? `<p>📝 <strong>Pour consulter et signer votre devis en ligne :</s
                       const path = m ? decodeURIComponent(m[1]) : d.devis_signe_url;
                       const { data, error } = await supabase.storage.from("devis").createSignedUrl(path, 3600);
                       if (error || !data?.signedUrl) { toast.error("PDF signé introuvable"); return; }
-                      window.open(data.signedUrl, "_blank", "noopener");
+                      await ouvrirPdfPriveUrl(data.signedUrl);
                     }}
                     className="text-xs underline text-primary"
                   >

@@ -1,4 +1,5 @@
 import { estCandidatElearning } from "@/lib/examenElearningRelance";
+import { ouvrirPdfPriveUrl } from "@/lib/ouvrirPdfPrive";
 import { EdofValideBadge } from "./EdofValideBadge";
 import { useCmaLettreSources } from '@/hooks/useCmaLettreSources';
 import { selectionLettreCma, listeCmaAffichee, categorieCma } from '@/lib/cmaLettreSelection';
@@ -2114,7 +2115,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
       toast.error("Erreur lors du téléchargement");
       return;
     }
-    window.open(data.signedUrl, '_blank');
+    await ouvrirPdfPriveUrl(data.signedUrl);
   };
 
   const handleAnalyzePdf = async (fileName: string, examType: 'admissibilite' | 'admission') => {

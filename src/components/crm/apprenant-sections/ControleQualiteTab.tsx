@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DossierDocumentsLibres } from "./DossierDocumentsLibres";
 import { JustificatifsPresenceControle } from "./JustificatifsPresenceControle";
 import { lireJustificatifsPresence, urlJustificatif, nomFichierZip } from "@/lib/justificatifsPresence";
+import { pdfPriveDepuisUrlSignee } from "@/lib/ouvrirPdfPrive";
 import { getSessionEndMs, getSessionDurationMinutes, clampConnexionsToAccessEnd } from "@/lib/reports/session-duration";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { computePresentielHours } from "@/lib/presentielHours";
@@ -861,9 +862,8 @@ export async function construireDossierControleZip(apprenant: any, formateur: st
             const jf = zip.folder("justificatifs-presence")!;
             for (const j of justifs) {
               if (j.fichier === "absent") throw new Error(`Justificatif de présence introuvable (${j.datePresence} ${j.debut}) : export interrompu`);
-              const resp = await fetch(await urlJustificatif(j.chemin));
-              if (!resp.ok) throw new Error(`Justificatif de présence illisible (${j.datePresence} ${j.debut}) : export interrompu`);
-              jf.file(nomFichierZip(j), await resp.blob());
+              const prive = await pdfPriveDepuisUrlSignee(await urlJustificatif(j.chemin));
+              jf.file(nomFichierZip(j), prive);
             }
           }
         }
@@ -891,10 +891,14 @@ export async function construireDossierControleZip(apprenant: any, formateur: st
                   .createSignedUrl(decodeURIComponent(path), 3600);
                 const fetchUrl = signed?.signedUrl || (raw.startsWith("http") ? raw : null);
                 if (!fetchUrl) continue;
-                const resp = await fetch(fetchUrl);
-                if (!resp.ok) continue;
-                const fileBlob = await resp.blob();
                 const ext = (d.nom_fichier || path).split(".").pop()?.split("?")[0] || "pdf";
+                let fileBlob: Blob;
+                if (ext.toLowerCase() === "pdf" && signed?.signedUrl) fileBlob = await pdfPriveDepuisUrlSignee(signed.signedUrl);
+                else {
+                  const resp = await fetch(fetchUrl);
+                  if (!resp.ok) continue;
+                  fileBlob = await resp.blob();
+                }
                 const base = (d.titre || d.nom_fichier || "document").replace(/\.[^.]+$/, "");
                 const safe = base.replace(/[^a-zA-Z0-9-_ ]+/g, "_").trim() || "document";
                 libreFolder.file(`${safe}.${ext}`, fileBlob);

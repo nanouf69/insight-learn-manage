@@ -16,6 +16,7 @@ import EmargementsSignesViewer from "./EmargementsSignesViewer";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { controlerAttestationFC, messageRefusAttestationFC, type ControleAttestationFC } from "@/lib/attestationFcVerrou";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
+import { ouvrirPdfPriveUrl } from "@/lib/ouvrirPdfPrive";
 import { toast } from "sonner";
 import agrementVtcAsset from "@/assets/agrement-vtc-ftransport.pdf.asset.json";
 import agrementTaxiAsset from "@/assets/agrement-taxi-ftransport.pdf.asset.json";
@@ -294,14 +295,22 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
           .from("documents-inscription")
           .createSignedUrl(path, 300);
         if (!error && data?.signedUrl) {
-          window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+          await ouvrirPdfPriveUrl(data.signedUrl);
           return;
         }
+      }
+      if (/\/storage\/v1\/object\/sign\//.test(url) && /\.pdf(?:[?#]|$)/i.test(url)) {
+        await ouvrirPdfPriveUrl(url);
+        return;
       }
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (e) {
       console.error("[RemboursementFC] open attestation error", e);
-      window.open(url, "_blank", "noopener,noreferrer");
+      if (/\/storage\/v1\/object\//.test(url) && /\.pdf(?:[?#]|$)/i.test(url)) {
+        toast.error("Impossible d'ouvrir le PDF privé");
+      } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
     }
   };
 

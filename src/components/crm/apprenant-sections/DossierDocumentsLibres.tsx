@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { ouvrirOngletPdf, afficherPdfDansOnglet } from "@/lib/ouvrirPdfPrive";
 import { toast } from "sonner";
 import { FolderPlus, Upload, Eye, Trash2, Loader2, FileText, Pencil } from "lucide-react";
 import { format } from "date-fns";
@@ -84,7 +85,7 @@ export function DossierDocumentsLibres({ apprenantId }: Props) {
     if (!doc.url) return;
     // Ouvrir l'onglet immédiatement (geste utilisateur) : sinon le navigateur
     // bloque la fenêtre car elle s'ouvrirait après l'attente du lien signé.
-    const win = window.open("", "_blank");
+    const win = ouvrirOngletPdf();
     const path = doc.url.includes("/documents-inscription/")
       ? doc.url.split("/documents-inscription/")[1]
       : doc.url;
@@ -96,10 +97,16 @@ export function DossierDocumentsLibres({ apprenantId }: Props) {
       toast.error("Impossible d'ouvrir le document");
       return;
     }
-    if (win) {
+    if (/\.pdf(\?|$)/i.test(doc.nom_fichier || path)) {
+      try {
+        await afficherPdfDansOnglet(win, data.signedUrl);
+      } catch {
+        win?.close();
+        toast.error("Impossible d'ouvrir le document");
+      }
+    } else if (win) {
       win.location.href = data.signedUrl;
     } else {
-      // Repli si le navigateur a tout de même bloqué l'onglet vide
       window.open(data.signedUrl, "_blank");
     }
   };

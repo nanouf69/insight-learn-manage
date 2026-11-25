@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Download, Upload, RefreshCw, Archive, Loader2, AlertTriangle, Trash2, Plus, FileText, Link2, FileStack } from "lucide-react";
 import { toast } from "sonner";
 import { toPdf, mergePdfs, isPdf } from "@/lib/agrementPdf";
+import { ouvrirPdfPriveUrl } from "@/lib/ouvrirPdfPrive";
 import { estLettrePresentation, fichiersPourExtra, piecesPourDossier, separerLettresPresentation } from "@/lib/agrementOrdre";
 
 /** Lecture d'un fichier avec 3 essais (coupure réseau / « Failed to fetch »), lecture seule. */
@@ -478,7 +479,8 @@ function PieceLigne({ societe, index, piece, champs, dossierCible, actifs, rempl
   const telecharger = async (f: Fichier) => {
     const { data, error } = await supabase.storage.from("agrements").createSignedUrl(f.storage_path, 300, { download: f.nom_fichier });
     if (error || !data) return toast.error("Lien indisponible");
-    window.open(data.signedUrl, "_blank");
+    if (isPdf(f.nom_fichier)) await ouvrirPdfPriveUrl(data.signedUrl);
+    else window.open(data.signedUrl, "_blank");
   };
 
   const setExpiration = async (f: Fichier, v: string) => {
@@ -491,7 +493,7 @@ function PieceLigne({ societe, index, piece, champs, dossierCible, actifs, rempl
       if (f.pdf_storage_path || isPdf(f.nom_fichier)) {
         const { data } = await supabase.storage.from("agrements").createSignedUrl(f.pdf_storage_path ?? f.storage_path, 300);
         if (!data) throw new Error();
-        window.location.href = data.signedUrl;
+        await ouvrirPdfPriveUrl(data.signedUrl);
       } else {
         const pdf = await pdfDe(f);
         if (!pdf) throw new Error();

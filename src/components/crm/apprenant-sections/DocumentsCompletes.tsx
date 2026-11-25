@@ -1,5 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, type MouseEvent } from "react";
+import { toast } from "sonner";
+import { ouvrirPdfPriveUrl } from "@/lib/ouvrirPdfPrive";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +35,12 @@ import { CompteurHeuresNonSignees } from './CompteurHeuresNonSignees';
 import { PresencesManuellesDetail } from './PresencesManuellesDetail';
 import { ContexteFormulaire } from './ContexteFormulaire';
 import { TYPES_PEDAGOGIQUES, type ContextePedagogique } from '@/lib/formulairePedagogique';
+
+function ouvrirDocumentPriveDepuisLien(event: MouseEvent<HTMLAnchorElement>, url: string): void {
+  if (!/\.pdf(?:[?#]|$)/i.test(url)) return;
+  event.preventDefault();
+  void ouvrirPdfPriveUrl(url).catch(() => toast.error("Impossible d'ouvrir le PDF privé"));
+}
 import { DevisFormulaires } from './DevisFormulaires';
 import { devisSignatureEvidence } from '@/lib/devisSignatureEvidence';
 import { ReglementServicesProInformation } from './ReglementServicesProInformation';
@@ -679,7 +687,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures, onOuv
               <div key={key} className="flex items-center gap-2 pl-3">
                 <span className="font-medium text-muted-foreground shrink-0">{getLabel(key)} :</span>
                 <Button variant="outline" size="sm" asChild className="h-8 gap-1">
-                  <a href={value} target="_blank" rel="noopener noreferrer">
+                  <a href={value} target="_blank" rel="noopener noreferrer" onClick={(event) => ouvrirDocumentPriveDepuisLien(event, value)}>
                     <ExternalLink className="w-3.5 h-3.5" />
                     Ouvrir / télécharger
                   </a>
@@ -758,6 +766,7 @@ export function DocumentsCompletes({ apprenant, onOuvrirRelanceSignatures, onOuv
                     href={donnees.justificatif_url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(event) => ouvrirDocumentPriveDepuisLien(event, donnees.justificatif_url)}
                     className="inline-flex items-center gap-1 text-primary underline"
                   >
                     <FileDown className="w-4 h-4" />

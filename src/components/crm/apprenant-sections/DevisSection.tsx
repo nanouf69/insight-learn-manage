@@ -40,6 +40,7 @@ import { buildDevisContratSnapshot, devisValantContrat, draftFromSnapshot, parse
 export const DEVIS_VALANT_CONTRAT_ACTIF = false;
 import { renderContractInto } from "@/lib/contratFormation/pdf";
 import { pagesContratDansDevis } from "@/lib/devisContratRoutage";
+import { pdfPriveDepuisUrlSignee } from "@/lib/ouvrirPdfPrive";
 
 async function getSignedDevisUrl(fichierUrl: string | null, download = false): Promise<string | null> {
   if (!fichierUrl) return null;
@@ -82,8 +83,7 @@ function DevisHistorique({ apprenantId, apprenant }: { apprenantId: string; appr
     try {
       const url = await getSignedDevisUrl(d.fichier_url);
       if (!url) throw new Error("Fichier introuvable");
-      const resp = await fetch(url);
-      const blob = await resp.blob();
+      const blob = await pdfPriveDepuisUrlSignee(url);
       const buf = await blob.arrayBuffer();
       let bin = "";
       const b = new Uint8Array(buf);
