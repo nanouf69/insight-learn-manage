@@ -17,8 +17,12 @@ export function ExportContactsEleves({ charger }: { charger: () => Promise<Dossi
   const [livraison, setLivraison] = useState('');
   if (profile?.role !== 'admin') return null;
 
-  const ouvrir = async () => {
-    setOpen(true); setBusy(true); setConfirme(false); setError(''); setLivraison(''); setFile(null); setResultat(null);
+  const ouvrir = () => {
+    setOpen(true); setConfirme(false); setError(''); setLivraison(''); setFile(null); setResultat(null);
+  };
+  const generer = async () => {
+    if (!confirme || busy) return;
+    setBusy(true); setError('');
     try {
       const resultat = genererContactsEleves(await charger());
       setResultat(resultat);
@@ -47,6 +51,8 @@ export function ExportContactsEleves({ charger }: { charger: () => Promise<Dossi
           <DialogTitle>Exporter les contacts élèves</DialogTitle>
           <DialogDescription>Fichier personnel .vcf : prénoms, noms et téléphones de tous les dossiers de la liste CRM, indépendamment des filtres affichés.</DialogDescription>
         </DialogHeader>
+        <label className="flex items-start gap-3 text-sm"><Checkbox className="mt-0.5 shrink-0" disabled={busy || !!resultat} checked={confirme} onCheckedChange={v => setConfirme(v === true)} aria-label="Confirmer l’export des données personnelles" /><span>Je confirme l’export de ces données personnelles pour mon usage administratif et leur conservation sécurisée.</span></label>
+        {!resultat && <Button className="gap-2" disabled={!confirme || busy} onClick={() => void generer()}><ContactRound className="h-4 w-4" />{error ? 'Réessayer la génération' : 'Générer le fichier .vcf'}</Button>}
         {busy && <p role="status" className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Lecture des dossiers…</p>}
         {error && <p role="alert" className="text-destructive">{error}</p>}
         {resultat && <div className="space-y-4">
@@ -59,14 +65,12 @@ export function ExportContactsEleves({ charger }: { charger: () => Promise<Dossi
             <ul className="mt-2 max-h-40 overflow-y-auto text-sm">{resultat.partages.map((r, i) => <li key={i} className="break-words">{r.noms.join(' / ')}</li>)}</ul>
           </details>}
           <p className="text-sm text-muted-foreground">Sur iPhone, ouvrez le fichier puis confirmez son import dans Contacts. Aucun contact n’est enregistré directement par la plateforme.</p>
-          <label className="flex items-start gap-3 text-sm"><Checkbox className="mt-0.5 shrink-0" checked={confirme} onCheckedChange={v => setConfirme(v === true)} aria-label="Confirmer l’export des données personnelles" /><span>Je confirme l’export de ces données personnelles pour mon usage administratif et leur conservation sécurisée.</span></label>
           <div className="flex flex-col gap-2 sm:flex-row">
             <Button className="gap-2" disabled={!confirme || !file || !resultat.nombre} onClick={() => { if (!file || !confirme) return; telechargerContacts(file); setLivraison(`${resultat.nombre} contacts : téléchargement lancé. Import à confirmer dans Contacts.`); }}><Download className="h-4 w-4" />Télécharger le fichier .vcf</Button>
             {partageDisponible && <Button variant="outline" className="gap-2" disabled={!confirme || !resultat.nombre} onClick={() => void partager()}><Share2 className="h-4 w-4" />Partager</Button>}
           </div>
           {livraison && <p role="status" className="text-sm text-muted-foreground">{livraison}</p>}
         </div>}
-        {!busy && !resultat && <Button variant="outline" onClick={() => void ouvrir()}>Réessayer</Button>}
       </DialogContent>
     </Dialog>
   </>;
