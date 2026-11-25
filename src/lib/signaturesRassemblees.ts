@@ -33,7 +33,7 @@ export function rassemblerSignatures(rows: any[], pratique: PratiqueSlotDetail[]
     }).filter(Boolean))];
     const horaires = practicalLabels.length === 1 ? String(practicalLabels[0]) : planning.length ? 'Horaires non déterminés' : candidates.length === 1 ? String(candidates[0]) : 'Horaires non déterminés';
     return { id: String(r.id), date, creneau: labels[demi] ?? demi, horaires,
-      sourceHoraires: planning.length ? 'Planning pratique consulté à l’export' : candidates.length === 1 ? 'Session attribuée / créneau enregistré' : 'Source absente ou ambiguë',
+      sourceHoraires: planning.length ? (planning.some(p => p.parts.some((x: any) => x.creneau === demi && x.horairesStandards)) ? 'Horaires standards de la pratique (aucun horaire spécifique saisi au planning)' : 'Planning pratique consulté à l’export') : candidates.length === 1 ? 'Session attribuée / créneau enregistré' : 'Source absente ou ambiguë',
       activite: planning.length ? `Pratique ${planning[0].typeFormation.toUpperCase()}` : theory.length ? 'Formation présentielle' : 'Présence (type non déterminé)',
       signedAt: r.signed_at ?? null, signature: r.signature_data_url, absent: r.absent === true };
   }).sort((a, b) => a.date.localeCompare(b.date) || (order[a.creneau] ?? 5) - (order[b.creneau] ?? 5) || String(a.signedAt ?? '').localeCompare(String(b.signedAt ?? '')) || a.id.localeCompare(b.id));
@@ -73,11 +73,12 @@ export async function chargerSignaturesRassemblees(apprenantId: string, seulemen
   const configs = dates.length ? await paginer((from, to) => supabase.from('planning_pratique_config').select('id, planning_start_date, planning_end_date, day_time_slots, updated_at').lte('planning_start_date', dates[dates.length - 1]).gte('planning_end_date', dates[0]).order('id').range(from, to)) : [];
   const slots = daySlotsDepuisConfigs(dates, configs);
   const pratique = calculerPratiqueSlotDetails(reservations, sessions, slots).map(p => {
-    // Do not label historical signatures with a default or generic practical-session timetable.
+    // Owner decision 25/11: a planned practical day without specific hours shows the standard
+    // practical timetable, explicitly labelled as standard (never presented as admin-typed hours).
     const explicit = slots.get(p.date);
     return { ...p, parts: p.parts.map(part => {
       const raw = typeof explicit === 'string' ? (part.creneau === 'matin' ? explicit : '') : explicit?.[part.creneau === 'matin' ? 'matin' : 'apresmidi'];
-      return raw ? part : { ...part, label: '', minutes: 0 };
+      return raw ? part : { ...part, horairesStandards: true };
     }) };
   });
   const { datesTheorie, datesPratique } = datesDuPlanning(sessions, reservations);
