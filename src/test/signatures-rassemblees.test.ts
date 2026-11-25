@@ -45,6 +45,26 @@ describe('PDF de signatures rassemblées sans mutation', () => {
   it('absence avec signature conservée et explicitement signalée', () => {
     expect(rassemblerSignatures([{ ...row(), absent: true }], [], [])[0].absent).toBe(true);
   });
+  it('pratique sans affectation : GUENICHI Naoufal, sans toucher aux autres séances', () => {
+    const p = { date: '2026-10-13', typeFormation: 'vtc' as const, reservationCreneau: 'journee' as const, minutes: 360, label: '', parts: resolvePratiqueSlotParts(null, 'vtc') };
+    expect(rassemblerSignatures([row()], [p], [])[0].formateur).toBe('GUENICHI Naoufal');
+    expect(rassemblerSignatures([row()], [], [session()])[0].formateur).toBe('Non renseigné');
+  });
+  it('formateur réel du planning pratique prioritaire, y compris un autre formateur', () => {
+    const p = { date: '2026-10-13', typeFormation: 'taxi' as const, reservationCreneau: 'journee' as const, minutes: 360, label: '', parts: resolvePratiqueSlotParts(null, 'taxi') };
+    const affectations = new Map([['2026-10-13', 'Albert AKONO']]);
+    expect(rassemblerSignatures([row()], [p], [], affectations)[0].formateur).toBe('Albert AKONO');
+  });
+  it('affectation réelle de session reprise et identité Naoufal normalisée', () => {
+    const avecFormateur = (prenom: string, nom: string) => ({ sessions: { ...session().sessions, session_formateurs: [{ formateurs: { prenom, nom } }] } });
+    expect(rassemblerSignatures([row()], [], [avecFormateur('NAOUFAL', 'GUENICHI')])[0].formateur).toBe('GUENICHI Naoufal');
+    expect(rassemblerSignatures([row()], [], [avecFormateur('ALBERT', 'AKONO')])[0].formateur).toBe('AKONO ALBERT');
+  });
+  it('pratique : affectation réelle de session utilisée avant le nom par défaut', () => {
+    const p = { date: '2026-10-13', typeFormation: 'vtc' as const, reservationCreneau: 'journee' as const, minutes: 360, label: '', parts: resolvePratiqueSlotParts(null, 'vtc') };
+    const pratique = { sessions: { ...session().sessions, type_session: 'pratique', date_debut: '2026-10-13', date_fin: '2026-10-13', session_formateurs: [{ formateurs: { prenom: 'ALBERT', nom: 'AKONO' } }] } };
+    expect(rassemblerSignatures([row()], [p], [pratique])[0].formateur).toBe('AKONO ALBERT');
+  });
   it('génère vraiment plusieurs pages et ne modifie rien', async () => {
     const source = Array.from({ length: 36 }, (_, i) => row(`fixture-${i}`));
     const before = JSON.stringify(source);

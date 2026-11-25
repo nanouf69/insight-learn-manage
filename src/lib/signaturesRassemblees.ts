@@ -4,19 +4,36 @@ import { pratiqueDocumentHours } from '@/lib/pratiqueDocumentHours';
 import { datesDuPlanning } from '@/lib/signaturesManquantes';
 import { aImageSignatureEmargement } from '@/lib/preuveSignatureEmargement';
 
-export interface SignatureRassemblee { id: string; date: string; creneau: string; horaires: string; sourceHoraires: string; activite: string; signedAt: string | null; signature: string; absent: boolean }
+export interface SignatureRassemblee { id: string; date: string; creneau: string; horaires: string; sourceHoraires: string; activite: string; formateur: string; signedAt: string | null; signature: string; absent: boolean }
 const labels: Record<string, string> = { matin: 'Matin', apres_midi: 'Après-midi', soir: 'Soir', soir_1: 'Soir 1', soir_2: 'Soir 2' };
 const evening: Record<string, string> = { soir: '17h00 - 21h00', soir_1: '17h00 - 18h30', soir_2: '18h30 - 21h00' };
 const order: Record<string, number> = { Matin: 0, 'Après-midi': 1, Soir: 2, 'Soir 1': 3, 'Soir 2': 4 };
 
+const normaliserFormateur = (value: unknown): string => {
+  const label = String(value ?? '').trim().replace(/\s+/g, ' ');
+  const normalized = label.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+  return normalized.includes('GUENICHI') && normalized.includes('NAOUFAL') ? 'GUENICHI Naoufal' : label;
+};
+const formateursDeSessions = (rows: any[]): string[] => [...new Set(rows.flatMap(row => {
+  const affectations = row?.sessions?.session_formateurs ?? [];
+  return affectations.map((affectation: any) => {
+    const f = affectation?.formateurs;
+    return normaliserFormateur([f?.nom, f?.prenom].filter(Boolean).join(' '));
+  }).filter(Boolean);
+}))];
+
 /** Preserve every stored signature ID, including multiple versions on the same date. */
-export function rassemblerSignatures(rows: any[], pratique: PratiqueSlotDetail[], sessions: any[]): SignatureRassemblee[] {
+export function rassemblerSignatures(rows: any[], pratique: PratiqueSlotDetail[], sessions: any[], formateursPlanning = new Map<string, string>()): SignatureRassemblee[] {
   const seen = new Set<string>();
   return rows.filter(r => r.masque !== true && aImageSignatureEmargement(r) && !seen.has(r.id) && !!seen.add(r.id)).map(r => {
     const date = String(r.date_emargement ?? '').slice(0, 10);
     const demi = String(r.demi_journee ?? '');
     const planning = pratique.filter(p => p.date === date && p.parts.some(x => x.creneau === demi));
     const practicalLabels = [...new Set(planning.map(p => pratiqueDocumentHours(date, demi, [p])).filter(Boolean))];
+    const sessionsPratique = sessions.filter(row => {
+      const s = row.sessions;
+      return s && /pratique/i.test(s.type_session ?? '') && date >= String(s.date_debut || '').slice(0, 10) && date <= String(row.date_fin_personnalisee || row.date_fin || s.date_fin || s.date_debut).slice(0, 10);
+    });
     const theory = sessions.filter(row => {
       const s = row.sessions;
       return s && !/pratique/i.test(s.type_session ?? '') && date >= String(row.date_debut || s.date_debut).slice(0, 10) && date <= String(row.date_fin_personnalisee || row.date_fin || s.date_fin || s.date_debut).slice(0, 10);
@@ -32,9 +49,13 @@ export function rassemblerSignatures(rows: any[], pratique: PratiqueSlotDetail[]
       return null;
     }).filter(Boolean))];
     const horaires = practicalLabels.length === 1 ? String(practicalLabels[0]) : planning.length ? 'Horaires non déterminés' : candidates.length === 1 ? String(candidates[0]) : 'Horaires non déterminés';
+    const formateurPlanning = normaliserFormateur(formateursPlanning.get(date));
+    const formateursReels = formateursDeSessions(planning.length ? sessionsPratique : theory);
+    const formateur = planning.length ? formateurPlanning || formateursReels.join(' · ') || 'GUENICHI Naoufal' : formateursReels.join(' · ') || 'Non renseigné';
     return { id: String(r.id), date, creneau: labels[demi] ?? demi, horaires,
       sourceHoraires: planning.length ? (planning.some(p => p.parts.some((x: any) => x.creneau === demi && x.horairesStandards)) ? 'Horaires standards de la pratique (aucun horaire spécifique saisi au planning)' : 'Planning pratique consulté à l’export') : candidates.length === 1 ? 'Session attribuée / créneau enregistré' : 'Source absente ou ambiguë',
       activite: planning.length ? `Pratique ${planning[0].typeFormation.toUpperCase()}` : theory.length ? 'Formation présentielle' : 'Présence (type non déterminé)',
+      formateur,
       signedAt: r.signed_at ?? null, signature: r.signature_data_url, absent: r.absent === true };
   }).sort((a, b) => a.date.localeCompare(b.date) || (order[a.creneau] ?? 5) - (order[b.creneau] ?? 5) || String(a.signedAt ?? '').localeCompare(String(b.signedAt ?? '')) || a.id.localeCompare(b.id));
 }
@@ -67,11 +88,15 @@ export async function chargerSignaturesRassemblees(apprenantId: string, seulemen
   const [rows, reservations, sessions] = await Promise.all([
     paginer((from, to) => supabase.from('emargements_fc').select('id, date_emargement, demi_journee, signature_data_url, signed_at, absent, masque').eq('apprenant_id', apprenantId).eq('masque', false).order('id').range(from, to)),
     paginer((from, to) => supabase.from('reservations_pratique').select('id, date_choisie, type_formation, creneau').eq('apprenant_id', apprenantId).order('id').range(from, to)),
-    paginer((from, to) => supabase.from('session_apprenants').select('id, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin)').eq('apprenant_id', apprenantId).order('id').range(from, to)),
+    paginer((from, to) => supabase.from('session_apprenants').select('id, date_debut, date_fin, date_fin_personnalisee, heure_debut_personnalisee, heure_fin_personnalisee, sessions:session_id(type_session, nom, statut, date_debut, date_fin, heure_debut, heure_fin, session_formateurs(formateurs(nom, prenom)))').eq('apprenant_id', apprenantId).order('id').range(from, to)),
   ]);
   const dates = [...reservations.map(r => r.date_choisie), ...sessions.filter(r => /pratique/i.test(r.sessions?.type_session ?? '')).map(r => r.sessions.date_debut)].filter(Boolean).map(d => String(d).slice(0, 10)).sort();
   const configs = dates.length ? await paginer((from, to) => supabase.from('planning_pratique_config').select('id, planning_start_date, planning_end_date, day_time_slots, updated_at').lte('planning_start_date', dates[dates.length - 1]).gte('planning_end_date', dates[0]).order('id').range(from, to)) : [];
   const slots = daySlotsDepuisConfigs(dates, configs);
+  const formateursPlanning = new Map<string, string>();
+  for (const [date, slot] of slots) {
+    if (slot && typeof slot === 'object' && typeof slot.formateur === 'string' && slot.formateur.trim()) formateursPlanning.set(date, slot.formateur.trim());
+  }
   const pratique = calculerPratiqueSlotDetails(reservations, sessions, slots).map(p => {
     // Owner decision 25/11: a planned practical day without specific hours shows the standard
     // practical timetable, explicitly labelled as standard (never presented as admin-typed hours).
@@ -82,6 +107,6 @@ export async function chargerSignaturesRassemblees(apprenantId: string, seulemen
     }) };
   });
   const { datesTheorie, datesPratique } = datesDuPlanning(sessions, reservations);
-  const toutes = rassemblerSignatures(rows, pratique, sessions);
+  const toutes = rassemblerSignatures(rows, pratique, sessions, formateursPlanning);
   return seulementPlanning ? toutes.filter(s => datesTheorie.has(s.date) || datesPratique.has(s.date)) : toutes;
 }

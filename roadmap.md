@@ -214,3 +214,6 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 
 ## Flèche Précédent entre fiches CRM (25/11)
 - [x] Fiche mémorisée dans l’historique admin pour recherche globale, liste CRM et demandes ; retour à la liste séparé et synchronisé ; 3 tests réussis, parcours réel liste → A → B → Précédent → A → Précédent → liste validé PC/mobile sans erreur ; aucune donnée ni publication.
+
+## Refonte PDF signatures rassemblées (25/11)
+- [x] Présentation A4 professionnelle bleu marine/bleu clair avec logo, identités, créneaux structurés, signatures originales alignées, pied de page et pagination ; formateur réel ou GUENICHI Naoufal uniquement pour la pratique concernée ; aucune donnée/preuve modifiée ; 49 tests PASS ; trois pages A4 fictives inspectées (11 références, 11 horodatages, logo et images), aucune publication.
