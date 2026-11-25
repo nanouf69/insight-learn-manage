@@ -1982,6 +1982,13 @@
       "when": 1795548203749,
       "tag": "0282_activer_signatures_trois_documents_intervenants",
       "breakpoints": true
+    },
+    {
+      "idx": 283,
+      "version": "7",
+      "when": 1795597803818,
+      "tag": "0283_pratique_apres_midi_apres_matin",
+      "breakpoints": true
     }
   ]
 }

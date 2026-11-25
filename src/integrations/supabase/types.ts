@@ -10879,6 +10879,10 @@ export type Database = {
           serveur_le: string
         }[]
       }
+      emargement_pratique_matin_signe: {
+        Args: { p_apprenant_id: string; p_date: string }
+        Returns: boolean
+      }
       emargement_theorie_inscrite: {
         Args: { p_apprenant_id: string; p_session_id?: string }
         Returns: {
