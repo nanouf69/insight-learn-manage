@@ -62,6 +62,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import SuiviEmailsPage from "@/components/emails/SuiviEmailsPage";
+import { empilerDestinationPrecedente, retirerDestinationPrecedente, type DestinationAdmin } from "@/lib/navigationAdmin";
 
 const pageConfig = {
   dashboard: { title: "Tableau de bord", subtitle: "Bienvenue, Marie !" },
@@ -127,7 +128,7 @@ const Index = () => {
   const { profile, user, loading } = useAuth();
   const initialNavigation = getInitialNavigationFromUrl();
   const [currentPage, setCurrentPage] = useState(initialNavigation.page);
-  const [pageHistory, setPageHistory] = useState<string[]>([]);
+  const [pageHistory, setPageHistory] = useState<DestinationAdmin[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [initialApprenantId, setInitialApprenantId] = useState<string | null>(initialNavigation.apprenantId);
@@ -302,29 +303,47 @@ const Index = () => {
     fetchFlux();
   }, [user]);
 
-  const handleNavigate = (page: string) => {
-    if (page !== currentPage) {
-      setPageHistory(prev => [...prev, currentPage]);
-    }
-    setCurrentPage(page);
-    // Mémorise la page dans l'URL pour survivre à un F5 (préférence d'interface uniquement)
+  const remplacerUrl = (page: string, apprenantId: string | null) => {
+    // Préférence d'interface uniquement : la fiche survit aussi à un F5.
     const params = new URLSearchParams(window.location.search);
     params.set("section", page);
-    if (page !== "crm") params.delete("apprenant");
+    if (page === "crm" && apprenantId) params.set("apprenant", apprenantId);
+    else params.delete("apprenant");
     window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
   };
 
+  const destinationCourante = (): DestinationAdmin => ({
+    page: currentPage,
+    apprenantId: currentPage === "crm" ? initialApprenantId : null,
+  });
+
+  const handleNavigate = (page: string) => {
+    const suivante: DestinationAdmin = { page, apprenantId: page === "crm" ? initialApprenantId : null };
+    setPageHistory(prev => empilerDestinationPrecedente(prev, destinationCourante(), suivante));
+    setCurrentPage(page);
+    remplacerUrl(page, suivante.apprenantId);
+  };
+
   const handleGoBack = () => {
-    if (pageHistory.length > 0) {
-      const prev = pageHistory[pageHistory.length - 1];
-      setPageHistory(h => h.slice(0, -1));
-      setCurrentPage(prev);
-    }
+    const retour = retirerDestinationPrecedente(pageHistory);
+    if (!retour) return;
+    setPageHistory(retour.historique);
+    setCurrentPage(retour.destination.page);
+    setInitialApprenantId(retour.destination.apprenantId);
+    remplacerUrl(retour.destination.page, retour.destination.apprenantId);
   };
 
   const handleNavigateToApprenant = (apprenantId: string) => {
+    const suivante: DestinationAdmin = { page: "crm", apprenantId };
+    setPageHistory(prev => empilerDestinationPrecedente(prev, destinationCourante(), suivante));
     setInitialApprenantId(apprenantId);
-    handleNavigate("crm");
+    setCurrentPage("crm");
+    remplacerUrl("crm", apprenantId);
+  };
+
+  const handleApprenantClosed = () => {
+    setInitialApprenantId(null);
+    remplacerUrl("crm", null);
   };
 
   const renderContent = () => {
@@ -441,7 +460,7 @@ const Index = () => {
       case "rdv-carte-vtc":
         return <PlanningRdvCarteVtc />;
       case "crm":
-        return <CRMDashboard initialApprenantId={initialApprenantId} onApprenantClosed={() => setInitialApprenantId(null)} />;
+        return <CRMDashboard initialApprenantId={initialApprenantId} onApprenantOpened={handleNavigateToApprenant} onApprenantClosed={handleApprenantClosed} />;
       case "planning":
         return <PlanningCalendar onNavigateToApprenant={handleNavigateToApprenant} />;
       case "sessions":

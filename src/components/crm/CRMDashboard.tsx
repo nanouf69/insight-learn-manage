@@ -80,10 +80,11 @@ const SEARCH_VISIBLE_APPRENANTS = 160;
 
 interface CRMDashboardProps {
   initialApprenantId?: string | null;
+  onApprenantOpened?: (id: string) => void;
   onApprenantClosed?: () => void;
 }
 
-export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashboardProps) {
+export function CRMDashboard({ initialApprenantId, onApprenantOpened, onApprenantClosed }: CRMDashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [formationFilter, setFormationFilter] = useState<string[]>([]);
   const [seuilFilter, setSeuilFilter] = useState(false);
@@ -95,6 +96,11 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
       setSelectedApprenantId(initialApprenantId);
     }
   }, [initialApprenantId]);
+
+  const ouvrirApprenant = (id: string) => {
+    if (onApprenantOpened) onApprenantOpened(id);
+    else setSelectedApprenantId(id);
+  };
 
   useEffect(() => {
     setVisibleLimit(searchQuery.trim() ? SEARCH_VISIBLE_APPRENANTS : INITIAL_VISIBLE_APPRENANTS);
@@ -216,7 +222,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <DemandesInscriptionUrgentes onOpenApprenant={setSelectedApprenantId} />
+      <DemandesInscriptionUrgentes onOpenApprenant={ouvrirApprenant} />
       {/* Pipeline Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {pipelineStages.map((stage) => (
@@ -363,7 +369,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
                   annulee ? 'border-destructive border-2 bg-destructive/5' : hasAnomalies ? 'border-red-500 border-2' : 'border-border'
                 }`}
 
-                onClick={() => setSelectedApprenantId(apprenant.id)}
+                onClick={() => ouvrirApprenant(apprenant.id)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
@@ -411,7 +417,7 @@ export function CRMDashboard({ initialApprenantId, onApprenantClosed }: CRMDashb
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => setSelectedApprenantId(apprenant.id)}>
+                      <DropdownMenuItem onClick={() => ouvrirApprenant(apprenant.id)}>
                         Voir fiche
                       </DropdownMenuItem>
                       <DropdownMenuItem>Modifier</DropdownMenuItem>
