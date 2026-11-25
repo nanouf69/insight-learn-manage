@@ -4110,6 +4110,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                  <a href={`/?section=crm&apprenant=${encodeURIComponent(String(a.id))}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" title="Ouvrir la fiche CRM">{a.nom} {a.prenom}</a>
                                  {hasReservation && <span className="text-xs font-semibold text-emerald-700">({formatDateFR(String(reservation?.date_choisie ?? dateSessionPratique))})</span>}
                                </div>
+                               <div className={`text-sm mt-0.5 ${a.telephone ? 'text-foreground' : 'text-destructive'}`}>📞 {a.telephone ? <a href={`tel:${a.telephone}`} className="hover:underline">{a.telephone}</a> : 'pas de téléphone'}</div>
                                {isDecale && (
                                  <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
                                )}
@@ -4465,6 +4466,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                  <a href={`/?section=crm&apprenant=${encodeURIComponent(String(a.id))}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" title="Ouvrir la fiche CRM">{a.nom} {a.prenom}</a>
                                  {hasReservation && <span className="text-xs font-semibold text-emerald-700">({formatDateFR(String(reservation?.date_choisie ?? dateSessionPratique))})</span>}
                                </div>
+                               <div className={`text-sm mt-0.5 ${a.telephone ? 'text-foreground' : 'text-destructive'}`}>📞 {a.telephone ? <a href={`tel:${a.telephone}`} className="hover:underline">{a.telephone}</a> : 'pas de téléphone'}</div>
                                {isDecale && (
                                  <div className="text-[11px] font-semibold text-orange-600 mt-0.5">📅 Décalé à la session suivante</div>
                                )}
