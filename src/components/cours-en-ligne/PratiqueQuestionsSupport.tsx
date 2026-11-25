@@ -8,7 +8,7 @@ import StableReadingImage from './StableReadingImage';
 /** Authenticated image-only reading; no PDF URL, progress callback or persistence. */
 export default function PratiqueQuestionsSupport({ moduleId, coursId }: { moduleId: number; coursId: number }) {
   const support = pratiqueQuestionsSupport(moduleId, coursId);
-  const [ouvert, setOuvert] = useState(false);
+  const [ouvert, setOuvert] = useState(true);
   const [page, setPage] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [src, setSrc] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export default function PratiqueQuestionsSupport({ moduleId, coursId }: { module
         <p className="text-sm font-bold uppercase tracking-wide text-primary">À consulter avant l’examen pratique</p>
       </div>
       <Button size="lg" className="h-auto w-full whitespace-normal gap-3 py-4 text-left text-base font-bold" aria-expanded={ouvert} onClick={() => setOuvert(!ouvert)}>
-        <FileText className="h-6 w-6 shrink-0" />{support.titre} — {ouvert ? 'Fermer' : 'Ouvrir le document'}
+        <FileText className="h-6 w-6 shrink-0" />{support.titre} — {ouvert ? 'Masquer le document' : 'Ouvrir le document'}
       </Button>
       {ouvert && <div className="space-y-3 select-none" onContextMenu={e => e.preventDefault()}>
         <div className="flex flex-wrap justify-center items-center gap-2">

@@ -8678,7 +8678,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
       return (
         <div className="space-y-4">
-        <PratiqueQuestionsSupport key={`questions-pratique-${module.id}-${cours.id}-${apprenantId ?? 'apercu'}`} moduleId={Number(module.id)} coursId={Number(cours.id)} />
         <Card key={cours.id} className="overflow-hidden">
           {cours.image && (
             <div className="w-full h-48 sm:h-64 overflow-hidden">
@@ -10146,6 +10145,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             <h2 className="text-2xl font-bold">{subjectInfo ? subjectInfo.parentTitle : moduleData.nom}</h2>
             <p className="text-muted-foreground text-sm">{Number(module.id) === 13 ? moduleData.description?.replace(/\b\d+\s+questions\b/i, `${totalQuestionsModule} questions`) : moduleData.description}</p>
           </div>
+
+          {[6, 8].includes(Number(module.id)) && (
+            <PratiqueQuestionsSupport
+              key={`questions-pratique-${module.id}-${apprenantId ?? 'apercu'}`}
+              moduleId={Number(module.id)}
+              coursId={2}
+            />
+          )}
 
           {Number(module.id) === 12 && <Suspense fallback={<p role="status">Chargement du quiz des jours fériés…</p>}><QuizJoursFeries key={apprenantId ?? "apercu"} compteId={apprenantId ?? null} /></Suspense>}
           {afficherJeuGestion(Number(module.id), currentPageData?.type === "cours" ? currentPageData.cours.titre : undefined) && (
