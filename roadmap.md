@@ -217,3 +217,6 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 
 ## Refonte PDF signatures rassemblées (25/11)
 - [x] Présentation A4 professionnelle bleu marine/bleu clair avec logo, identités, créneaux structurés, signatures originales alignées, pied de page et pagination ; formateur réel ou GUENICHI Naoufal uniquement pour la pratique concernée ; aucune donnée/preuve modifiée ; 49 tests PASS ; trois pages A4 fictives inspectées (11 références, 11 horodatages, logo et images), aucune publication.
+
+## Candidats à former — progression et relance (25/11)
+- [ ] Agrandir VTC/TAXI, afficher le taux de modules réalisés avec le calcul partagé et proposer une relance individuelle pratique avec aperçu soigné et confirmation ; aucun envoi de test, aucune annulation automatique, aucune donnée pédagogique modifiée.

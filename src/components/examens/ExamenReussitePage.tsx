@@ -3924,7 +3924,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               <div className="grid grid-cols-1 gap-6">
                 {/* VTC */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-bold text-blue-700">VTC (Présentiel, E-learning, VA, PA VTC)</h4>
+                  <h4 className="text-xl font-extrabold tracking-tight text-blue-700">VTC <span className="text-sm font-semibold">(Présentiel, E-learning, VA, PA VTC)</span></h4>
                   <div className="flex flex-wrap gap-2">
                     <MailTestPratiqueDialog type="vtc" />
                     <AlertDialog>
@@ -4085,6 +4085,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                           <TableHead className="w-8">#</TableHead>
                           <TableHead>Nom Prénom</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead>Modules à réaliser</TableHead>
                           <TableHead>Examen théorique</TableHead>
                           <TableHead className="text-center w-20">Actions</TableHead>
                         </TableRow>
@@ -4115,10 +4116,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                              </TableCell>
 
                              <TableCell>
-                               <Badge className="bg-blue-100 text-blue-800 text-xs">
+                               <Badge className="bg-blue-100 px-3 py-1 text-base font-extrabold text-blue-800">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
                             </TableCell>
+                            <TableCell><TauxElearningCell candidat={a} contexte="pratique" /></TableCell>
                             <TableCell>
                               <DateExamenTheoriqueSelect
                                 apprenantId={a.id}
@@ -4277,7 +4279,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
 
                 {/* TAXI */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-bold text-amber-700">TAXI (Présentiel, E-learning, TA, PA TAXI)</h4>
+                  <h4 className="text-xl font-extrabold tracking-tight text-amber-700">TAXI <span className="text-sm font-semibold">(Présentiel, E-learning, TA, PA TAXI)</span></h4>
                   <div className="flex flex-wrap gap-2">
                     <MailTestPratiqueDialog type="taxi" />
                     <AlertDialog>
@@ -4438,6 +4440,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                           <TableHead className="w-8">#</TableHead>
                           <TableHead>Nom Prénom</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead>Modules à réaliser</TableHead>
                           <TableHead>Examen théorique</TableHead>
                           <TableHead className="text-center w-20">Actions</TableHead>
                         </TableRow>
@@ -4468,10 +4471,11 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                              </TableCell>
 
                               <TableCell>
-                               <Badge className="bg-amber-100 text-amber-800 text-xs">
+                               <Badge className="bg-amber-100 px-3 py-1 text-base font-extrabold text-amber-800">
                                 {typeLabel[a.type_apprenant || ''] || a.type_apprenant || '-'}
                               </Badge>
                             </TableCell>
+                            <TableCell><TauxElearningCell candidat={a} contexte="pratique" /></TableCell>
                             <TableCell>
                               <DateExamenTheoriqueSelect
                                 apprenantId={a.id}
