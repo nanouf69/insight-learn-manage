@@ -26,6 +26,8 @@ def main():
     mods = sorted({c['module_id'] for c in comp})
     audit = json.loads(capture(f"SELECT coalesce(jsonb_agg(jsonb_build_object('m',module_id,'e',exercice_id,'q',question_id,'f',field,'t',created_at)),'[]') FROM public.module_admin_audit_log WHERE module_id IN ({','.join(map(str,mods))}) AND field IN ('question_added','question_deleted')"))
     mes = capture(f"SELECT coalesce(jsonb_agg(jsonb_build_object('m',module_id,'d',module_data)),'[]') FROM public.module_editor_state WHERE module_id IN ({','.join(map(str,mods))})")
+    # Premières soumissions réelles (tous comptes) contenant chaque clé de module 4, anonymisées.
+    premieres = json.loads(capture("SELECT coalesce(jsonb_agg(jsonb_build_object('e',exercice_id,'k',key,'t',t)),'[]') FROM (SELECT r.exercice_id, key, min(r.submitted_at) t FROM public.reponses_apprenants r, jsonb_object_keys(r.reponses) key WHERE r.exercice_id LIKE 'module_4_exo_%' AND r.status='submitted' AND r.submitted_at IS NOT NULL AND jsonb_typeof(r.reponses)='object' AND r.apprenant_id <> '" + DOSSIER + "' GROUP BY 1,2) x"))
     real_md5 = capture(f"SELECT md5(string_agg(row_to_json(c)::text, '' ORDER BY module_id)) FROM public.apprenant_module_completion c WHERE apprenant_id='{DOSSIER}'")
     real_ans = capture(f"SELECT md5(string_agg(row_to_json(r)::text, '' ORDER BY exercice_id)) FROM public.reponses_apprenants r WHERE apprenant_id='{DOSSIER}'")
     env = {k: v for k, v in os.environ.items() if not k.startswith(('PG', 'SUPABASE', 'LOVABLE_', 'VITE_'))}
@@ -71,6 +73,8 @@ def main():
         sql('INSERT INTO public.module_admin_audit_log VALUES ' + ','.join(f"({a['m']},{Q(a['e'])},{Q(a['q'])},{Q(a['f'])},{Q(a['t'])})" for a in audit) + ';')
         for r in json.loads(mes):
             sql(f"INSERT INTO public.module_editor_state VALUES({r['m']},{Q(json.dumps(r['d']))}::jsonb);")
+        for i, pr in enumerate(premieres):
+            sql(f"INSERT INTO public.reponses_apprenants VALUES('99999999-0000-4000-8000-{i:012d}',{Q(pr['e'])},{Q(json.dumps({pr['k']: 'A'}))}::jsonb,'submitted',{Q(pr['t'])},'2026-01-01Z','2026-01-01Z');")
         snap = "SELECT md5(string_agg(t::text,'' ORDER BY t::text)) FROM (SELECT row_to_json(c) t FROM public.apprenant_module_completion c UNION ALL SELECT row_to_json(r) FROM public.reponses_apprenants r) x"
         before_copy = sql(snap)
         before = {m: v(ADMIN, A, m) for m in mods}

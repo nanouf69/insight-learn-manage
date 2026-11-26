@@ -3,7 +3,8 @@
 -- rétroactivement seulement si TOUTES ces preuves existent :
 --  1) l'apprenant a une soumission serveur de l'exercice qui ne contient pas sa clé ;
 --  2) une question qu'il avait répondue a été supprimée au journal APRÈS cette soumission ;
---  3) aucune réponse enregistrée (tous comptes) ne contient cette clé avant cette soumission.
+--  3) aucune soumission (tous comptes) contenant cette clé n'est datée avant ou à cette soumission
+--     (created_at d'une ligne ne date pas l'apparition d'une clé : non utilisé).
 -- Ne renvoie que des identifiants du dossier demandé ; lecture seule.
 CREATE OR REPLACE FUNCTION public.obligations_non_datees_anterieures(_apprenant_id uuid)
  RETURNS TABLE(module_id integer, exercice_id text, question_id text)
@@ -41,8 +42,9 @@ BEGIN
                   WHERE key LIKE k.ex || '-%')
      AND NOT EXISTS (SELECT 1 FROM public.reponses_apprenants o
                       WHERE o.exercice_id = s.exercice_id AND jsonb_typeof(o.reponses) = 'object'
-                        AND o.reponses ? (k.ex || '-' || k.qid)
-                        AND LEAST(o.created_at, o.updated_at, coalesce(o.submitted_at, o.updated_at)) <= s.submitted_at);
+                        AND o.status = 'submitted' AND o.submitted_at IS NOT NULL
+                        AND o.submitted_at <= s.submitted_at
+                        AND o.reponses ? (k.ex || '-' || k.qid));
 END;
 $fn$;
 REVOKE ALL ON FUNCTION public.obligations_non_datees_anterieures(uuid) FROM PUBLIC, anon;
