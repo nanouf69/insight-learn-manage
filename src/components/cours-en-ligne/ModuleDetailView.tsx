@@ -10058,7 +10058,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               <Button size="sm" className="gap-2" onClick={() => {
                                 goToPage(currentPage + 1);
                               }}>
-                                Suivant ➡️
+                                Passer au cours / quiz suivant ➡️
                               </Button>
                             )}
                             {currentPage === totalPages - 1 && (

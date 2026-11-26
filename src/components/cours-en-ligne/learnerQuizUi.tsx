@@ -495,7 +495,7 @@ export function ChoixApresQuiz({ fausses, onRelire, repriseEnCours, onSuivant, f
           </Button>
         )}
         {onSuivant ? (
-          <Button className="w-full min-h-11" data-testid="choix-suivant" onClick={onSuivant}>Suivant ➡️</Button>
+          <Button className="w-full min-h-11" data-testid="choix-suivant" onClick={onSuivant}>Passer au cours / quiz suivant ➡️</Button>
         ) : fin}
       </div>
     </div>

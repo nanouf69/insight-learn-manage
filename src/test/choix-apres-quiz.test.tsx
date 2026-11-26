@@ -29,3 +29,10 @@ describe("choix après quiz initial validé", () => {
     expect(screen.getByTestId("choix-relire").textContent).toMatch(/Reprendre la correction/);
   });
 });
+
+describe("libellé de progression", () => {
+  it("affiche « Passer au cours / quiz suivant »", () => {
+    render(<ChoixApresQuiz fausses={1} onRelire={() => {}} onSuivant={() => {}} />);
+    expect(screen.getByTestId("choix-suivant").textContent).toContain("Passer au cours / quiz suivant");
+  });
+});

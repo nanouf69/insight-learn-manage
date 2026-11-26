@@ -515,7 +515,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                             )}
                             {pageCourante < total - 1 && (
                               <Button size="sm" className="gap-2" onClick={() => allerA(pageCourante + 1)}>
-                                Suivant ➡️
+                                Passer au cours / quiz suivant ➡️
                               </Button>
                             )}
                             {pageCourante === total - 1 && (
