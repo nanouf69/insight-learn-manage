@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoImage from '@/assets/logo-ftransport-2.png';
+import { lignesFactureCommune } from '@/lib/comptabilite/factureCommune';
 
 const COMPANY = {
   name: 'FTRANSPORT',
@@ -133,7 +134,9 @@ export async function generateDraftPDF(draft: any, opts: { final?: boolean } = {
   });
 
   // Totaux
-  const finalY = (doc as any).lastAutoTable?.finalY || Math.max(y, yd) + 40;
+  let finalY = (doc as any).lastAutoTable?.finalY || Math.max(y, yd) + 40;
+  // Keep totals, payment terms and legal notes together after a multi-learner table.
+  if (finalY + 110 > ph - 20) { doc.addPage(); finalY = 15; }
   const totalHT = lignes.reduce((s, l) => s + calcLigneHT(l), 0);
   const totalTVA = lignes.reduce((s, l) => {
     const taux = l.tvaType === 'EXO' ? 0 : Number(l.tvaTaux) || 20;
@@ -228,7 +231,15 @@ export function factureToDraftShape(f: any) {
     refDossier: [f?.client_nom, f?.client_adresse, f?.client_siret ? `SIRET : ${f.client_siret}` : null]
       .filter(Boolean).join('\n'),
     refConvention: '',
-    lignes: [{
+    lignes: lignesFactureCommune(f).length > 0 ? lignesFactureCommune(f).map(l => ({
+      stagiaire: l.stagiaire,
+      designation: l.designation,
+      tvaType: 'EXO',
+      tvaTaux: 0,
+      prixUnitaire: Number(l.montant_ht),
+      quantite: 1,
+      remise: 0,
+    })) : [{
       stagiaire: '',
       designation,
       tvaType,

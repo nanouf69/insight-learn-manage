@@ -1,0 +1,1 @@
+- FC collective invoices use a new admin-only invoice with null legacy learner ID and frozen named lines; creation is atomic and retry-scoped by invoice ID, existing invoices/payments remain separate, and no learner payment/attendance evidence is inferred from the collective total. Why: group billing must not double-count or fabricate individual financial proof.

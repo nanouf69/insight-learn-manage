@@ -5143,6 +5143,7 @@ export type Database = {
           date_emission: string
           date_paiement: string | null
           id: string
+          lignes_apprenants: Json
           montant_ht: number
           montant_ttc: number
           montant_tva: number
@@ -5166,6 +5167,7 @@ export type Database = {
           date_emission?: string
           date_paiement?: string | null
           id?: string
+          lignes_apprenants?: Json
           montant_ht?: number
           montant_ttc?: number
           montant_tva?: number
@@ -5189,6 +5191,7 @@ export type Database = {
           date_emission?: string
           date_paiement?: string | null
           id?: string
+          lignes_apprenants?: Json
           montant_ht?: number
           montant_ttc?: number
           montant_tva?: number
@@ -11015,6 +11018,45 @@ export type Database = {
       corrige_officiel_actuel: {
         Args: { p_attempt_ids: string[] }
         Returns: Json
+      }
+      creer_facture_commune_fc: {
+        Args: {
+          _confirmer_factures_existantes?: boolean
+          _id: string
+          _lignes: Json
+          _payeur_apprenant_id: string
+          _session_id: string
+        }
+        Returns: {
+          apprenant_id: string | null
+          client_adresse: string | null
+          client_nom: string
+          client_opco: string | null
+          client_siret: string | null
+          created_at: string
+          date_echeance: string | null
+          date_emission: string
+          date_paiement: string | null
+          id: string
+          lignes_apprenants: Json
+          montant_ht: number
+          montant_ttc: number
+          montant_tva: number
+          numero: string
+          numero_convention: string | null
+          numero_engagement: string | null
+          session_id: string | null
+          statut: string | null
+          tva_taux: number
+          type_financement: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "factures"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       crm_date_examen_iso: { Args: { p_text: string }; Returns: string }
       crm_enregistrer_reinscription: {

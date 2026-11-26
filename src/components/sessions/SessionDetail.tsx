@@ -63,6 +63,7 @@ import { TeamsLinkSender } from "@/components/sessions/TeamsLinkSender";
 import { SignaturesPapierFC } from "./SignaturesPapierFC";
 import { SessionExamAccess } from "./acces-examens/SessionExamAccess";
 import { SessionModuleAssignment } from "./SessionModuleAssignment";
+import { FactureCommuneFC } from "./FactureCommuneFC";
 import { DebloquerAttestationFC } from "./DebloquerAttestationFC";
 import { chargerPreuvesPapier } from "@/lib/fcSignaturesPapier";
 import { facturePourAttestationFC, factureFCReglee } from "@/lib/factureAttestationFC";
@@ -6181,6 +6182,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                 </Button>
               </div>
 
+              <FactureCommuneFC sessionId={session.id} inscriptions={apprenantsForFactures}
+                selection={selectedFactureApprenants} financeurs={financeursFCMap}
+                facturesExistantes={facturesFCMap} />
               <ScrollArea className="flex-1">
                 <div className="space-y-2 pr-2">
                   {apprenantsForFactures.length === 0 && (

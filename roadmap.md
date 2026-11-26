@@ -1,4 +1,7 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Facture commune — 26/11 14:36
+- [x] Brouillon distinct pour au moins deux apprenants sélectionnés, destinataire confirmé, lignes figées et total exact ; factures existantes séparées, création/réessai atomiques et réservés à l’admin.
+- [x] Session, Comptabilité et PDF complet : 8 Vitest + 14 scénarios PostgreSQL jetables PASS ; formulaire PC/mobile vérifié, sauvegarde/relecture et PDF simulés. Aucune facture réelle créée ni envoi/publication ; parcours réel non testé. Structure additive appliquée au service partagé.
 ## Pratique VTC — PDF Lyon et QCM 2 (26/11)
 - [x] Règle 10:52 préparée : seuil 138 nouvelle cohorte, historique 99 ; 61 Vitest et 10 SQL jetables PASS, garde client/serveur, acquis/source intacts. Rapport docs/quiz-lyon-cohorte-publication-2026-11-26.md.
 - [ ] Publication ciblée : bloquée par absence de promotion d’un candidat isolé et commit public non fourni ; base locale provisoire 7880b5850, delta huit fichiers + SQL préparé, HEAD conservé. PDF authentifié actuel non revalidé (403 direct) ; aucune activation/publication globale.

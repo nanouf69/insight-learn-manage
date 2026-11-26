@@ -33,6 +33,7 @@ import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { parseExportCpf, rapprocher, estVente2026, beneficiaireDepuisReference, cleNom, STATUT_VALIDE, estCpf, type LigneExportCpf } from "@/lib/rapprochementExportCpf";
 import { dateEmissionFactureFournisseur } from "@/lib/comptabilite/factureFournisseur";
+import { lignesFactureCommune } from "@/lib/comptabilite/factureCommune";
 
 interface Releve {
   id: string;
@@ -58,6 +59,7 @@ interface Facture {
   date_paiement: string | null;
   client_opco: string | null;
   apprenant_id?: string | null;
+  lignes_apprenants?: unknown;
   _draftRaw?: any;
 }
 
@@ -561,6 +563,20 @@ export function ComptabilitePage() {
   };
 
   const validateDraft = async (draft: Facture) => {
+    if (lignesFactureCommune(draft).length > 0) {
+      setValidatingDraft(true);
+      try {
+        const { data, error } = await supabase.from('factures').update({ statut: 'en_attente' })
+          .eq('id', draft.id).eq('statut', 'brouillon').select('*').single();
+        if (error) throw error;
+        if (data.statut !== 'en_attente') throw new Error('Validation non confirmée.');
+        toast.success('Facture commune validée');
+        setDraftPreview(null);
+        await fetchFactures();
+      } catch (e) { toast.error(e instanceof Error ? e.message : 'Impossible de valider cette facture.'); }
+      finally { setValidatingDraft(false); }
+      return;
+    }
     const d = draft._draftRaw;
     if (!d) {
       toast.error("Brouillon introuvable");
@@ -1028,6 +1044,7 @@ export function ComptabilitePage() {
   const filteredFactures = useMemo(() => {
     return allFactures.filter((f) => {
       const matchSearch =
+        lignesFactureCommune(f).some(l => l.stagiaire.toLowerCase().includes(search.toLowerCase())) ||
         f.numero.toLowerCase().includes(search.toLowerCase()) ||
         f.client_nom.toLowerCase().includes(search.toLowerCase()) ||
         (f.apprenant_id ? (apprenantNames[f.apprenant_id] || "").toLowerCase().includes(search.toLowerCase()) : false);
@@ -1686,7 +1703,7 @@ export function ComptabilitePage() {
                         )}
                         onClick={
                           isDraft
-                            ? () => setDraftPreview(f)
+                            ? () => setDraftPreview(lignesFactureCommune(f).length ? { ...f, _draftRaw: factureToDraftShape(f) } : f)
                             : isDbFacture
                               ? () => openEditFacture(f)
                               : undefined
@@ -1733,6 +1750,7 @@ export function ComptabilitePage() {
                         </TableCell>
                         <TableCell>
                           <div>{f.client_nom}</div>
+                          {lignesFactureCommune(f).map(l => <div key={l.apprenant_id} className="text-xs text-muted-foreground mt-0.5">{l.stagiaire} — {formatMontant(Number(l.montant_ht))}</div>)}
                           {rappr && (
                             <div className={cn("text-xs mt-0.5 font-medium", rappr.couleur === "vert" ? "text-success" : "text-destructive")}>
                               {rappr.motif}
@@ -2581,6 +2599,10 @@ export function ComptabilitePage() {
               />
             </div>
             <div className="col-span-2 space-y-1 rounded-md border p-3 bg-muted/30">
+              {editingFacture && lignesFactureCommune(editingFacture).length > 0 ? <>
+                <label className="text-xs font-medium">Apprenants de la facture commune</label>
+                {lignesFactureCommune(editingFacture).map(l => <p key={l.apprenant_id} className="text-sm">{l.stagiaire} — {formatMontant(Number(l.montant_ht))}</p>)}
+              </> : <>
               <label className="text-xs font-medium">Apprenant rattaché</label>
               <div className="text-sm">
                 {editFactureForm.apprenant_id ? (
@@ -2637,6 +2659,7 @@ export function ComptabilitePage() {
                   ))}
                 </div>
               )}
+              </>}
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Type de financement</label>
@@ -2657,6 +2680,7 @@ export function ComptabilitePage() {
                 type="number"
                 step="0.01"
                 value={editFactureForm.montant_ht}
+                disabled={!!editingFacture && lignesFactureCommune(editingFacture).length > 0}
                 onChange={(e) => setEditFactureForm(f => ({ ...f, montant_ht: e.target.value }))}
               />
             </div>
@@ -2664,6 +2688,7 @@ export function ComptabilitePage() {
               <label className="text-xs text-muted-foreground">Taux TVA</label>
               <Select
                 value={editFactureForm.tva_taux}
+                disabled={!!editingFacture && lignesFactureCommune(editingFacture).length > 0}
                 onValueChange={(v) => setEditFactureForm(f => ({ ...f, tva_taux: v }))}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
