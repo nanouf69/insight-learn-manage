@@ -6,6 +6,22 @@ import { IDS_JEUX_LYON } from "@/lib/jeuxPedagogiques";
 const mods = [{ id: 1, nom: "Introduction" }, { id: 2, nom: "Réglementation" }, { id: 8, nom: "PRATIQUE VTC" }];
 const ok = (p: any) => { expect(p.etat).toBe("ok"); return p; };
 describe("progression modules élève", () => {
+  it('verdict RPC complet : registre absent et détails incomplets ne rétrogradent pas le module', () => {
+    const rows = [{module_id:8,status:'completed',preuve_serveur:true,details:[{exerciceId:1,questionId:1,reponseEleve:null}]}];
+    const before = JSON.stringify(rows);
+    for (const activites of [null,new Set<string>()]) {
+      expect(progressionModulesEleve([{id:8,nom:'Pratique VTC'}],()=>true,activites,undefined,'fictif',rows)).toMatchObject({etat:'ok',termines:1,restants:[]});
+    }
+    expect(JSON.stringify(rows)).toBe(before);
+  });
+  it('un refus RPC conserve les obligations manquantes du registre', () => {
+    const rows = [{module_id:8,status:'completed',completed_at:'2026-11-14T21:06:54Z',preuve_serveur:false}];
+    expect(progressionModulesEleve([{id:8,nom:'Pratique VTC'}],()=>true,new Set(),undefined,'fictif',rows)).toMatchObject({etat:'ok',termines:0,restants:[{id:8,raison:'module'}]});
+    expect(progressionModulesEleve([{id:8,nom:'Pratique VTC'}],()=>true,null,undefined,'fictif',rows).etat).toBe('indisponible');
+  });
+  it('preuve complète sans état completed ne fabrique pas une validation', () => {
+    expect(progressionModulesEleve([{id:8,nom:'Pratique VTC'}],()=>false,new Set(),undefined,'fictif',[{module_id:8,status:'in_progress',preuve_serveur:true}])).toMatchObject({termines:0});
+  });
   it("0 module terminé", () => { const p = ok(progressionModulesEleve(mods, () => false, new Set())); expect([p.termines, p.total, p.restants.length]).toEqual([0, 3, 3]); });
   it("tout completed + jeux faits = tous terminés", () => { const p = ok(progressionModulesEleve(mods, () => true, new Set(IDS_JEUX_LYON))); expect(p.termines).toBe(3); expect(p.restants).toEqual([]); });
   it("completed avant les jeux, jeux à faire = pas 100 %", () => {

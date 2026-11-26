@@ -1,5 +1,22 @@
 # Progression BENTAYEB — 26 novembre 2026
 
+## Relecture complémentaire — 26/11 15:36 UTC
+### Portes tracées et delta en aperçu
+1. **Lecture** : `CoursPublic` charge les lignes et `etat_completion_modules`, vérifie identité de module/statut/date via `projeterProgressionConfirmee`, puis attache `preuve_serveur`. Reprise de lecture focus/online/visibilité/Realtime, sans polling ; erreur maintenue jusqu'à réussite, retour d'un module remet aussi propriétaire et erreur à jour.
+2. **Carte** : `computeServerCompletedModuleIds` qualifie déjà le parent par la preuve serveur. Le second `.every(completionEvidenceAllowsDone)` sur toutes les sous-lignes était un veto redondant : retiré du caller et du helper d'affichage. Un parent RPC incomplet ne peut plus être remplacé par des enfants terminés ; les lignes à statut explicite restent présentes jusqu'à ce calcul.
+3. **Compteurs À faire/Réalisés** : `progressionModulesEleve` recontrôlait séparément détails et registre. Désormais une ligne parent `completed` + `preuve_serveur=true`, déjà reconnue terminée, compte comme terminée sans second veto. Verdict faux/absent : obligations et gel historiques restent contrôlés. Aucun jeu n'est marqué réalisé.
+4. **12/15** : `moduleQuizCounter` reste un compteur de détails/remises disponibles ; il n'est pas transformé en 15/15 et ne pilote ni statut ni ouverture après preuve RPC complète. Notes initiales conservées, reprises facultatives exclues de l'autorité de validation.
+5. **Accès** : `computeUnlockState` reçoit le même ensemble de modules qualifiés par le serveur ; module 2 terminé ouvre 3, indépendamment du compteur 12/15. Aucune dérogation nominative ajoutée.
+6. **CRM** : `useCandidatModules` passe désormais par la même projection stricte que l'apprenant au lieu de `avecEtatServeur` seul ; état absent/statut/date discordants = erreur, pas de repli local. Les compteurs partagent `progressionModulesEleve`.
+
+### Preuves et limites de cette relecture
+- **98 tests ciblés PASS** (huit suites) : 839/839 malgré 12/15, ancienne sous-ligne fausse, registre incomplet/indisponible, refus parent et 838/839, identité CRM, dates/statuts périmés, conservation JSON et règles de gel/pratique.
+- **Navigateur PC/mobile simulé PASS** : le vrai écran CoursPublic, sous lectures entièrement interceptées et identité fictive, affiche module 2 dans Réalisés, Terminé, 12/15 et 45/842 ; clic Formules ouvre le module 3 à 4 %. Aucune requête de données réelle ni écriture n'a été autorisée par ce contrôle. L'aperçu du document Office affiche « No preview available » : rendu PDF externe non validé par ce test.
+- **Build OK** ; aucun SQL, migration, contenu pédagogique, ticket ou envoi modifié.
+- **Lecture réelle limitée** : module 2 completed/100, 45/842, updated_at 14:38:11.898323 et empreinte détails 035ab12d9f8518df1c24213e854d87c8 ; module 3 in_progress/4 inchangé. Le rôle SQL de lecture disponible refuse l'exécution du RPC : verdict réel connecté à nouveau NON PROUVÉ. Les 839/839 sont ceux de la lecture précédente et des tests.
+- Le dossier n'a actuellement pas de sous-lignes : le veto parent/enfant est une possibilité concrète de code reproduite, pas une nouvelle cause nominative prouvée. Sans session réelle de BENTAYEB, un affichage ancien non rechargé reste aussi possible. L'alignement supprime ces portes de divergence sans modifier ses données.
+- Aperçu : Cours en ligne → Vue apprenant → BENTAYEB ; aucune publication.
+
 ## Cause précise
 Le dossier demandé correspond à **Mohamed BENTAYEB**, et non au prénom Amine du courriel : identifiant a9bbbcc9-f5bf-441d-a534-ac0e1241899c, parcours VTC e-learning.
 

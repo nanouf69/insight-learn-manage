@@ -7,7 +7,8 @@ import { resolveFormationId, modulesExigesDashboard, normalizeModuleIdForDashboa
 import { computeServerCompletedModuleIds, type CompletionLite } from '@/lib/moduleUnlockLogic';
 import { ACTIVITES_CODE } from '@/lib/jeuxPedagogiques';
 import { fetchAllRows } from '@/lib/supabase/fetch-all-rows';
-import { avecEtatServeur, chargerEtatCompletionServeur } from '@/lib/etatCompletionServeur';
+import { chargerEtatCompletionServeur } from '@/lib/etatCompletionServeur';
+import { projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
 
 export const CANDIDAT_MODULES_KEY = 'candidat-modules-confirmes';
 
@@ -28,7 +29,9 @@ export async function chargerCandidatModules(apprenantId: string) {
     // Verdict serveur unique (preuves soumises comprises) : même source que l'élève et les jalons.
     chargerEtatCompletionServeur(apprenantId),
   ]);
-  const completions = recordedCompletions.map(row => avecEtatServeur(row, etatsServeur));
+  // Même vérification stricte que CoursPublic : lecture absente/périmée = erreur,
+  // jamais un repli sur des détails incomplets ou un ancien drapeau completed.
+  const completions = projeterProgressionConfirmee(recordedCompletions, apprenantId, etatsServeur, []);
   const done = computeServerCompletedModuleIds(completions, DASHBOARD_PARENT_TO_CHILDREN, normalizeModuleIdForDashboard);
   return progressionModulesEleve(modulesExigesDashboard(formation, apprenant.modules_autorises, completions, (apprenant as any).date_fin_cours_en_ligne), id => done.has(id),
     new Set(activites.filter(a => a.completed === true).map(a => String(a.exercice_id))), undefined, apprenantId, completions);

@@ -1,6 +1,6 @@
 // Pure helpers for module unlocking logic, extracted from CoursPublic.tsx
 // to enable unit testing without the heavy CoursPublic dependencies.
-import { completionEvidenceAllowsDone } from "./moduleCompletionEvidence";
+import { completionEvidenceAllowsDone, type CompletionEvidenceRow } from "./moduleCompletionEvidence";
 
 export interface ModuleLite {
   id: number;
@@ -31,7 +31,7 @@ export interface UnlockComputationResult {
   unlockedModuleIds: Set<number>;
 }
 
-export interface CompletionLite {
+export interface CompletionLite extends CompletionEvidenceRow {
   module_id: number;
   status?: string | null;
   completed_at?: string | null;
@@ -62,6 +62,9 @@ export function computeServerCompletedModuleIds(
     }
 
     const children = parentToChildren[normalizedId] ?? [];
+    // Un verdict parent explicite prévaut sur toutes les anciennes sous-lignes,
+    // y compris un refus serveur : aucun repli enfant ne doit le contourner.
+    if (completionRows.some((row) => Number(row.module_id) === normalizedId && row.preuve_serveur !== undefined)) return;
     if (children.length > 0 && children.every((childId) => doneRawIds.has(childId))) {
       result.add(normalizedId);
     }
@@ -197,7 +200,7 @@ export interface LearnerModuleDisplayInput {
   examStats?: ExamStatsLite;
   hasProgress: boolean;
   locked?: boolean;
-  /** Historical server evidence only; never a counter of subsequently added content. */
+  /** @deprecated Evidence is resolved before serverCompleted; never a second display veto. */
   obligationsComplete?: boolean;
 }
 
@@ -236,7 +239,7 @@ export function getLearnerModuleDisplayState(input: LearnerModuleDisplayInput): 
   if (!input.loaded) {
     return { status: "chargement", action: null, isDone: false, locked: true };
   }
-  const isDone = input.obligationsComplete !== false && isModuleDoneForDisplay(input.serverCompleted, input.quizStats, input.examStats);
+  const isDone = isModuleDoneForDisplay(input.serverCompleted, input.quizStats, input.examStats);
   if (isDone) {
     // Un module terminé n'est jamais verrouillé par un ancien état client.
     return { status: "termine", action: "revoir", isDone: true, locked: false };

@@ -1,4 +1,7 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Autorité serveur après relecture BENTAYEB — 26/11 15:36
+- [x] Carte sans second veto, compteur partagé RPC prioritaire, parent incomplet non contourné, projection CRM stricte ; aucun SQL/contenu/ticket modifié.
+- [x] 98 tests ciblés et PC/mobile simulé : Terminé 12/15, Formules ouvert à 4 %, build OK ; lectures réelles inchangées. RPC et connexion réelle BENTAYEB non revérifiés (rôle SQL refusé/session élève absente). Rapport docs/bentayeb-progression-2026-11-26.md, sans publication.
 ## Prestations et notifications des factures — 26/11 15:26
 - [x] Neuf prestations dans Modifier la facture et PDF ; sauvegarde CAS + versions privées, original/rattachements/paiements conservés. Migration 0296 et service d’envoi dédiés actifs, interface en aperçu non publiée.
 - [x] 19 Vitest, contrats PostgreSQL versions/rattachements et deno check PASS ; PC/mobile sauvegarde/relecture/erreur/réessai/annulation/historique simulés PASS, build OK. Aucun mail ni facture réel de test ; réception réelle non vérifiée, destinataire à confirmer. Rapport docs/factures-prestations-notifications-2026-11-26.md.

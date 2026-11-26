@@ -49,7 +49,6 @@ import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/component
 import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboard, modulesAttribuesDashboard, modulesExigesDashboard, equipementsTaxiAjoute, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
-import { completionEvidenceAllowsDone } from "@/lib/moduleCompletionEvidence";
 import { avecEtatServeur, chargerEtatCompletionServeur, type EtatCompletionServeur } from "@/lib/etatCompletionServeur";
 import { chargerPreuvesQuizModules, projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
 import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
@@ -325,7 +324,7 @@ const computeFullyCompletedModuleIds = (completionRows: any[]): Set<number> => {
   // (Éviter de "perdre" une complétion historique qui redemanderait à l'apprenant de refaire le module.)
 
   return computeServerCompletedModuleIds(
-    completionRows.filter(isModuleCompletionFullyDone),
+    completionRows.filter(row => row.status != null || isModuleCompletionFullyDone(row)),
     PARENT_TO_CHILDREN,
     normalizeModuleIdForDashboard,
   );
@@ -1368,7 +1367,6 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const refresh = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-        setCompletionsError(false);
         setCompletionsReloadToken(t => t + 1);
       }, 250);
     };
@@ -1650,7 +1648,11 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         });
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows as any);
+        setCompletionsOwner(apprenant.id);
+        setCompletionsError(false);
         setCompletionsLoaded(true);
+      } else if (requestId === completionsRequestRef.current) {
+        setCompletionsError(true);
       }
 
       if (examData && requestId === completionsRequestRef.current) {
@@ -2170,7 +2172,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const display = getLearnerModuleDisplayState({
       loaded: completionsLoaded,
       serverCompleted: completedModuleIds.has(module.id),
-      obligationsComplete: rows.filter(r => r.status === "completed").every(completionEvidenceAllowsDone),
+      // completedModuleIds a déjà appliqué le verdict RPC au module parent.
+      // Les sous-lignes/compteurs incomplets ne peuvent pas opposer un second veto.
       quizStats: moduleQuizStatsById[module.id],
       examStats: examBlancStatsById[module.id],
       hasProgress: rows.some(hasModuleCompletionProgress),
@@ -2185,7 +2188,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
 
   // Module 64 ajouté pour un parcours terminé avant la borne : consultable, hors compteur (aucune régression).
   const idsModulesExiges = new Set(modulesExigesDashboard(selectedFormation, apprenant?.modules_autorises, (moduleCompletionsForNotes ?? []) as any[], apprenant?.date_fin_cours_en_ligne).map((m) => m.id));
-  // Affichage élève : module terminé = serveur + activités requises du registre terminées.
+  // Verdict RPC complet prioritaire ; registre seulement en l'absence de ce verdict.
   const progressionModules = completionsLoaded && completionsOwner === apprenant?.id && activitesEleve.pret
     ? progressionModulesEleve(modules.filter((m) => idsModulesExiges.has(m.id)).map((m) => ({ id: m.id, nom: m.nom })), (id) => !!moduleProgressById[id]?.isDone, activitesEleve.termines, undefined, apprenant?.id, moduleCompletionsForNotes)
     : null;

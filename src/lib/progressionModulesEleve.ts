@@ -12,8 +12,9 @@ export type ProgressionModules =
 
 /**
  * Comptage AFFICHÉ à l'élève : un module = un identifiant (jamais un jeu compté comme module).
- * Terminé = statut serveur « completed » ET activités du registre requises terminées
- * (confirmées par le serveur). Lecture impossible => indisponible (jamais 0 ni 100 %).
+ * Verdict RPC complet = Terminé, sans second veto du registre ou des détails.
+ * Sans verdict complet, les activités requises restent contrôlées.
+ * Lecture nécessaire impossible => indisponible (jamais 0 ni 100 %).
  */
 export function progressionModulesEleve(
   modules: ModuleEleveLite[],
@@ -30,6 +31,14 @@ export function progressionModulesEleve(
   const restants: ModuleRestant[] = [];
   let termines = 0;
   for (const m of vus.values()) {
+    // Même autorité que les cartes/locks et le CRM : ne pas rouvrir un module
+    // dont toutes les obligations sont déjà prouvées par etat_completion_modules.
+    const confirme = completions.some(c => Number(c.module_id) === Number(m.id)
+      && c.status === "completed" && c.preuve_serveur === true);
+    if (estTermineServeur(m.id) && confirme) {
+      termines++;
+      continue;
+    }
     // Gel par module : une activité ajoutée après la validation serveur de CE module n'est pas exigée.
     const ligne = completions.find((c) => Number(c.module_id) === Number(m.id) && c.status === "completed");
     const acts = activitesRequisesModule(m.id, ligne, date).filter(a => !exception?.activitesDispensees.includes(a.id) && !dispensesHistoriques.has(a.id));

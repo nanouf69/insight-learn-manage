@@ -14,7 +14,7 @@ vi.mock('@/integrations/supabase/client', () => ({ supabase: { from: (table: str
   q.single = async () => fake.rows[table];
   q.range = async (from: number, to: number) => ({ ...fake.rows[table], data: fake.rows[table]?.data?.slice(from, to + 1) });
   return q;
-}, auth: { getSession: async () => ({ data: { session: { user: { id: 'compte-test' } } } }) }, rpc: async (fn: string) => fake.rows[`rpc:${fn}`] ?? { data: [], error: null } } }));
+}, auth: { getSession: async () => ({ data: { session: { user: { id: 'compte-test' } } } }) }, rpc: async (fn: string) => fake.rows[`rpc:${fn}`] ?? { data: (fake.rows.apprenant_module_completion?.data ?? []).map((r:any)=>({...r,preuve_complete:null})), error: null } } }));
 
 beforeEach(() => {
   fake.calls = [];
@@ -88,6 +88,22 @@ describe('Candidats : même parcours et preuves que l’élève, lecture simulé
   });
 });
 describe('Verdict serveur unique etat_completion_modules (lecture simulée)', () => {
+  it('CRM BENTAYEB : 839/839 et détails 12/15 = même Réalisé que l’élève', async () => {
+    fake.rows.apprenants.data = {type_apprenant:'vtc-e',modules_autorises:[2,3]};
+    const stocke = [{module_id:2,status:'completed',completed_at:'2026-10-29T11:04:53Z',details:Array.from({length:15},(_,i)=>({exerciceId:i+1,questionId:1,reponseEleve:i<12?['B']:null}))}];
+    const before = JSON.stringify(stocke);
+    fake.rows.apprenant_module_completion.data = stocke;
+    fake.rows['rpc:etat_completion_modules'] = {data:[{module_id:2,status:'completed',completed_at:stocke[0].completed_at,questions_requises:839,questions_prouvees:839,preuve_complete:true,status_effectif:'completed',progress_effectif:100}],error:null};
+    expect(await chargerCandidatModules('fictif')).toMatchObject({total:2,termines:1,restants:[{id:3,raison:'module'}]});
+    expect(JSON.stringify(stocke)).toBe(before);
+  });
+  it.each(['absent','statut','date'])('CRM : verdict %s ne retombe pas sur un ancien completed', async kind => {
+    const row = {module_id:8,status:'completed',completed_at:'2026-11-14T21:06:54Z'};
+    fake.rows.apprenant_module_completion.data = [row];
+    fake.rows['rpc:etat_completion_modules'] = {data:kind==='absent'?[]:[{...row,status:kind==='statut'?'in_progress':'completed',completed_at:kind==='date'?'2026-11-15T00:00:00Z':row.completed_at,preuve_complete:true}],error:null};
+    await expect(chargerCandidatModules('fictif')).rejects.toThrow('synchronisation');
+    expect(row.status).toBe('completed');
+  });
   it('Riyad : module 2 « completed » sans preuve serveur => reste à terminer, statut stocké intact', async () => {
     fake.rows.apprenants = { data: { type_apprenant: 'vtc-e', modules_autorises: [2, 5], formation_choisie: null } };
     const stocke = [{ module_id: 2, status: 'completed', completed_at: '2026-10-20T08:00:00Z' }, { module_id: 5, status: 'completed', completed_at: '2026-10-21T08:00:00Z' }];

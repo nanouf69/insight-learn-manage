@@ -5,6 +5,7 @@ import { projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
 import { compterQuizModule } from '@/lib/moduleQuizCounter';
 import { completionEvidenceAllowsDone } from '@/lib/moduleCompletionEvidence';
 import { computeServerCompletedModuleIds, computeUnlockState, getLearnerModuleDisplayState } from '@/lib/moduleUnlockLogic';
+import { progressionModulesEleve } from '@/lib/progressionModulesEleve';
 
 const date = '2026-09-17T10:36:23Z';
 const row = { module_id: 2, status: 'completed', completed_at: date, score_obtenu: 102, score_max: 819,
@@ -14,6 +15,27 @@ const state = (complete: boolean | null) => new Map([[2, {module_id:2,status:'co
 const proof = (i:number) => ({apprenant_id:'owner',exercice_id:`module_2_exo_${i}`,status:'submitted',submitted_at:date,reponses:{[`${i}-1`]:['B']}});
 
 describe('Module 2 : parité des preuves admin/élève sans mutation', () => {
+  it('parent 839/839 confirmé : une ancienne sous-ligne incomplète ne rétrograde pas À faire', () => {
+    const parent = {...row,preuve_serveur:true};
+    const child = {...row,module_id:14,preuve_serveur:false};
+    const rows = [parent, child];
+    const before = JSON.stringify(rows);
+    const done = computeServerCompletedModuleIds(rows,{2:[14]},n=>n===14?2:n);
+    // Reproduit le veto retiré de CoursPublic : cette valeur ne pilote plus les cartes.
+    expect(rows.filter(r=>r.status==='completed').every(completionEvidenceAllowsDone)).toBe(false);
+    const display = getLearnerModuleDisplayState({loaded:true,serverCompleted:done.has(2),obligationsComplete:false,quizStats:{completedQuizzes:12,totalQuizzes:15},hasProgress:true});
+    expect(display).toMatchObject({status:'termine',isDone:true,locked:false});
+    expect(progressionModulesEleve([{id:2,nom:'Cours VTC'},{id:3,nom:'Formules'}],id=>done.has(id),new Set(),undefined,'owner',rows)).toMatchObject({termines:1,restants:[{id:3,raison:'module'}]});
+    expect(computeUnlockState({modules:[{id:2},{id:3}],completedModuleIds:done,moduleQuizStatsById:{2:{completedQuizzes:12,totalQuizzes:15}},examBlancStatsById:{},isElearning:true}).unlockedModuleIds.has(3)).toBe(true);
+    expect(JSON.stringify(rows)).toBe(before);
+  });
+  it('parent RPC incomplet : les sous-lignes terminées ne contournent pas le refus', () => {
+    const rows = [{...row,preuve_serveur:false},{...row,module_id:14,preuve_serveur:true}];
+    const done = computeServerCompletedModuleIds(rows,{2:[14]},n=>n===14?2:n);
+    expect(done.has(2)).toBe(false);
+    expect(getLearnerModuleDisplayState({loaded:true,serverCompleted:done.has(2),quizStats:{completedQuizzes:12,totalQuizzes:15},hasProgress:true}).isDone).toBe(false);
+    expect(computeUnlockState({modules:[{id:2},{id:3}],completedModuleIds:done,moduleQuizStatsById:{2:{completedQuizzes:12,totalQuizzes:15}},examBlancStatsById:{},isElearning:true}).unlockedModuleIds.has(3)).toBe(false);
+  });
   it('BENTAYEB : 839/839 serveur + 12/15 quiz = réalisé et module 3 accessible', () => {
     const original = {...row, score_obtenu:45, score_max:842, details:row.details.map((d,i)=>({...d,reponseEleve:i<12?['B']:null}))};
     const before = JSON.stringify(original);
@@ -24,7 +46,8 @@ describe('Module 2 : parité des preuves admin/élève sans mutation', () => {
     expect(stats).toMatchObject({completedQuizzes:12,totalQuizzes:15});
     expect(learner).toEqual(admin);
     const done = computeServerCompletedModuleIds(learner,{},n=>n);
-    expect(getLearnerModuleDisplayState({loaded:true,serverCompleted:done.has(2),obligationsComplete:completionEvidenceAllowsDone(learner[0]),quizStats:stats,hasProgress:true})).toMatchObject({status:'termine',isDone:true,locked:false});
+    expect(getLearnerModuleDisplayState({loaded:true,serverCompleted:done.has(2),quizStats:stats,hasProgress:true})).toMatchObject({status:'termine',isDone:true,locked:false});
+    expect(progressionModulesEleve([{id:2,nom:'Cours VTC'},{id:3,nom:'Formules'}],id=>done.has(id),new Set(),undefined,'owner',learner)).toMatchObject({termines:1,restants:[{id:3,raison:'module'}]});
     expect(computeUnlockState({modules:[{id:2},{id:3}],completedModuleIds:done,moduleQuizStatsById:{2:stats},examBlancStatsById:{},isElearning:true}).unlockedModuleIds.has(3)).toBe(true);
     expect(JSON.stringify(original)).toBe(before);
   });
@@ -48,7 +71,7 @@ describe('Module 2 : parité des preuves admin/élève sans mutation', () => {
     const stats=compterQuizModule(projected,[]);
     expect(stats).toMatchObject({completedQuizzes:2,totalQuizzes:15});
     expect(computeServerCompletedModuleIds(projected,{},n=>n).has(2)).toBe(false);
-    expect(getLearnerModuleDisplayState({loaded:true,serverCompleted:true,hasProgress:true,obligationsComplete:completionEvidenceAllowsDone(projected[0]),quizStats:stats}).isDone).toBe(false);
+    expect(getLearnerModuleDisplayState({loaded:true,serverCompleted:computeServerCompletedModuleIds(projected,{},n=>n).has(2),hasProgress:true,quizStats:stats}).isDone).toBe(false);
   });
   it.each([0,2,15])('%s/15 remises : admin et élève ont le même verdict', count => {
     const original={...row,status:count===15?'completed':'in_progress',details:row.details.map(d=>({...d,reponseEleve:null}))};

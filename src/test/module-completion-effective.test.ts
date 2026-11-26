@@ -11,7 +11,7 @@ describe("Projection effective sans mutation", () => {
     expect(completionEvidenceAllowsDone(r)).toBe(false);
     expect(compterQuizModule([r], [])).toMatchObject({ completedQuizzes: done, totalQuizzes: count });
     expect(computeServerCompletedModuleIds([r], {}, n => n).has(id)).toBe(false);
-    expect(getLearnerModuleDisplayState({ loaded: true, serverCompleted: true, hasProgress: true, obligationsComplete: false }).isDone).toBe(false);
+    expect(getLearnerModuleDisplayState({ loaded: true, serverCompleted: computeServerCompletedModuleIds([r], {}, n => n).has(id), hasProgress: true }).isDone).toBe(false);
   });
   it("réponses toutes fausses mais toutes remises : completion conservée", () => {
     expect(completionEvidenceAllowsDone(row(31,[5],[5]))).toBe(true);
