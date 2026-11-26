@@ -3,8 +3,12 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { z } from 'npm:zod@3';
 import { sendBrandedEmail } from '../_shared/send-branded-email.ts';
 import { notificationFacture, envoiFactureAutorise } from '../_shared/factureRevisionRegles.ts';
+import { envoyerAvisSuppression } from '../_shared/factureSuppressionEnvoi.ts';
 
-const schema = z.object({ revisionId:z.string().uuid(), pdfBase64:z.string().max(7_000_000).optional() }).strict();
+const schema = z.union([
+  z.object({ revisionId:z.string().uuid(), pdfBase64:z.string().max(7_000_000).optional() }).strict(),
+  z.object({ suppressionId:z.string().uuid() }).strict(),
+]);
 const escaped = (s:string) => s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c] ?? c));
 const reply = (data:unknown,status=200) => new Response(JSON.stringify(data),{status,headers:{...corsHeaders,'Content-Type':'application/json'}});
 
@@ -24,6 +28,12 @@ Deno.serve(async req => {
     if(roleError || role!==true) return reply({error:'Envoi réservé aux administrateurs.'},403);
     const input=schema.safeParse(await req.json());
     if(!input.success) return reply({error:'Référence ou PDF invalide.'},400);
+    if ('suppressionId' in input.data) {
+      const result = await envoyerAvisSuppression(admin, input.data.suppressionId, auth.user, {
+        configure: !!Deno.env.get('RESEND_API_KEY'), envoyer: sendBrandedEmail,
+      });
+      return reply(result, 'envoye' in result && result.envoye ? 200 : 409);
+    }
     const {data:r,error:readError}=await admin.from('facture_revisions').select('*').eq('id',input.data.revisionId).single();
     if(readError || !r) return reply({error:'Version de facture introuvable.'},404);
     if(r.statut_envoi==='envoye') return reply({envoye:true,revisionId:r.id,dejaEnvoye:true});

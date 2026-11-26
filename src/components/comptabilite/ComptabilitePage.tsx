@@ -39,6 +39,7 @@ import { RattachementsFacture } from "./RattachementsFacture";
 import { PRESTATIONS_FACTURE, notificationFacture } from '@/lib/comptabilite/prestationsFacture';
 import { destinataireFactureParDefaut } from '@/lib/comptabilite/destinataireFacture';
 import { evenementCorbeille, snapshotCorbeille, suppressionsActives, type TraceCorbeilleFacture } from '@/lib/comptabilite/corbeilleFactures';
+import { destinataireAvisSuppression, metaAvis, statutAvisSuppression } from '../../../supabase/functions/_shared/factureSuppressionAvis';
 
 interface Releve {
   id: string;
@@ -179,9 +180,11 @@ export function ComptabilitePage() {
   const [trashError, setTrashError] = useState(false);
   const [trashTab, setTrashTab] = useState('remettre');
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [avisSuppressionBusy, setAvisSuppressionBusy] = useState<string | null>(null);
   const corbeilleBusy = useRef(false);
   const suppressionsEnCours = useMemo(() => suppressionsActives(facturesSupprimees), [facturesSupprimees]);
   const facturesMasquees = useMemo(() => new Set(suppressionsEnCours.map(t => t.facture_id)), [suppressionsEnCours]);
+  const historiqueCorbeille = useMemo(() => facturesSupprimees.filter(t => !String(metaAvis(t)?.action ?? '').startsWith('avis_suppression_')), [facturesSupprimees]);
   const [editFactureForm, setEditFactureForm] = useState<{
     numero: string;
     client_nom: string;
@@ -813,9 +816,12 @@ export function ComptabilitePage() {
     }
   }, []);
 
-  const enregistrerCorbeille = async (factureId: string, action: 'supprimer' | 'remettre', motif: string | null, suppressionId?: string) => {
+  const enregistrerCorbeille = async (factureId: string, action: 'supprimer' | 'remettre', motif: string | null, suppressionId?: string, attendu?: Facture) => {
     const { data: f, error: readError } = await supabase.from('factures').select('*').eq('id', factureId).single();
     if (readError || !f) throw new Error('La facture originale est introuvable. Aucune facture ni aucun paiement ne sera reconstitué.');
+    if (action === 'supprimer' && (!destinataireAvisSuppression(f) || (attendu && (f.updated_at !== attendu.updated_at || f.client_email !== attendu.client_email)))) {
+      throw new Error('Le destinataire est absent ou la facture a changé. Rouvrez la confirmation après vérification de la facture.');
+    }
     const { data: userData, error: authError } = await supabase.auth.getUser();
     if (authError || !userData.user) throw new Error('Veuillez vous reconnecter.');
     const id = crypto.randomUUID();
@@ -827,6 +833,26 @@ export function ComptabilitePage() {
       deleted_by: userData.user.id, deleted_by_email: userData.user.email ?? null,
     }).select('id').single();
     if (error || data?.id !== id) throw new Error(error?.message ?? 'Enregistrement non confirmé : vérifiez la corbeille avant de réessayer.');
+    return id;
+  };
+
+  const envoyerAvisFactureSupprimee = async (suppressionId: string) => {
+    setAvisSuppressionBusy(suppressionId);
+    try {
+      const { data, error } = await supabase.functions.invoke('facture-notifier-revision', { body: { suppressionId } });
+      if (error || data?.envoye !== true) {
+        let detail = data?.error ?? 'Facture dans la corbeille, mais avis non confirmé. Vérifiez l’historique avant tout renvoi.';
+        try { const body = await (error as { context?: Response } | null)?.context?.json(); if (body?.error) detail = body.error; } catch { /* Transport outcomes remain unknown. */ }
+        toast.error(detail);
+        return;
+      }
+      toast.success('Facture dans la corbeille — avis envoyé au destinataire');
+    } catch {
+      toast.error('Facture dans la corbeille, mais avis non confirmé. Vérifiez l’historique avant tout renvoi.');
+    } finally {
+      await fetchFacturesSupprimees();
+      setAvisSuppressionBusy(null);
+    }
   };
 
   const handleDeleteFacture = async () => {
@@ -837,8 +863,9 @@ export function ComptabilitePage() {
       const f = deletingTarget;
       const traces = await fetchFacturesSupprimees();
       if (!traces) return;
+      let suppressionId = suppressionsActives(traces).find(t => t.facture_id === f.id)?.id;
       if (!suppressionsActives(traces).some(t => t.facture_id === f.id)) {
-        await enregistrerCorbeille(f.id, 'supprimer', deleteMotif.trim() || null);
+        suppressionId = await enregistrerCorbeille(f.id, 'supprimer', deleteMotif.trim() || null, undefined, f);
       }
       const confirmation = await fetchFacturesSupprimees();
       if (!confirmation || !suppressionsActives(confirmation).some(t => t.facture_id === f.id)) {
@@ -848,6 +875,7 @@ export function ComptabilitePage() {
       setDeleteMotif("");
       await fetchFactures();
       toast.success(`Facture ${f.numero} placée dans la corbeille — paiements conservés`);
+      if (suppressionId) await envoyerAvisFactureSupprimee(suppressionId);
     } catch (e: any) {
       console.error(e);
       toast.error(`Suppression impossible : ${e.message ?? e}`);
@@ -858,7 +886,7 @@ export function ComptabilitePage() {
   };
 
   const handleRemettreFacture = async (trace: TraceCorbeilleFacture) => {
-    if (!trace.facture_id || corbeilleBusy.current) return;
+    if (!trace.facture_id || corbeilleBusy.current || avisSuppressionBusy) return;
     corbeilleBusy.current = true;
     setRestoringId(trace.id);
     try {
@@ -2928,8 +2956,13 @@ export function ComptabilitePage() {
                 <strong>{formatMontant(Number(deletingTarget.montant_ttc))}</strong>
               </p>
               <p className="text-xs text-muted-foreground">
-                La facture sera placée dans la corbeille. Vous pourrez la remettre ; l’original, les paiements et les apprenants rattachés seront conservés. Cette action n’annule pas la facture et n’envoie aucun mail.
+                La facture sera placée dans la corbeille. Vous pourrez la remettre ; l’original, les paiements et les apprenants rattachés seront conservés. Un mail « Facture supprimée » sera envoyé au destinataire après confirmation. Cette action n’est pas un avoir ni une annulation comptable.
               </p>
+              {destinataireAvisSuppression(deletingTarget) ? (
+                <p className="text-sm break-all">Destinataire : <strong>{destinataireAvisSuppression(deletingTarget)}</strong></p>
+              ) : (
+                <p role="alert" className="text-sm text-destructive">L’adresse du destinataire manque ou est invalide. Renseignez-la dans « Modifier la facture » avant de supprimer et avertir le destinataire.</p>
+              )}
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Motif de la suppression (recommandé)</label>
                 <Input
@@ -2944,9 +2977,9 @@ export function ComptabilitePage() {
             <Button variant="outline" onClick={() => { setDeletingTarget(null); setDeleteMotif(""); }} disabled={deleteBusy}>
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteFacture} disabled={deleteBusy}>
+            <Button variant="destructive" onClick={handleDeleteFacture} disabled={deleteBusy || !destinataireAvisSuppression(deletingTarget)}>
               <Trash2 className="h-4 w-4 mr-2" />
-              {deleteBusy ? "Suppression..." : "Supprimer"}
+              {deleteBusy ? "Suppression..." : "Supprimer et avertir"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2971,7 +3004,7 @@ export function ComptabilitePage() {
             <p className="text-sm text-muted-foreground py-6 text-center">Chargement...</p>
           ) : trashError ? (
             <p role="alert" className="text-sm text-destructive py-6 text-center">Lecture impossible. Fermez et rouvrez la corbeille pour réessayer.</p>
-          ) : (trashTab === 'remettre' ? suppressionsEnCours : facturesSupprimees).length === 0 ? (
+          ) : (trashTab === 'remettre' ? suppressionsEnCours : historiqueCorbeille).length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">{trashTab === 'remettre' ? 'Aucune facture à remettre' : 'Aucun historique'}</p>
           ) : (
             <Table>
@@ -2984,11 +3017,12 @@ export function ComptabilitePage() {
                   <TableHead>Motif</TableHead>
                   <TableHead>Auteur</TableHead>
                   <TableHead>Le</TableHead>
+                  <TableHead>Avis au destinataire</TableHead>
                   <TableHead className="sticky right-0 bg-background">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(trashTab === 'remettre' ? suppressionsEnCours : facturesSupprimees).map((d) => (
+                {(trashTab === 'remettre' ? suppressionsEnCours : historiqueCorbeille).map((d) => (
                   <TableRow key={d.id}>
                     <TableCell className="font-medium">{d.numero}</TableCell>
                     <TableCell>{d.client_nom || "—"}</TableCell>
@@ -2999,9 +3033,20 @@ export function ComptabilitePage() {
                     <TableCell className="text-xs">
                       {d.deleted_at ? format(new Date(d.deleted_at), "dd/MM/yyyy HH:mm", { locale: fr }) : "—"}
                     </TableCell>
+                    <TableCell className="text-xs min-w-40">
+                      {evenementCorbeille(d)?.action === 'supprimer' ? (
+                        <div className="space-y-1">
+                          <span>{avisSuppressionBusy === d.id ? 'Envoi…' : ({ non_envoye: 'Non envoyé', indetermine: 'Envoi engagé ou non confirmé — ne pas renvoyer', envoye: 'Envoyé', historique: '—' })[statutAvisSuppression(d, facturesSupprimees)]}</span>
+                          <div className="break-all text-muted-foreground">{destinataireAvisSuppression(d.snapshot) ?? 'Adresse absente'}</div>
+                          {statutAvisSuppression(d, facturesSupprimees) === 'non_envoye' && suppressionsEnCours.some(t => t.id === d.id) && destinataireAvisSuppression(d.snapshot) && (
+                            <Button variant="outline" size="sm" disabled={!!avisSuppressionBusy || deleteBusy || !!restoringId} onClick={() => void envoyerAvisFactureSupprimee(d.id)}>Envoyer l’avis</Button>
+                          )}
+                        </div>
+                      ) : '—'}
+                    </TableCell>
                     <TableCell className="sticky right-0 bg-background">
                       {suppressionsEnCours.some(t => t.id === d.id) ? (
-                        <Button variant="outline" size="sm" disabled={!!restoringId || deleteBusy} onClick={() => void handleRemettreFacture(d)}>
+                        <Button variant="outline" size="sm" disabled={!!restoringId || deleteBusy || !!avisSuppressionBusy} onClick={() => void handleRemettreFacture(d)}>
                           <RefreshCw className="h-4 w-4 mr-2" />{restoringId === d.id ? 'Remise…' : 'Remettre'}
                         </Button>
                       ) : (

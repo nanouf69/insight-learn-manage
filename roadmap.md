@@ -282,3 +282,4 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 
 ## Corbeille des factures (26/11)
 - [x] Confirmation explicite et onglet Remettre ; retrait réversible par journal existant, originaux/paiements/rattachements intacts, historique conservé ; 28 tests et parcours fictif PC/mobile réussis, aperçu OK, aucune écriture réelle, migration, envoi ou publication. Anciennes suppressions physiques non reconstituées.
+- [x] Avis après suppression confirmée préparé : destinataire figé, prise/accusé uniques, état visible et relecture ; 47 tests, contrôle Deno et parcours fictifs PC/mobile réussis. Choix utilisateur 16:22 : garder en aperçu, aucune activation/publication ni mail réel.
