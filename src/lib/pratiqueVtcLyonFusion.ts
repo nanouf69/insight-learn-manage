@@ -13,7 +13,7 @@ export const QUESTIONS_AJOUT_LYON = QCM2_LYON.questions.map((q, i) => ({
   sourceLivreLyon: q.sourceQuestion,
 }));
 
-type Question = { id: number | string; enonce?: string };
+type Question = { id: number | string; enonce?: string; sourceLivreLyon?: number };
 type Exercice = { id: number | string; questions?: Question[] };
 
 const norm = (s?: string) => (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
