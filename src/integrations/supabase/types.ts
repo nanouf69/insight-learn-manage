@@ -10095,6 +10095,69 @@ export type Database = {
         }
         Relationships: []
       }
+      signalements_reponses_envois: {
+        Row: {
+          copie_html: string
+          copie_texte: string
+          created_at: string
+          demande_par: string | null
+          demande_par_nom: string | null
+          destinataire: string
+          envoye_le: string | null
+          erreur: string | null
+          id: string
+          signalement_id: string
+          statut: string
+          suivi_id: string
+          sujet: string
+        }
+        Insert: {
+          copie_html: string
+          copie_texte: string
+          created_at?: string
+          demande_par?: string | null
+          demande_par_nom?: string | null
+          destinataire: string
+          envoye_le?: string | null
+          erreur?: string | null
+          id?: string
+          signalement_id: string
+          statut?: string
+          suivi_id: string
+          sujet: string
+        }
+        Update: {
+          copie_html?: string
+          copie_texte?: string
+          created_at?: string
+          demande_par?: string | null
+          demande_par_nom?: string | null
+          destinataire?: string
+          envoye_le?: string | null
+          erreur?: string | null
+          id?: string
+          signalement_id?: string
+          statut?: string
+          suivi_id?: string
+          sujet?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signalements_reponses_envois_signalement_id_fkey"
+            columns: ["signalement_id"]
+            isOneToOne: false
+            referencedRelation: "signalements_apprenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signalements_reponses_envois_suivi_id_fkey"
+            columns: ["suivi_id"]
+            isOneToOne: false
+            referencedRelation: "signalements_suivi"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signalements_suivi: {
         Row: {
           auteur_id: string | null

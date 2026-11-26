@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { etatResolution } from "@/lib/signalements/resolution";
 
 const STATUTS: Record<string, string> = { recu: "Reçu", en_cours: "En cours", traite: "Traité" };
 const NATURES: Record<string, string> = {
@@ -17,12 +18,27 @@ const ENVOI: Record<string, string> = { en_attente: "Mail en attente", envoye: "
 type Ticket = { id: string; reference: string; type: string; apprenant_nom: string | null; apprenant_email: string | null; explication: string; captures: { chemin: string }[]; statut: string; envoi_statut: string; envoi_erreur: string | null; created_at: string };
 type Suivi = { id: string; signalement_id: string; nature: string; contenu: string | null; statut_avant: string | null; statut_apres: string | null; visible_apprenant: boolean; auteur_nom: string | null; created_at: string };
 
+type Envoi = { id: string; suivi_id: string; destinataire: string; sujet: string; copie_html: string; statut: string; erreur: string | null; envoye_le: string | null; demande_par_nom: string | null; created_at: string };
+const ENVOI_REP: Record<string, string> = { en_cours: "Envoi en cours / résultat inconnu", envoye: "Mail envoyé", echec: "Mail en échec" };
+
+async function envoyerReponse(suiviId: string): Promise<boolean> {
+  const { data, error } = await supabase.functions.invoke("signalement-envoyer-reponse", { body: { suivi_id: suiviId } });
+  if (error || !data?.ok) {
+    let msg = (data as any)?.error;
+    try { msg = msg ?? (await (error as any)?.context?.json())?.error; } catch { /* ignore */ }
+    toast.error(msg ?? "Le mail de réponse n'est pas parti.");
+    return false;
+  }
+  toast.success("Réponse envoyée par mail."); return true;
+}
+
 const fmt = (d: string) => new Date(d).toLocaleString("fr-FR", { timeZone: "Europe/Paris" });
 
 /** Registre interne des tickets apprenants rattachés à l'indicateur 32 (admin uniquement, historique non modifiable). */
 export function SignalementsIndicateur32() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [suivis, setSuivis] = useState<Suivi[]>([]);
+  const [envois, setEnvois] = useState<Envoi[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const charger = useCallback(async () => {
     const sb = supabase as any;
@@ -31,6 +47,8 @@ export function SignalementsIndicateur32() {
     setErreur(null); setTickets(data ?? []);
     const { data: s, error: e2 } = await sb.from("signalements_suivi").select("*").order("created_at");
     if (e2) setErreur("Lecture de l'historique impossible."); else setSuivis(s ?? []);
+    const { data: ev, error: e3 } = await sb.from("signalements_reponses_envois").select("*").order("created_at");
+    if (e3) setErreur("Lecture des envois de réponses impossible."); else setEnvois(ev ?? []);
   }, []);
   useEffect(() => { void charger(); }, [charger]);
 
@@ -49,13 +67,13 @@ export function SignalementsIndicateur32() {
       {erreur && <p className="text-sm text-destructive">{erreur}</p>}
       {tickets.length === 0 && !erreur && <p className="text-sm text-muted-foreground">Aucun ticket.</p>}
       {tickets.map((t) => (
-        <TicketCarte key={t.id} t={t} suivis={suivis.filter((s) => s.signalement_id === t.id)} onCapture={ouvrirCapture} onChange={charger} />
+        <TicketCarte key={t.id} t={t} suivis={suivis.filter((s) => s.signalement_id === t.id)} envois={envois} onCapture={ouvrirCapture} onChange={charger} />
       ))}
     </div>
   );
 }
 
-function TicketCarte({ t, suivis, onCapture, onChange }: { t: Ticket; suivis: Suivi[]; onCapture: (c: string) => void; onChange: () => void }) {
+function TicketCarte({ t, suivis, envois, onCapture, onChange }: { t: Ticket; suivis: Suivi[]; envois: Envoi[]; onCapture: (c: string) => void; onChange: () => void }) {
   const [nature, setNature] = useState("analyse");
   const [texte, setTexte] = useState("");
   const [statut, setStatut] = useState(t.statut);
@@ -64,13 +82,14 @@ function TicketCarte({ t, suivis, onCapture, onChange }: { t: Ticket; suivis: Su
     const changeStatut = statut !== t.statut;
     if (!texte.trim() && !changeStatut) return toast.error("Écrivez un texte ou changez le statut.");
     setEnCours(true);
-    const { error } = await (supabase as any).rpc("signalement_ajouter_suivi", {
+    const { data: suiviId, error } = await (supabase as any).rpc("signalement_ajouter_suivi", {
       _signalement_id: t.id, _nature: texte.trim() ? nature : "statut", _contenu: texte.trim() || null,
       _nouveau_statut: changeStatut ? statut : null, _visible_apprenant: nature === "reponse" || (!texte.trim() && changeStatut),
     });
-    setEnCours(false);
-    if (error) return toast.error(`Non enregistré : ${error.message}`);
-    toast.success("Suivi enregistré."); setTexte(""); onChange();
+    if (error) { setEnCours(false); return toast.error(`Non enregistré : ${error.message}`); }
+    toast.success("Suivi enregistré dans l'historique."); setTexte("");
+    if (texte.trim() && nature === "reponse" && suiviId) await envoyerReponse(suiviId);
+    setEnCours(false); onChange();
   };
   return (
     <Card>
@@ -80,11 +99,13 @@ function TicketCarte({ t, suivis, onCapture, onChange }: { t: Ticket; suivis: Su
           <Badge variant="secondary">{STATUTS[t.statut] ?? t.statut}</Badge>
           <Badge variant="outline">{t.type === "bug" ? "Bug informatique" : "Remarque"}</Badge>
           <Badge variant={t.envoi_statut === "echec" ? "destructive" : "outline"}>{ENVOI[t.envoi_statut] ?? t.envoi_statut}</Badge>
+          <Badge variant={t.statut === "traite" ? "default" : "destructive"}>{etatResolution(t.statut)}</Badge>
           <Badge variant="outline">Qualiopi — indicateur 32</Badge>
         </CardTitle>
-        <p className="text-xs text-muted-foreground">{t.apprenant_nom} {t.apprenant_email ? `(${t.apprenant_email})` : ""} · {fmt(t.created_at)}</p>
+        <p className="text-xs text-muted-foreground">Apprenant : {t.apprenant_nom ?? "?"} · Adresse e-mail : {t.apprenant_email ?? "non enregistrée"} · Reçu le {fmt(t.created_at)}</p>
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
+        <p className="text-xs font-semibold">Demande intégrale de l'apprenant :</p>
         <p className="whitespace-pre-wrap">{t.explication}</p>
         {t.envoi_erreur && <p className="text-xs text-destructive">Erreur d'envoi : {t.envoi_erreur}</p>}
         {t.captures?.length > 0 && (
@@ -96,9 +117,10 @@ function TicketCarte({ t, suivis, onCapture, onChange }: { t: Ticket; suivis: Su
               <p className="text-xs text-muted-foreground">
                 {fmt(s.created_at)} · {s.auteur_nom ?? "?"} · {NATURES[s.nature] ?? s.nature}
                 {s.statut_avant && s.statut_apres && s.statut_avant !== s.statut_apres ? ` · ${STATUTS[s.statut_avant]} → ${STATUTS[s.statut_apres]}` : ""}
-                {s.visible_apprenant ? " · visible par l'apprenant" : " · interne"}
+                {s.nature === "reponse" ? ` · destinataire : ${t.apprenant_email ?? "?"}` : s.visible_apprenant ? " · visible par l'apprenant" : " · interne (jamais visible par l'apprenant)"}
               </p>
               {s.contenu && <p className="whitespace-pre-wrap">{s.contenu}</p>}
+              {s.nature === "reponse" && <EnvoisReponse suivi={s} envois={envois.filter((e) => e.suivi_id === s.id)} onChange={onChange} />}
             </li>
           ))}
         </ol>
@@ -119,5 +141,30 @@ function TicketCarte({ t, suivis, onCapture, onChange }: { t: Ticket; suivis: Su
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function EnvoisReponse({ suivi, envois, onChange }: { suivi: Suivi; envois: Envoi[]; onChange: () => void }) {
+  const [enCours, setEnCours] = useState(false);
+  const dejaEnvoye = envois.some((e) => e.statut === "envoye");
+  const bloque = envois.some((e) => e.statut === "en_cours");
+  return (
+    <div className="mt-1 space-y-1">
+      {envois.length === 0 && <p className="text-xs text-destructive">Aucun envoi de mail enregistré pour cette réponse.</p>}
+      {envois.map((e) => (
+        <details key={e.id} className="text-xs">
+          <summary className={e.statut === "echec" ? "text-destructive" : ""}>
+            {ENVOI_REP[e.statut] ?? e.statut} · à {e.destinataire} · {fmt(e.envoye_le ?? e.created_at)} · par {e.demande_par_nom ?? "?"}{e.erreur ? ` · ${e.erreur}` : ""}
+          </summary>
+          <p className="font-medium">Sujet : {e.sujet}</p>
+          <iframe title={`Copie ${e.id}`} sandbox="" srcDoc={e.copie_html} className="w-full h-48 rounded border bg-background" />
+        </details>
+      ))}
+      {!dejaEnvoye && !bloque && (
+        <Button size="sm" variant="outline" disabled={enCours} onClick={async () => { setEnCours(true); await envoyerReponse(suivi.id); setEnCours(false); onChange(); }}>
+          {envois.length ? "Réessayer l'envoi du mail" : "Envoyer par mail"}
+        </Button>
+      )}
+    </div>
   );
 }

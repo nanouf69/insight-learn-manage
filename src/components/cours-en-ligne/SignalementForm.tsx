@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { etatResolution } from "@/lib/signalements/resolution";
 
 export const MAX_IMAGE_OCTETS = 20 * 1024 * 1024;
 
@@ -107,19 +108,21 @@ export default function SignalementForm() {
 
 export const STATUT_TICKET: Record<string, string> = { recu: "Reçu", en_cours: "En cours", traite: "Traité" };
 
-type Ticket = { id: string; reference: string; type: string; explication: string; statut: string; created_at: string };
+type Ticket = { id: string; reference: string; type: string; explication: string; statut: string; created_at: string; apprenant_email: string | null };
+type Envoi = { id: string; signalement_id: string; copie_texte: string; envoye_le: string | null; destinataire: string };
 type Suivi = { id: string; signalement_id: string; nature: string; contenu: string | null; statut_apres: string | null; created_at: string };
 
 /** Lecture seule : l'apprenant voit uniquement ses tickets et les réponses qui lui sont destinées (RLS). */
 function MesTickets({ cle }: { cle: number }) {
   const [tickets, setTickets] = useState<Ticket[] | null>(null);
   const [suivis, setSuivis] = useState<Suivi[]>([]);
+  const [envois, setEnvois] = useState<Envoi[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const charger = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data, error } = await (supabase as any).from("signalements_apprenants")
-      .select("id, reference, type, explication, statut, created_at").eq("auth_user_id", user.id).order("created_at", { ascending: false });
+      .select("id, reference, type, explication, statut, created_at, apprenant_email").eq("auth_user_id", user.id).order("created_at", { ascending: false });
     if (error) { setErreur("Vos tickets n'ont pas pu être chargés."); return; }
     setTickets(data ?? []);
     const ids = (data ?? []).map((t: Ticket) => t.id);
@@ -127,6 +130,9 @@ function MesTickets({ cle }: { cle: number }) {
       const { data: s } = await (supabase as any).from("signalements_suivi")
         .select("id, signalement_id, nature, contenu, statut_apres, created_at").in("signalement_id", ids).order("created_at");
       setSuivis(s ?? []);
+      const { data: e } = await (supabase as any).from("signalements_reponses_envois")
+        .select("id, signalement_id, copie_texte, envoye_le, destinataire").in("signalement_id", ids).eq("statut", "envoye").order("envoye_le");
+      setEnvois(e ?? []);
     }
   }, []);
   useEffect(() => { void charger(); }, [charger, cle]);
@@ -140,11 +146,21 @@ function MesTickets({ cle }: { cle: number }) {
         <article key={t.id} className="rounded-lg border p-3 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="font-semibold">{t.reference}</span>
-            <span className="text-xs rounded-full bg-muted px-2 py-1">{STATUT_TICKET[t.statut] ?? t.statut}</span>
+            <span className="flex gap-1">
+              <span className="text-xs rounded-full bg-muted px-2 py-1">{STATUT_TICKET[t.statut] ?? t.statut}</span>
+              <span className={`text-xs rounded-full px-2 py-1 font-semibold ${t.statut === "traite" ? "bg-primary text-primary-foreground" : "bg-destructive/10 text-destructive"}`}>{etatResolution(t.statut)}</span>
+            </span>
           </div>
           <p className="text-xs text-muted-foreground">{t.type === "bug" ? "Bug informatique" : "Remarque"} · {fmt(t.created_at)}</p>
+          {t.apprenant_email && <p className="text-xs text-muted-foreground">Adresse e-mail associée : {t.apprenant_email}</p>}
           <p className="text-sm whitespace-pre-wrap">{t.explication}</p>
-          {suivis.filter((s) => s.signalement_id === t.id && s.nature !== "creation" && (s.contenu || s.nature === "statut")).map((s) => (
+          {envois.filter((e) => e.signalement_id === t.id).map((e) => (
+            <div key={e.id} className="rounded-md bg-muted p-2 text-sm">
+              <p className="text-xs text-muted-foreground">Réponse du centre envoyée le {e.envoye_le ? fmt(e.envoye_le) : "?"} à {e.destinataire}</p>
+              <p className="whitespace-pre-wrap">{e.copie_texte}</p>
+            </div>
+          ))}
+          {suivis.filter((s) => s.signalement_id === t.id && s.nature === "statut").map((s) => (
             <div key={s.id} className="border-l-2 border-primary pl-3 text-sm">
               <p className="text-xs text-muted-foreground">{fmt(s.created_at)}{s.statut_apres ? ` · ${STATUT_TICKET[s.statut_apres] ?? s.statut_apres}` : ""}</p>
               {s.contenu && <p className="whitespace-pre-wrap">{s.contenu}</p>}

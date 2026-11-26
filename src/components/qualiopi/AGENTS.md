@@ -2,3 +2,4 @@
 - Adaptation records use a separate admin-only append-only table and explicit actual-implementation confirmation; never include them in general Qualiopi exports. Why: sensitive needs must not leak or become fabricated evidence.
 - Indicator 7 reads its admin-only persistent matrix; exports contain documentary rows only, declared references stay unverified and source forms are referenced without copying personal answers. Why: model annotations cannot prove coverage or disclose learner needs.
 - Learner support tickets (signalements_apprenants + append-only signalements_suivi) are written by the server function and admin RPC signalement_ajouter_suivi only; learners read own tickets/visible replies; why: Qualiopi 32 audit trail must stay immutable.
+- Reply emails go only through signalement-envoyer-reponse, journaled in signalements_reponses_envois (exact copy, one non-failed send per reply, en_cours→envoye/echec only); why: no false 'sent' and no duplicate reply.
