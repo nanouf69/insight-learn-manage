@@ -197,6 +197,7 @@ export default function ExamensBlancsPage({
   const [liveExamens, setLiveExamens] = useState<ExamenBlanc[]>([]);
   const [liveExamensLoaded, setLiveExamensLoaded] = useState(false);
   const [liveExamensError, setLiveExamensError] = useState(false);
+  const [liveExamensSessionError, setLiveExamensSessionError] = useState(false);
   const [selectionRefreshKey, setSelectionRefreshKey] = useState(0);
   const [isReloadingQuestions, setIsReloadingQuestions] = useState(false);
   const examStartTimeRef = useRef<number>(savedSession?.examStartTime || Date.now());
@@ -327,6 +328,7 @@ export default function ExamensBlancsPage({
         logSecurityImageDebug(saved, force ? "manual-refetch" : "auto-refetch");
         setLiveExamens(saved);
         setLiveExamensError(false);
+        setLiveExamensSessionError(false);
         setLiveExamensLoaded(true);
         // CRITICAL: Never replace examenChoisi during an active exam or results display
         // to prevent question reordering that causes answer mismatches
@@ -344,6 +346,7 @@ export default function ExamensBlancsPage({
         if ((err as any)?.sessionAbsente) console.warn("[ExamensBlancs] Connexion expirée : reconnexion nécessaire");
         else console.error("[ExamensBlancs] Version active indisponible", err);
         setLiveExamensError(true);
+        setLiveExamensSessionError((err as any)?.sessionAbsente === true);
         return [] as ExamenBlanc[];
       } finally {
         clearTimeout(timeoutTimer);
@@ -1560,7 +1563,7 @@ export default function ExamensBlancsPage({
             {liveExamensError ? (
               <>
                 <AlertTriangle className="w-10 h-10 mx-auto text-red-600" />
-                <p className="font-semibold text-red-700">{EXAM_CONTENT_UNAVAILABLE_MESSAGE}</p>
+                <p className="font-semibold text-red-700">{liveExamensSessionError ? "Session expirée ou changée. Reconnectez-vous puis réessayez. Vos réponses sont conservées." : EXAM_CONTENT_UNAVAILABLE_MESSAGE}</p>
                 <Button
                   onClick={() => { setLiveExamensError(false); void refreshLiveExamens({ force: true }); }}
                   className="gap-2"

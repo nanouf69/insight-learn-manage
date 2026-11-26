@@ -1,13 +1,17 @@
 # Roadmap — chantiers ouverts (13/11/2026)
 ## Corrections techniques du bilan — 26/11/2026
-- [ ] Sauvegarde : reprise bornée, couverture des nouvelles tables, export/restauration jetables ; activation distincte.
-- [ ] Réponses : worker/auth/acquittement et tests réseau, rechargement, concurrence sans purge.
-- [ ] Examens : crash null.nonPassee et version absente, tests sans note inventée.
-- [ ] Sécurité : six RPC, candidat moindre privilège et tests SQL jetables ; aucune migration réelle.
-- [ ] Quatre copies 505 : lecture avant/après, reprise déterministe seulement, aucune remise fabriquée.
-- [ ] Corrections partagées : identités prouvées, tests fictifs, aucun lien en masse.
-- [ ] I21 : état signé/readback/PDF, tests fictifs PC/mobile, preuves existantes intactes.
-- [ ] Rapport exact du delta, résultats exécutés et procédure d'activation pour revue.
+- [x] Sauvegarde : reprise bornée et curseur composé, couverture additive, export/restauration PostgreSQL jetables (16 tests) ; aucun export réel lancé.
+- [x] Réponses : refus figés/backoff/propriété préservés, opérations durables et Web Lock ; tests réseau, expiration/reconnexion et rechargement, sans purge.
+- [x] Examens : null.nonPassee et helper de statut sécurisés, absence de version distincte d'expiration ; EB1/3/5 PC/mobile, aucune note inventée.
+- [x] Sécurité : candidat six RPC et matrice SQL jetable 6/6 ; aucune ACL réelle modifiée.
+- [x] Quatre copies 505 : SELECT avant/après identiques ; tests catalogue 9/9, activation 8/8, parcours fictifs A–F 6/6 ; candidat append-only avec préconditions, aucune remise fabriquée.
+- [x] Corrections partagées : 290 liens équivalents, 167 attentes équivalentes/43 différentes ; 2 références désalignées localisées, candidat ciblé ; suite SQL 10/10 (6 hérités + 4 spécifiques), aucun lien réel créé.
+- [x] I21 : readback/PDF/preuve et garde clic concurrent ; 3 tests UI + PC/mobile fictifs, signatures existantes intactes.
+- [x] Rapport exact : docs/incident-bilan-2026-11-26.md ; 144/144 tests ciblés et build OK.
+- [ ] Activation serveur/cron/écrans : attend l'accord sur le delta précis ; export réel complet et accès authentifiés réels non prouvés avant activation, aucune publication globale permise.
+- [x] Deux vrais onglets Chromium : 2 opérations exactes, une seule requête simultanée, ACK conservé après reload ; aucun trafic backend réel.
+- [ ] 505 et références : candidats du 26/11 testés avec empreintes de fixtures fictives ; validation SQL complète sur catalogue jetable reste nécessaire avant accord ; reprise 505 exige le clic/revue de l'élève concerné, jamais une remise administrative.
+- [ ] Safari sans Web Locks/stockage privé et capture physique iPhone : non prouvés ; limites d'activation documentées.
 ## Preuves Qualiopi I22/I32 — 25/11/2026 18:14 UTC
 - [x] Enregistrer sans doublon « 32.docx » (I32) et « CCF_000546(1).pdf » (I22) comme pièces reçues/inspectées dans ChatGPT, originaux binaires non transférés, avec réserves et métadonnées complètes.
 - [x] Rattacher uniquement des exemples CRM réels à I32, conserver les deux exemples existants et expliciter l'absence de preuve d'analyse ou d'efficacité lorsqu'elle n'est pas démontrée.

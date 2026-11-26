@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 const invoke = vi.fn();
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { functions: { invoke: (...a: any[]) => invoke(...a) } } }));
@@ -9,6 +9,7 @@ const signee = { id: "r1", signed_at: "2026-11-25T18:05:55Z", reponses: { evalua
 HTMLCanvasElement.prototype.getContext = (() => ({ scale() {}, beginPath() {}, moveTo() {}, lineTo() {}, stroke() {}, clearRect() {}, drawImage() {} })) as any;
 HTMLCanvasElement.prototype.toDataURL = () => "data:image/png;base64,AAAA";
 describe("Évaluation I21 état réel", () => {
+  beforeEach(()=>invoke.mockReset());
   it("n'affiche pas de formulaire de signature si une évaluation signée existe", () => {
     render(<EvaluationCompetencesI21 documentId="d" doc={doc} fichiers={[]} reviews={[signee]} onSaved={async () => ({})} />);
     expect(screen.queryByText(/Signer manuscritement/)).toBeNull();

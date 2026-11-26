@@ -10,7 +10,7 @@ class Contract(unittest.TestCase):
         c.as_user = ['setpriv','--reuid=1000','--regid=1000','--clear-groups'] if os.geteuid()==0 else []
         if c.as_user: os.chown(c.d,1000,1000)
         c.env = {k:v for k,v in os.environ.items() if not k.startswith('PG') and k not in ('DATABASE_URL','SUPABASE_SERVICE_ROLE_KEY')}
-        subprocess.run(c.as_user+['initdb','-D',c.d+'/db','-U','postgres','-A','trust','--no-locale'],env=c.env,check=True,capture_output=True)
+        subprocess.run(c.as_user+['initdb','-D',c.d+'/db','-U','postgres','-A','trust','--no-locale','--encoding=UTF8'],env=c.env,check=True,capture_output=True)
         subprocess.run(c.as_user+['pg_ctl','-D',c.d+'/db','-l',c.d+'/log','-o',f'-k {c.d} -p 55526 -h ""','-w','start'],env=c.env,check=True,capture_output=True)
         c.addClassCleanup(lambda: subprocess.run(c.as_user+['pg_ctl','-D',c.d+'/db','-m','immediate','stop'],env=c.env,capture_output=True))
         c.sql("""

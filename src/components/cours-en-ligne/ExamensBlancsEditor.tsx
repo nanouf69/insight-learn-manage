@@ -495,7 +495,7 @@ async function loadSavedExamensActuels(notifyRepairs: boolean, lignesFigees?: Ar
         sessionFinale = !!s2?.session;
         compteFinal = s2?.session?.user?.id ?? null;
       } catch { sessionFinale = false; }
-      if (!sessionFinale || (compteFinal && compteFinal !== compteActuel)) {
+      if (!sessionFinale || compteFinal !== compteActuel) {
         tracerChargementExamens({ phase: "relecture", session: sessionFinale ? "changee" : "absente", premiere: "vide", relecture: relecture.error ? "erreur" : (relecture.data?.length ? "trouve" : "vide") });
         const e = new ExamContentUnavailableError("Session expirée ou changée : reconnexion nécessaire");
         (e as any).sessionAbsente = true;

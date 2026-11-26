@@ -13,7 +13,7 @@ vi.mock("@/integrations/supabase/client", () => {
   return {
     supabase: {
       auth: {
-        getSession: async () => ({ data: { session: { access_token: "perime" } } }),
+        getSession: async () => ({ data: { session: { access_token: "perime", user: state.user } } }),
         getUser: async () => ({ data: { user: state.user } }),
       },
       from: () => query,
