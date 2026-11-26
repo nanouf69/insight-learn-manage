@@ -300,3 +300,7 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 
 ## Mail vers SMS (26/11, 17:22)
 - [x] Action sur les mails du CRM, téléphone prérempli et modifiable, projection du texte et liens, raccourcissement explicite à 480 caractères, confirmation payante et transport SMS existant ; aucun mail historique modifié, aucune migration/publication ni envoi réel de vérification.
+
+## Incident Bentayeb — traçabilité (26/11, 17:32)
+- [x] Compte exact vérifié ; déclaration du dirigeant et deux textes fournis archivés dans une preuve privée I31 unique, extrait/texte complet déclaré distingués, heures et pièces jointes non vérifiées, non résolu en attente de confirmation ; relecture et empreintes progression/signatures/tickets inchangées, 6 tests PASS.
+- [ ] Rattachement au ticket existant et fil exhaustif dans Bugs signalés / remarques : bloqué, registre tickets vide au contrôle, aucun mail du fil archivé, aucune connexion Outlook accessible ; session demandeur redirigée vers l’espace apprenant, vue admin réelle NON PROUVÉE. Aucun ticket créé ni mail envoyé.
