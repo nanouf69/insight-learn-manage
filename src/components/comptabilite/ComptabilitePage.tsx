@@ -37,6 +37,7 @@ import { lignesFactureCommune } from "@/lib/comptabilite/factureCommune";
 import { apprenantsRattachesFacture, type RattachementFacture } from "@/lib/comptabilite/rattachementsFacture";
 import { RattachementsFacture } from "./RattachementsFacture";
 import { PRESTATIONS_FACTURE, notificationFacture } from '@/lib/comptabilite/prestationsFacture';
+import { destinataireFactureParDefaut } from '@/lib/comptabilite/destinataireFacture';
 
 interface Releve {
   id: string;
@@ -200,6 +201,31 @@ export function ComptabilitePage() {
     client_email: "",
   });
   const factureEditOperation = useRef<string>(crypto.randomUUID());
+  const emailFactureModifie = useRef(false);
+  const [emailFactureLoading, setEmailFactureLoading] = useState(false);
+  useEffect(() => {
+    let actif = true;
+    const id = editingFacture?.apprenant_id;
+    if (!id) { setEmailFactureLoading(false); return; }
+    setEmailFactureLoading(true);
+    void (async () => {
+      try {
+        const [financeur, stagiaire] = await Promise.all([
+          supabase.from('financeurs_fc').select('type_financeur,email_facturation,contact_email').eq('apprenant_id', id).maybeSingle(),
+          supabase.from('apprenants').select('email,facture_contact_email,societe_nom,organisme_financeur').eq('id', id).single(),
+        ]);
+        if (!actif) return;
+        if (financeur.error || stagiaire.error) throw financeur.error || stagiaire.error;
+        const email = destinataireFactureParDefaut(financeur.data, stagiaire.data, editingFacture?.type_financement ?? 'particulier');
+        if (!emailFactureModifie.current) setEditFactureForm(form => ({ ...form, client_email: email }));
+      } catch {
+        if (actif) toast.error('Impossible de lire les coordonnées du financeur ou du stagiaire. Vérifiez le destinataire avant l’envoi.');
+      } finally {
+        if (actif) setEmailFactureLoading(false);
+      }
+    })();
+    return () => { actif = false; };
+  }, [editingFacture?.id, editingFacture?.apprenant_id]);
   const [revisionsFacture, setRevisionsFacture] = useState<any[]>([]);
   const [revisionBusy, setRevisionBusy] = useState<string | null>(null);
   const [revisionsError, setRevisionsError] = useState(false);
@@ -291,6 +317,7 @@ export function ComptabilitePage() {
     const tva = Number(f.montant_tva) || 0;
     const taux = ht > 0 ? Math.round((tva / ht) * 100) : 20;
     setEditingFacture(f);
+    emailFactureModifie.current = false;
     factureEditOperation.current = crypto.randomUUID();
     setEditFactureForm({
       numero: f.numero,
@@ -313,7 +340,7 @@ export function ComptabilitePage() {
   };
 
   const saveFactureEdit = async () => {
-    if (!editingFacture) return;
+    if (!editingFacture || emailFactureLoading) return;
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFactureForm.client_email.trim())) {
       toast.error('Confirmez l’adresse email du destinataire de la facture.'); return;
     }
@@ -2719,7 +2746,7 @@ export function ComptabilitePage() {
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Email du destinataire de la facture</label>
-              <Input type="email" value={editFactureForm.client_email} onChange={e=>setEditFactureForm(f=>({...f,client_email:e.target.value}))} />
+              <Input aria-label="Email du destinataire de la facture" type="email" disabled={emailFactureLoading} placeholder={emailFactureLoading ? 'Chargement de l’adresse…' : ''} value={editFactureForm.client_email} onChange={e=>{emailFactureModifie.current = true; setEditFactureForm(f=>({...f,client_email:e.target.value}));}} />
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Type de financement</label>
@@ -2820,7 +2847,7 @@ export function ComptabilitePage() {
             <Button variant="outline" onClick={() => setEditingFacture(null)} disabled={savingFactureEdit}>
               Annuler
             </Button>
-            <Button onClick={saveFactureEdit} disabled={savingFactureEdit}>
+            <Button onClick={saveFactureEdit} disabled={savingFactureEdit || emailFactureLoading}>
               <Check className="h-4 w-4 mr-2" />
               {savingFactureEdit ? "Enregistrement..." : editFactureForm.statut==='brouillon' ? 'Enregistrer' : "Enregistrer et envoyer"}
             </Button>
