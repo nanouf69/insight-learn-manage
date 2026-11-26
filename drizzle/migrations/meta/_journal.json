@@ -2024,6 +2024,20 @@
       "when": 1795699692180,
       "tag": "0288_signalements_apprenants_qualiopi_32",
       "breakpoints": true
+    },
+    {
+      "idx": 289,
+      "version": "7",
+      "when": 1795699904967,
+      "tag": "0289_signalements_tickets_suivi",
+      "breakpoints": true
+    },
+    {
+      "idx": 290,
+      "version": "7",
+      "when": 1795699927410,
+      "tag": "0290_signalement_suivi_auteur_fix",
+      "breakpoints": true
     }
   ]
 }

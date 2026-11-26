@@ -10043,7 +10043,12 @@ export type Database = {
           explication: string
           id: string
           pieces_jointes: boolean | null
+          qualiopi_indicateur: number
           qualiopi_preuve_id: string | null
+          reference: string
+          statut: string
+          statut_modifie_le: string | null
+          statut_modifie_par: string | null
           type: string
         }
         Insert: {
@@ -10059,7 +10064,12 @@ export type Database = {
           explication: string
           id?: string
           pieces_jointes?: boolean | null
+          qualiopi_indicateur?: number
           qualiopi_preuve_id?: string | null
+          reference?: string
+          statut?: string
+          statut_modifie_le?: string | null
+          statut_modifie_par?: string | null
           type: string
         }
         Update: {
@@ -10075,10 +10085,62 @@ export type Database = {
           explication?: string
           id?: string
           pieces_jointes?: boolean | null
+          qualiopi_indicateur?: number
           qualiopi_preuve_id?: string | null
+          reference?: string
+          statut?: string
+          statut_modifie_le?: string | null
+          statut_modifie_par?: string | null
           type?: string
         }
         Relationships: []
+      }
+      signalements_suivi: {
+        Row: {
+          auteur_id: string | null
+          auteur_nom: string | null
+          contenu: string | null
+          created_at: string
+          id: string
+          nature: string
+          signalement_id: string
+          statut_apres: string | null
+          statut_avant: string | null
+          visible_apprenant: boolean
+        }
+        Insert: {
+          auteur_id?: string | null
+          auteur_nom?: string | null
+          contenu?: string | null
+          created_at?: string
+          id?: string
+          nature: string
+          signalement_id: string
+          statut_apres?: string | null
+          statut_avant?: string | null
+          visible_apprenant?: boolean
+        }
+        Update: {
+          auteur_id?: string | null
+          auteur_nom?: string | null
+          contenu?: string | null
+          created_at?: string
+          id?: string
+          nature?: string
+          signalement_id?: string
+          statut_apres?: string | null
+          statut_avant?: string | null
+          visible_apprenant?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signalements_suivi_signalement_id_fkey"
+            columns: ["signalement_id"]
+            isOneToOne: false
+            referencedRelation: "signalements_apprenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sms_envois: {
         Row: {
@@ -12021,6 +12083,16 @@ export type Database = {
       sessions_publiques_devis: { Args: never; Returns: Json }
       shared_exercice_key: { Args: { e: Json }; Returns: string }
       shared_exercice_strict_key: { Args: { e: Json }; Returns: string }
+      signalement_ajouter_suivi: {
+        Args: {
+          _contenu: string
+          _nature: string
+          _nouveau_statut: string
+          _signalement_id: string
+          _visible_apprenant: boolean
+        }
+        Returns: string
+      }
       signaler_echec_validation_quiz: {
         Args: {
           _apprenant_id: string

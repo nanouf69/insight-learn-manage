@@ -64,25 +64,27 @@ Deno.serve(async (req) => {
     const date = new Intl.DateTimeFormat("fr-FR", { dateStyle: "full", timeStyle: "medium", timeZone: "Europe/Paris" }).format(new Date());
     const nom = `${app.prenom ?? ""} ${app.nom ?? ""}`.trim() || "(nom non renseigné)";
     const liens = images.map((i, n) => `<li><a href="${esc(i.lien)}">Capture ${n + 1} (${esc(i.nom)})</a></li>`).join("");
-    const html = `<div style="font-family:Arial,sans-serif;max-width:640px">
-<h2>Signalement apprenant : ${esc(libelle)}</h2>
-<p><strong>Type :</strong> ${esc(libelle)}<br/><strong>Apprenant :</strong> ${esc(nom)}${app.email ? ` (${esc(app.email)})` : ""}<br/><strong>Date :</strong> ${esc(date)}</p>
-<p><strong>Explication :</strong></p><p style="white-space:pre-wrap">${esc(explication)}</p>
-${images.length ? `<p><strong>Captures (${images.length})</strong> ${joindre ? "jointes à ce mail ; " : "trop volumineuses pour être jointes ; "}liens privés valables 7 jours :</p><ul>${liens}</ul>` : "<p>Aucune capture.</p>"}
-</div>`;
-
     // Trace privée conservée AVANT l'envoi (registre interne, jamais visible de l'apprenant).
     const captures = (chemins as string[]).map((c, n) => ({ bucket: BUCKET, chemin: c, mime: images[n].mime, octets: images[n].octets.length }));
     const { data: trace, error: tErr } = await admin.from("signalements_apprenants").insert({
       apprenant_id: app.id, auth_user_id: uid, type, apprenant_nom: nom, apprenant_email: app.email ?? null,
       explication, captures, pieces_jointes: joindre,
-    }).select("id, created_at").single();
+    }).select("id, created_at, reference").single();
     if (tErr || !trace) { console.error("[signaler-remarque-bug] trace", tErr); return json(500, { error: "Le signalement n'a pas pu être enregistré. Réessayez plus tard." }); }
+
+    const html = `<div style="font-family:Arial,sans-serif;max-width:640px">
+<h2>Ticket ${esc(trace.reference)} : ${esc(libelle)}</h2>
+<p><strong>Référence :</strong> ${esc(trace.reference)}<br/><strong>Statut :</strong> Reçu<br/><strong>Type :</strong> ${esc(libelle)}<br/><strong>Apprenant :</strong> ${esc(nom)}${app.email ? ` (${esc(app.email)})` : ""}<br/><strong>Date :</strong> ${esc(date)}</p>
+<p><strong>Explication :</strong></p><p style="white-space:pre-wrap">${esc(explication)}</p>
+${images.length ? `<p><strong>Captures (${images.length})</strong> ${joindre ? "jointes à ce mail ; " : "trop volumineuses pour être jointes ; "}liens privés valables 7 jours :</p><ul>${liens}</ul>` : "<p>Aucune capture.</p>"}
+</div>`;
+
+    await admin.from("signalements_suivi").insert({ signalement_id: trace.id, nature: "creation", statut_apres: "recu", visible_apprenant: true, contenu: "Ticket reçu.", auteur_nom: "Système" });
 
     // Rattachement interne au registre Qualiopi existant : indicateur 32, reçu NON analysé.
     try {
       const { data: preuve } = await admin.from("qualiopi_preuves").insert({
-        titre: `Signalement apprenant (${libelle}) – ${nom}`,
+        titre: `Ticket ${trace.reference} (${libelle}) – ${nom}`,
         description: explication.slice(0, 500),
         date_preuve: String(trace.created_at).slice(0, 10),
         source_type: "signalement_apprenant", source_table: "signalements_apprenants", source_id: trace.id,
@@ -101,17 +103,18 @@ ${images.length ? `<p><strong>Captures (${images.length})</strong> ${joindre ? "
     try {
       await sendBrandedEmail({
       to: DESTINATAIRE,
-      subject: `[${libelle}] ${nom}`,
+      subject: `[${trace.reference}] ${libelle} – ${nom}`,
       html,
       replyTo: app.email ?? undefined,
       attachments: joindre ? images.map((i) => ({ name: i.nom, contentType: i.mime, contentBytes: toBase64(i.octets) })) : [],
       });
     } catch (e) {
       await admin.from("signalements_apprenants").update({ envoi_statut: "echec", envoi_erreur: String((e as Error)?.message ?? e).slice(0, 500), envoi_le: new Date().toISOString() }).eq("id", trace.id);
-      throw e;
+      console.error("[signaler-remarque-bug] mail", e);
+      return json(502, { error: `Votre ticket ${trace.reference} est enregistré, mais le mail au centre n'a pas pu partir. Le centre le verra dans son registre.`, reference: trace.reference, envoi: "echec" });
     }
     await admin.from("signalements_apprenants").update({ envoi_statut: "envoye", envoi_le: new Date().toISOString() }).eq("id", trace.id);
-    return json(200, { ok: true, joint: joindre });
+    return json(200, { ok: true, joint: joindre, reference: trace.reference, envoi: "envoye" });
   } catch (e) {
     console.error("[signaler-remarque-bug]", e);
     return json(502, { error: "L'envoi du mail a échoué. Votre signalement n'a pas été transmis, réessayez plus tard." });

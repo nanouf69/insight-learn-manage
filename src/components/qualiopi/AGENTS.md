@@ -1,3 +1,4 @@
 - Indicator 6 originals attach only after DOCX structure, private-object readback and proof CAS confirmation; append files without replacing history. Why: a declared schedule is not a stored original.
 - Adaptation records use a separate admin-only append-only table and explicit actual-implementation confirmation; never include them in general Qualiopi exports. Why: sensitive needs must not leak or become fabricated evidence.
 - Indicator 7 reads its admin-only persistent matrix; exports contain documentary rows only, declared references stay unverified and source forms are referenced without copying personal answers. Why: model annotations cannot prove coverage or disclose learner needs.
+- Learner support tickets (signalements_apprenants + append-only signalements_suivi) are written by the server function and admin RPC signalement_ajouter_suivi only; learners read own tickets/visible replies; why: Qualiopi 32 audit trail must stay immutable.
