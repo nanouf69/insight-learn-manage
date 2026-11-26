@@ -1,6 +1,6 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
 import { ajouterLyonVtc, COURS_LYON_VTC_ID, PDF_LYON_VTC, estPdfLyonVtc } from '@/lib/pratiqueVtcLyonRessource';
-import PratiqueVtcLyonQcm2 from './PratiqueVtcLyonQcm2';
+import { fusionnerQuizLyon, retirerAjoutsQuizLyon } from '@/lib/pratiqueVtcLyonFusion';
 import { FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
 import { Bilan505Desactive, couperBilan505, remettreBilan505, useBilan505Active, type RevueItem } from '@/lib/bilan505Remise';
 import { Bilan505RevuePanel } from './Bilan505RevuePanel';
@@ -1155,7 +1155,7 @@ const buildSiblingBilanSecurityModule = (
 
 const forceSourceExerciseTitles = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
   if (Number(moduleId) === 8 && loadedData.cours.some(c => c.id === COURS_LYON_VTC_ID)) {
-    return ajouterLyonVtc(loadedData);
+    return fusionnerQuizLyon(ajouterLyonVtc(loadedData));
   }
   if (Number(moduleId) !== 9) return loadedData;
 
@@ -5856,7 +5856,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const fallbackSavedAt = new Date().toISOString();
     const { data: casData, error } = await supabase.rpc("save_module_editor_state", {
       p_module_id: moduleId,
-      p_module_data: moduleData as any,
+      p_module_data: retirerAjoutsQuizLyon(moduleId, moduleData) as any,
       p_deleted_cours: (deletedCours ?? []) as any,
       p_deleted_exercices: (deletedExercices ?? []) as any,
       p_source_fingerprint: sourceFingerprint,
@@ -10203,7 +10203,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
           {/* Grilles d'évaluation pratique (tous les passages) */}
           {Number(module.id) === 8 && <PratiqueVtcLyonSupport key={`support-vtc-${apprenantId ?? "apercu"}`} moduleId={8} />}
-          {Number(module.id) === 8 && <PratiqueVtcLyonQcm2 key={`qcm2-lyon-${apprenantId ?? "apercu"}`} />}
           {Number(module.id) === 6 && <PratiqueTaxiLyonSupport key={`support-taxi-${apprenantId ?? "apercu"}`} moduleId={6} />}
           {Number(module.id) === 6 && (
             <Suspense fallback={<p role="status">Chargement des exercices TAXI…</p>}>
