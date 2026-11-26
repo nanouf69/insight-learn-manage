@@ -1,5 +1,6 @@
 import { useState, useRef, type ChangeEvent } from "react";
 import { apercuTexteEmail } from "@/lib/apercuTexteEmail";
+import { EmailVersSmsDialog } from './EmailVersSmsDialog';
 import { Mail, Send, Inbox, Clock, Plus, Search, RefreshCw, Loader2, FileText, Forward, Paperclip, X, RotateCcw, Download, Phone, Trash2, Copy } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -1424,7 +1425,7 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                   <div 
                     key={email.id}
                     onClick={() => setSelectedEmail(email)}
-                    className={`flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer ${
+                    className={`grid grid-cols-[2rem_minmax(0,1fr)] md:flex items-start gap-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer ${
                       !email.is_read ? 'bg-blue-50 border-l-4 border-l-blue-500 border-blue-200 shadow-sm' : ''
                     }`}
                   >
@@ -1486,7 +1487,8 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                         );
                       })()}
                     </div>
-                    <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+                    <div className="col-span-2 flex flex-wrap items-center gap-2 shrink-0 md:max-w-[45%]" onClick={(e) => e.stopPropagation()}>
+                      <EmailVersSmsDialog email={email} telephone={apprenant.telephone ?? ''} nom={`${apprenant.prenom ?? ''} ${apprenant.nom ?? ''}`} />
                       {email.type === 'sent' && (
                         <Button
                           size="sm"
@@ -1570,7 +1572,8 @@ export function EmailsSection({ apprenant }: EmailsSectionProps) {
                     }} 
                   />
                 )}
-                <div className="flex justify-end gap-2 pt-2 border-t">
+                <div className="flex flex-wrap justify-end gap-2 pt-2 border-t">
+                  <EmailVersSmsDialog email={selectedEmail} telephone={apprenant.telephone ?? ''} nom={`${apprenant.prenom ?? ''} ${apprenant.nom ?? ''}`} />
                   {selectedEmail.type === 'sent' && (
                     <Button
                       size="sm"

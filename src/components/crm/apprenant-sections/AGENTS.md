@@ -1,4 +1,5 @@
 # Subject-reset boundary
+- Email-to-SMS is an editable plain-text projection using the existing admin SMS transport, with explicit paid-send confirmation, intact URLs and no automatic retry after an uncertain result; why: originals and recipients must stay unchanged and a preview must never send or duplicate a paid message.
 - CRM document displays retain signature/presence readers even when document lists are empty or fail; report unconfirmed reads separately from missing evidence. Why: an empty dossier must not hide missing attendance signatures.
 - Quick signature consultation uses the same admin-gated, learner-scoped loader as the existing PDF exports and preserves every returned signature ID; why: viewing must not write attendance or invent alternative evidence.
 - Whole-exam reset cancellation is a disabled preview until effective cutoff, exclusive neutralisation and authorization projections cover every reader and starter; use exact reset identity and never write results or originals. Why: a cancellation event alone cannot restore consistent access or grades.

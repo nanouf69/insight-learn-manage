@@ -297,3 +297,6 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 
 ## Adresse du destinataire de facture (26/11, 16:28)
 - [x] Champ d’édition prérempli par financeur sinon stagiaire, toujours saisissable pendant lecture ; délai borné 10 s, arrêt sur changement de facture et erreur visible ; saisie manuelle préservée. 26 tests et quatre parcours fictifs PC/mobile réussis ; lecture réelle non prouvée faute d’accès à la facture, aucun enregistrement/envoi/publication.
+
+## Mail vers SMS (26/11, 17:22)
+- [x] Action sur les mails du CRM, téléphone prérempli et modifiable, projection du texte et liens, raccourcissement explicite à 480 caractères, confirmation payante et transport SMS existant ; aucun mail historique modifié, aucune migration/publication ni envoi réel de vérification.
