@@ -1,6 +1,18 @@
 # Pratique VTC — PDF Lyon et QCM 2, 26/11/2026
 
-## Livraison préparée, non publiée
+## Rectification du périmètre confirmé à 09:41 UTC — aperçu uniquement
+Cette section remplace le raccordement et la persistance décrits dans la livraison précédente ci-dessous (conservée comme historique).
+- Le PDF reste une pièce du cours existant : cours Lyon 1785334184827 dans la projection serveur, cours 2 dans PRATIQUE_VTC_DATA. La page supplémentaire de support et l’exercice QCM 2 ont été retirés du modèle requis préparé. Aucun cours/jalon existant n’est réordonné ; les exercices d’origine restent la même référence dans la projection.
+- Le QCM 2 apparaît séparément dans Pratique VTC, avec 39 questions retenues après comparaison aux 99 questions existantes ; quatre choix, sélection unique, explication courte. Banque et quiz existant inchangés.
+- Entraînement facultatif en mémoire uniquement : fermeture/réouverture dans le même écran conserve les choix, rechargement les remet à vide. Aucun appel de sauvegarde, aucune tentative, aucun score officiel, aucune validation de module. Le contenu et le PDF restent disponibles au rechargement. Cette limitation est volontaire pour respecter « ne crée pas de questions ou de tentatives d’apprenants ».
+- Fichiers du delta : ModuleDetailView.tsx, PratiqueVtcLyonQcm2.tsx (nouveau), pratiqueVtcLyonQcm2.ts, pratique-vtc-lyon-qcm2.test.ts, documentation/roadmap/AGENTS. Les autres travaux en attente sont conservés.
+- 59/59 tests Vitest exécutés : 46 QCM/projection/résultat local, 3 ancien support VTC, 10 supports pratiques. Build OK, git diff --check OK.
+- Chromium PC 1280×1800 et mobile 390×844, vrai ModuleDetailView sur transports fictifs confinés : 39 QCM, absence de champ libre, remplacement de sélection A/B, corrigé 39/39, anciennes lignes inchangées, aucun appel portant l’ID QCM 2, liste des 7 cours et du quiz historique inchangée, rechargement sans écriture. Aucun débordement ni pageerror.
+- PDF : HTTP 200 et SHA-256 identique à l’original sur domaine public, aperçu et localhost ; téléchargement exact PC/mobile. Rendu visuellement inspecté PC/mobile. Première capture mobile prise avant le rendu : nouvelle capture après chargement confirme la couverture lisible, aucune correction du lecteur requise. Une lecture urllib a reçu 403 ; nouvelle vérification curl réussie sur les trois origines, sans modification de sécurité.
+- Aucun compte réel utilisé, aucune écriture Cloud, aucune migration, publication ou communication. Parcours authentifié officiel non prouvé (limite d’accès précédente maintenue). Les réponses d’entraînement ne sont pas présentées comme persistantes.
+- Aperçu dans le module Pratique VTC : bouton « QCM 2 – Examen pratique Connaissance de Lyon », mention « Facultatif · Hors jalons » ; PDF consultable/téléchargeable dans Connaissances Ville de Lyon.
+
+## Livraison précédente, remplacée par la rectification ci-dessus, non publiée
 - PDF joint exact (20 pages, 76 questions), ressource CDN : HTTP 200 sur gestion.ftransport.fr, SHA-256 `e5a151ffc9a07b0845986f53980be42dbb06a292e722934b13287c5026560673`, identique à l’original.
 - Module 8 : rattachement additif au cours Lyon existant 1785334184827, fichier et titre « Examen pratique – Connaissance de Lyon » ; lecture intégrée et téléchargement explicitement autorisé pour ce fichier seulement.
 - QCM distinct 826110201, 39 questions, quatre choix, une seule bonne réponse et explication courte ; aucun QRC. Le quiz serveur actuel 1785332774763 contient **99 questions**, pas 67 ; toutes conservées.

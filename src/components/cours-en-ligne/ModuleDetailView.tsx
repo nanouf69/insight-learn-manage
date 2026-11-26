@@ -1,5 +1,6 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
 import { ajouterLyonVtc, QCM2_LYON, COURS_LYON_VTC_ID, PDF_LYON_VTC, estQcm2Lyon, estPdfLyonVtc } from '@/lib/pratiqueVtcLyonQcm2';
+import PratiqueVtcLyonQcm2 from './PratiqueVtcLyonQcm2';
 import { FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
 import { Bilan505Desactive, couperBilan505, remettreBilan505, useBilan505Active, type RevueItem } from '@/lib/bilan505Remise';
 import { Bilan505RevuePanel } from './Bilan505RevuePanel';
@@ -1154,12 +1155,7 @@ const buildSiblingBilanSecurityModule = (
 
 const forceSourceExerciseTitles = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
   if (Number(moduleId) === 8 && loadedData.cours.some(c => c.id === COURS_LYON_VTC_ID)) {
-    const added = ajouterLyonVtc(loadedData);
-    // Source merging must not move the historical quiz or its page before QCM 2.
-    return { ...added, exercices: [
-      ...added.exercices.filter(e => e.id !== QCM2_LYON.id),
-      ...added.exercices.filter(e => e.id === QCM2_LYON.id),
-    ] };
+    return ajouterLyonVtc(loadedData);
   }
   if (Number(moduleId) !== 9) return loadedData;
 
@@ -2126,7 +2122,7 @@ const PRATIQUE_VTC_DATA: ModuleData = {
   description: "Cours et exercices pour la préparation à l'épreuve pratique VTC — Déroulement de l'examen, devis et facturation, lieux touristiques de Lyon, relation client.",
   cours: [
     { id: 1, titre: "1. Grille de notation de l'épreuve pratique VTC", sousTitre: "Barème : Parcours (2pts), Sécurité/Conduite (10pts), Relation client (5pts), Facturation (3pts) — Note min. 12/20", description: "L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points. Est déclaré reçu le candidat ayant obtenu au moins 12/20.", actif: true },
-    { id: 2, titre: "2. Déroulement de l'épreuve pratique VTC", sousTitre: "Accueil des jurys, tirage au sort, devis, parcours, facture, prise de congé", description: "1) Arrangements techniques. 2) Accueil des jurys. 3) Présentation carte grise et assurance. 4) Tirage au sort destination. 5) Réalisation du devis (transfert ou mise à disposition) + GPS (6 min max). 6) Signature du devis par le client. 7) Parcours aller-retour. 8) Facturation et prise de congé.", actif: true },
+    { id: 2, titre: "2. Déroulement de l'épreuve pratique VTC", sousTitre: "Accueil des jurys, tirage au sort, devis, parcours, facture, prise de congé", description: "1) Arrangements techniques. 2) Accueil des jurys. 3) Présentation carte grise et assurance. 4) Tirage au sort destination. 5) Réalisation du devis (transfert ou mise à disposition) + GPS (6 min max). 6) Signature du devis par le client. 7) Parcours aller-retour. 8) Facturation et prise de congé.", actif: true, fichiers: [PDF_LYON_VTC] },
     { id: 3, titre: "3. Monuments historiques de Lyon", sousTitre: "Cathédrale St Jean, Basilique de Fourvière, Église St Georges", image: imgCathedraleStJean, description: "• Cathédrale St Jean (1480) — Vieux Lyon, 5e arr., près du funiculaire de Fourvière.\n• Basilique de Fourvière (1886) — Patrimoine mondial UNESCO 1998, surplombe la ville.\n• Église St Georges (1848) — Vieux Lyon, entre Quarantaine et St-Jean.", actif: true },
     { id: 4, titre: "4. Places et bâtiments remarquables", sousTitre: "Place Bellecour, Palais de Justice, Place des Terreaux, Opéra, Hôtel de Ville", image: imgPlaceTerreaux, description: "• Place Bellecour — 5e plus grande place de France, statue de Louis XIV.\n• Palais de Justice (1835) — 5e arr., « Palais des 24 colonnes ».\n• Place des Terreaux — 1er arr., fontaine Bartholdi.\n• Opéra de Lyon (1831) — restructuré par Jean Nouvel (1993).\n• Hôtel de Ville — entre Place des Terreaux et Place de la Comédie.\n• Hôtel-Dieu — premier hôpital lyonnais (1184), aujourd'hui InterContinental.\n• Musée des Confluences — inauguré en 2014.", actif: true },
     { id: 5, titre: "5. Tours et architecture moderne", sousTitre: "Tour Part-Dieu (le crayon, 165m), Tour Oxygène (117m), Tour Incity (la gomme, 202m)", image: imgTourOxygene, description: "• Tour Part-Dieu « le crayon » — 42 étages, 165m, ouverte depuis 1977.\n• Tour Oxygène — 28 niveaux, 117m, inaugurée en 2010.\n• Tour Incity « la gomme » — 39 étages, 202m, 3e plus haut gratte-ciel de France, inaugurée en 2016.", actif: true },
@@ -2135,7 +2131,6 @@ const PRATIQUE_VTC_DATA: ModuleData = {
     { id: 8, titre: "8. Spécialités culinaires et restaurants", sousTitre: "Quenelle, Cervelle de canut, Tablier de sapeur, Bugnes, Bouchons lyonnais", image: imgBrasserieGeorges, description: "• Quenelle — semoule de blé dur, beurre, œufs, lait.\n• Cervelle de canut — fromage blanc, herbes, échalote.\n• Tablier de sapeur — gras-double.\n• Bugnes, Coussins lyonnais, Tarte praline.\n• Brasserie Georges (2e, cours Verdun) — fruits de mer, choucroute.\n• Bouchons lyonnais — restaurants typiques.", actif: true },
     { id: 9, titre: "9. Devis et facturation VTC", sousTitre: "Transfert vs Mise à disposition, calcul TVA 10%, signature du devis", description: "• Transfert (A→B) : prix forfaitaire HT + TVA 10%.\n• Mise à disposition : tarif horaire.\n• Minimum 10€ HT (11€ TTC).\n• Faire signer le devis par le client avant de démarrer.\n• Facture à établir à l'arrivée.", actif: true },
     { id: 10, titre: "10. Conseils pratiques pour le jour de l'examen", sousTitre: "Tenue vestimentaire, GPS, gestion du feu orange, comportement neutre", description: "• Tenue élégante (pas de baskets/casquettes).\n• GPS sur téléphone (Waze/Maps), tester avant l'examen.\n• Feu orange : s'arrêter sauf danger pour véhicules suivants.\n• Rester poli, courtois, neutre.\n• Bien écrire le point de départ de la facturation sur le devis.\n• À destination : retourner au siège ou stationner hors chaussée.", actif: true },
-    { id: COURS_LYON_VTC_ID, titre: 'Examen pratique – Connaissance de Lyon', actif: true, fichiers: [PDF_LYON_VTC] },
   ],
   exercices: [
     {
@@ -2174,7 +2169,6 @@ const PRATIQUE_VTC_DATA: ModuleData = {
         { id: 7, enonce: "Quel moyen de transport permet d'aller à l'aéroport de Lyon ?", choix: [{ lettre: "A", texte: "Le Rhône Express", correct: true }, { lettre: "B", texte: "Le TGV" }, { lettre: "C", texte: "Le tramway T4" }] },
       ]
     },
-    QCM2_LYON,
   ],
 };
 
@@ -10209,6 +10203,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
           {/* Grilles d'évaluation pratique (tous les passages) */}
           {Number(module.id) === 8 && <PratiqueVtcLyonSupport key={`support-vtc-${apprenantId ?? "apercu"}`} moduleId={8} />}
+          {Number(module.id) === 8 && <PratiqueVtcLyonQcm2 key={`qcm2-lyon-${apprenantId ?? "apercu"}`} />}
           {Number(module.id) === 6 && <PratiqueTaxiLyonSupport key={`support-taxi-${apprenantId ?? "apercu"}`} moduleId={6} />}
           {Number(module.id) === 6 && (
             <Suspense fallback={<p role="status">Chargement des exercices TAXI…</p>}>

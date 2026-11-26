@@ -21,14 +21,15 @@ export function ajouterLyonVtc<T extends { id: number; cours: Course[]; exercice
   if (module.id !== 8) throw new Error('Ajout réservé à la pratique VTC.');
   const course = module.cours.find(c => c.id === COURS_LYON_VTC_ID);
   if (!course) throw new Error('Cours Lyon absent : aucun rattachement implicite.');
-  const existing = module.exercices.find(e => e.id === quiz.id);
-  if (existing && (!('titre' in existing) || existing.titre !== quiz.titre)) {
-    throw new Error('Identifiant QCM déjà utilisé : conserver les deux contenus pour revue.');
-  }
   return {
     ...module,
     cours: module.cours.map(c => c !== course || c.fichiers?.some(f => f.url === pdf.url)
       ? c : { ...c, fichiers: [...(c.fichiers ?? []), PDF_LYON_VTC] }),
-    exercices: existing ? module.exercices : [...module.exercices, quiz],
+    // QCM 2 is rendered separately, never a required exercise or completion page.
+    exercices: module.exercices,
   };
+}
+
+export function noteEntrainementLyon(reponses: Record<number, string>) {
+  return quiz.questions.filter(q => q.choix.some(c => 'correct' in c && c.correct && reponses[q.id] === c.lettre)).length;
 }

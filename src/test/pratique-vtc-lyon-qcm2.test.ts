@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ajouterLyonVtc, COURS_LYON_VTC_ID, PDF_LYON_VTC, QCM2_LYON, estQcm2Lyon, estPdfLyonVtc } from '@/lib/pratiqueVtcLyonQcm2';
+import { ajouterLyonVtc, COURS_LYON_VTC_ID, PDF_LYON_VTC, QCM2_LYON, estQcm2Lyon, estPdfLyonVtc, noteEntrainementLyon } from '@/lib/pratiqueVtcLyonQcm2';
 
 describe('Ajout complémentaire Lyon VTC', () => {
   it('convertit uniquement les 39 objectifs absents sur les 76 du PDF', () => {
@@ -26,9 +26,22 @@ describe('Ajout complémentaire Lyon VTC', () => {
     expect(before.cours[1].fichiers).toHaveLength(1);
     expect(ajouterLyonVtc(after)).toEqual(after);
   });
-  it('refuse un autre module et un identifiant déjà occupé', () => {
+  it('refuse un autre module sans inventer un cours', () => {
     expect(() => ajouterLyonVtc({ id: 6, cours: [], exercices: [] })).toThrow();
-    expect(() => ajouterLyonVtc({ id: 8, cours: [{ id: COURS_LYON_VTC_ID }], exercices: [{ id: QCM2_LYON.id }] })).toThrow();
+    expect(() => ajouterLyonVtc({ id: 8, cours: [], exercices: [] })).toThrow();
+  });
+  it('ne crée aucun exercice requis ni page ou jalon supplémentaire', () => {
+    const before = { id: 8, cours: [{ id: COURS_LYON_VTC_ID }], exercices: [{ id: 1785332774763 }] };
+    const after = ajouterLyonVtc(before);
+    expect(after.exercices).toBe(before.exercices);
+    expect(after.exercices.map(e => e.id)).toEqual([1785332774763]);
+    expect(after.cours.map(c => c.id)).toEqual(before.cours.map(c => c.id));
+  });
+  it('calcule uniquement un résultat local avec une seule réponse par question', () => {
+    expect(noteEntrainementLyon({})).toBe(0);
+    expect(noteEntrainementLyon({ 826110001: 'A' })).toBe(1);
+    expect(noteEntrainementLyon({ 826110001: 'B' })).toBe(0);
+    expect(noteEntrainementLyon({ 826110001: 'A,B' })).toBe(0);
   });
   it('réserve la sélection unique au nouveau quiz du module 8', () => {
     expect(estQcm2Lyon(8, 826110201)).toBe(true);
