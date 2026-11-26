@@ -2101,6 +2101,13 @@
       "when": 1795725149374,
       "tag": "0299_renumerotation_critere_soumissions_datees",
       "breakpoints": true
+    },
+    {
+      "idx": 300,
+      "version": "7",
+      "when": 1795725540581,
+      "tag": "0300_renumerotation_journal_par_question",
+      "breakpoints": true
     }
   ]
 }

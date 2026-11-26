@@ -45,3 +45,8 @@ Chemin : **Cours en ligne → Vue apprenant → BENTAYEB**. La projection testé
 **Parcours connecté réel NON PROUVÉ** : la session disponible du demandeur est rôle user, pas administrateur ; le contrôle navigateur en lecture seule affiche un refus de vérification d’accès. La connexion SQL disponible ne peut pas assumer authenticated. Aucune élévation de droits ni écriture de test n’a été faite. La parité des droits est prouvée sur PostgreSQL jetable, pas par une connexion réelle de BENTAYEB.
 
 Le correctif serveur est actif sur le service partagé ; le changement d’interface reste en aperçu, sans publication frontend.
+## Suivi 26/11 20:40 UTC — antériorité par question (Seydou)
+- Défaut 0297 (date de création de ligne globale) reproduit sur lignes réelles anonymisées : 0 exemption.
+- 0299 (soumissions datées) puis 0300 (journal par question, horodatage client antérieur = refus) : 144 (exo 101) + 7 (exo 100) exemptions.
+- Contrôle réel lecture seule du texte de la fonction en ligne : Seydou 144+7 ; M. Arga 0 ; M. Bentayeb 0. Premier journal 101-60001 : 18/09 22:12 UTC > remise 16/09 19:17 UTC.
+- Aucune donnée apprenant écrite. Compte réel non ouvert.

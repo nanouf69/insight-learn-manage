@@ -4,6 +4,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CANDIDATE = ROOT / 'docs/sql-revue/2026-11-26-renumerotation-apres-soumission.sql'
+SUIVI = ROOT / 'docs/sql-revue/2026-11-26-renumerotation-journal-par-question.sql'
 DOSSIER = 'd51ba01f-6c6b-4073-afa1-d01fda236f4b'  # Seydou Norou BA (lecture seule)
 A, U = 'aaaaaaaa-0000-4000-8000-00000000000a', 'bbbbbbbb-0000-4000-8000-00000000000b'
 N, NU = 'eeeeeeee-0000-4000-8000-00000000000e', 'ffffffff-0000-4000-8000-00000000000f'
@@ -28,6 +29,10 @@ def main():
     mes = capture(f"SELECT coalesce(jsonb_agg(jsonb_build_object('m',module_id,'d',module_data)),'[]') FROM public.module_editor_state WHERE module_id IN ({','.join(map(str,mods))})")
     # Premières soumissions réelles (tous comptes) contenant chaque clé de module 4, anonymisées.
     premieres = json.loads(capture("SELECT coalesce(jsonb_agg(jsonb_build_object('e',exercice_id,'k',key,'t',t)),'[]') FROM (SELECT r.exercice_id, key, min(r.submitted_at) t FROM public.reponses_apprenants r, jsonb_object_keys(r.reponses) key WHERE r.exercice_id LIKE 'module_4_exo_%' AND r.status='submitted' AND r.submitted_at IS NOT NULL AND jsonb_typeof(r.reponses)='object' AND r.apprenant_id <> '" + DOSSIER + "' GROUP BY 1,2) x"))
+    # Lignes réelles d'autres comptes (anonymisées) : dates de ligne + statut, clés seulement.
+    autres = json.loads(capture("SELECT coalesce(jsonb_agg(jsonb_build_object('a',md5(apprenant_id::text),'e',exercice_id,'k',(SELECT coalesce(jsonb_agg(x),'[]') FROM jsonb_object_keys(reponses) x),'s',status,'t',submitted_at,'c',created_at,'u',updated_at)),'[]') FROM public.reponses_apprenants WHERE exercice_id IN ('module_4_exo_100','module_4_exo_101') AND jsonb_typeof(reponses)='object' AND apprenant_id <> '" + DOSSIER + "'"))
+    # Premier événement réel du journal PAR QUESTION (tous comptes, anonymisés) pour ces exercices.
+    journal = json.loads(capture("SELECT coalesce(jsonb_agg(jsonb_build_object('a',md5(apprenant_id::text),'e',exercice_id,'q',question_id,'c',c,'k',k)),'[]') FROM (SELECT apprenant_id, exercice_id, question_id, min(created_at) c, min(client_saved_at) k FROM public.reponses_apprenants_journal WHERE apprenant_id IN (SELECT apprenant_id FROM public.reponses_apprenants WHERE exercice_id IN ('module_4_exo_100','module_4_exo_101')) AND exercice_id IN ('module_4_exo_100','module_4_exo_101') GROUP BY 1,2,3) x"))
     real_md5 = capture(f"SELECT md5(string_agg(row_to_json(c)::text, '' ORDER BY module_id)) FROM public.apprenant_module_completion c WHERE apprenant_id='{DOSSIER}'")
     real_ans = capture(f"SELECT md5(string_agg(row_to_json(r)::text, '' ORDER BY exercice_id)) FROM public.reponses_apprenants r WHERE apprenant_id='{DOSSIER}'")
     env = {k: v for k, v in os.environ.items() if not k.startswith(('PG', 'SUPABASE', 'LOVABLE_', 'VITE_'))}
@@ -56,6 +61,7 @@ def main():
         CREATE TABLE public.reponses_apprenants(apprenant_id uuid,exercice_id text,reponses jsonb,status text,submitted_at timestamptz,created_at timestamptz DEFAULT now(),updated_at timestamptz DEFAULT now());
         CREATE TABLE public.quiz_lyon_cohortes(apprenant_id uuid);
         CREATE TABLE public.module_editor_state(module_id int, module_data jsonb);
+        CREATE TABLE public.reponses_apprenants_journal(apprenant_id uuid,exercice_id text,question_id text,created_at timestamptz,client_saved_at timestamptz);
         CREATE TABLE public.module_admin_audit_log(module_id int,exercice_id text,question_id text,field text,created_at timestamptz);
         GRANT SELECT ON public.apprenants,public.apprenant_module_completion,public.reponses_apprenants,public.quiz_lyon_cohortes,public.module_admin_audit_log TO authenticated;
         ALTER TABLE public.module_admin_audit_log ENABLE ROW LEVEL SECURITY;
@@ -75,12 +81,39 @@ def main():
             sql(f"INSERT INTO public.module_editor_state VALUES({r['m']},{Q(json.dumps(r['d']))}::jsonb);")
         for i, pr in enumerate(premieres):
             sql(f"INSERT INTO public.reponses_apprenants VALUES('99999999-0000-4000-8000-{i:012d}',{Q(pr['e'])},{Q(json.dumps({pr['k']: 'A'}))}::jsonb,'submitted',{Q(pr['t'])},'2026-01-01Z','2026-01-01Z');")
+        anon = {}
+        uid = lambda h: anon.setdefault(h, f'77777777-0000-4000-8000-{len(anon):012d}')
+        for o in autres:
+            sql(f"INSERT INTO public.reponses_apprenants VALUES('{uid(o['a'])}',{Q(o['e'])},{Q(json.dumps({k: 'A' for k in o['k']}))}::jsonb,{Q(o['s'])},{Q(o['t'])},{Q(o['c'])},{Q(o['u'])});")
+        for i in range(0, len(journal), 2000):
+            sql('INSERT INTO public.reponses_apprenants_journal VALUES ' + ','.join(f"('{uid(j['a'])}',{Q(j['e'])},{Q(j['q'])},{Q(j['c'])},{Q(j['k'])})" for j in journal[i:i+2000]) + ';')
+        for h in list(anon):
+            sql(f"INSERT INTO public.apprenants VALUES('{anon[h]}',NULL) ON CONFLICT DO NOTHING;")
         snap = "SELECT md5(string_agg(t::text,'' ORDER BY t::text)) FROM (SELECT row_to_json(c) t FROM public.apprenant_module_completion c UNION ALL SELECT row_to_json(r) FROM public.reponses_apprenants r) x"
         before_copy = sql(snap)
         before = {m: v(ADMIN, A, m) for m in mods}
         print('AVANT (copie de Seydou) :', before)
         assert before[4].split('|')[2] == 'false', before[4]
+        sub101 = next(x['t'] for x in subs if x['e'] == 'module_4_exo_101' and x['s'] == 'submitted')
+        nb_exempt = lambda ex: int(sql(actor(ADMIN, f"SELECT count(*) FROM public.obligations_non_datees_anterieures('{A}') WHERE exercice_id='{ex}'")))
+        # 1) Reproduction du défaut 0297 : date de création de ligne globale = fausse antériorité.
+        ancien = CANDIDATE.read_text().replace(
+            "                        AND o.status = 'submitted' AND o.submitted_at IS NOT NULL\n                        AND o.submitted_at <= s.submitted_at\n                        AND o.reponses ? (k.ex || '-' || k.qid));",
+            "                        AND o.reponses ? (k.ex || '-' || k.qid)\n                        AND LEAST(o.created_at, o.updated_at, coalesce(o.submitted_at, o.updated_at)) <= s.submitted_at);")
+        assert ancien != CANDIDATE.read_text()
+        sql(ancien)
+        assert nb_exempt('101') == 0 and nb_exempt('100') == 0, 'défaut 0297 non reproduit sur lignes réelles'
+        lignes_avant = sum(1 for o in autres if o['e'] == 'module_4_exo_101' and min(o['c'], o['u']) <= sub101 and any(k.startswith('101-6') for k in o['k']))
+        assert lignes_avant > 0, 'aucune ligne créée avant la remise'
+        print(f'DÉFAUT 0297 reproduit : 0 exemption ; {lignes_avant} lignes réelles créées avant la remise portant des clés 6xxxx.')
+        # 2) Règle 0299 puis suivi par question (journal).
         sql(CANDIDATE.read_text())
+        assert (nb_exempt('101'), nb_exempt('100')) == (144, 7), 'règle 0299'
+        sql(SUIVI.read_text())
+        assert (nb_exempt('101'), nb_exempt('100')) == (144, 7), 'règle suivi journal'
+        jour60001 = min(j['c'] for j in journal if j['e'] == 'module_4_exo_101' and j['q'] == '101-60001')
+        assert jour60001 > sub101, 'journal 60001 antérieur'
+        print(f'SUIVI : 144+7 exemptions ; premier journal 101-60001 = {jour60001} > remise {sub101}.')
         after = {m: v(ADMIN, A, m) for m in mods}
         print('APRÈS :', after)
         assert after[4].endswith('|true|completed'), after[4]
@@ -105,6 +138,13 @@ def main():
         assert sql("SELECT NOT prosecdef FROM pg_proc WHERE proname='etat_completion_modules'") == 't'
         assert capture(f"SELECT md5(string_agg(row_to_json(c)::text, '' ORDER BY module_id)) FROM public.apprenant_module_completion c WHERE apprenant_id='{DOSSIER}'") == real_md5
         assert capture(f"SELECT md5(string_agg(row_to_json(r)::text, '' ORDER BY exercice_id)) FROM public.reponses_apprenants r WHERE apprenant_id='{DOSSIER}'") == real_ans
+        # 3) Refus conservateur : un événement de journal antérieur sur UNE clé la rend de nouveau exigée.
+        sql(f"INSERT INTO public.reponses_apprenants_journal VALUES('{next(iter(anon.values()))}','module_4_exo_101','101-60001','2026-09-01Z',NULL);")
+        assert nb_exempt('101') == 143 and not v(ADMIN, A, 4).endswith('|true|completed'), 'journal antérieur ignoré'
+        sql(f"INSERT INTO public.reponses_apprenants_journal VALUES('{next(iter(anon.values()))}','module_4_exo_101','101-60002','2026-10-01Z','2026-09-01Z');")
+        assert nb_exempt('101') == 142, 'horodatage client antérieur ambigu non refusé'
+        sql("DELETE FROM public.reponses_apprenants_journal WHERE created_at IN ('2026-09-01Z','2026-10-01Z')")
+        assert nb_exempt('101') == 144
         # Preuve versionnée (lecture seule) : instantané module_editor_state_reference_20260928,
         # postérieur à la validation du 15/09. Ne fournit AUCUNE date exacte d'ajout.
         exemptes = sql(actor(ADMIN, f"SELECT coalesce(json_agg(json_build_array(module_id, exercice_id, question_id)),'[]') FROM public.obligations_non_datees_anterieures('{A}')"))
