@@ -577,7 +577,7 @@ export default function DevisPublic() {
             </table>
 
             <p className="text-xs text-gray-500">
-              Centre de formation agréé par la préfecture : {typeConfig.agrement} — NDA : 84 69 15114 69 — SIRET : 823 461 561 000 18.
+              Centre de formation agréé par la préfecture : {typeConfig.agrement} — NDA : 84 69 15114 69 — SIRET : 82346156100016.
               Certifié Qualiopi. Ftransport n'est pas assujetti à la TVA. Les prix sont nets de taxe.
             </p>
 

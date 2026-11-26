@@ -256,7 +256,7 @@ export default function AnalyseBesoinForm({
       <Card>
         <CardContent className="p-5 text-center space-y-1">
           <h3 className="font-bold text-lg">ANALYSE DU BESOIN – FICHE CLIENT</h3>
-          <p className="text-xs text-muted-foreground">NDA : 84 69 1511469 | SIRET : 82346156100018 | Qualiopi ✓</p>
+          <p className="text-xs text-muted-foreground">NDA : 84 69 1511469 | SIRET : 82346156100016 | Qualiopi ✓</p>
         </CardContent>
       </Card>
 

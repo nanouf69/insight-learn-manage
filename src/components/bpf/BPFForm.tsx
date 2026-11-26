@@ -33,7 +33,7 @@ import { Loader2 } from "lucide-react";
 const autoData = {
   // Données organisme (pré-remplies)
   organisme: {
-    siret: "53516371400044",
+    siret: "82346156100016",
     codeNAF: "8559A",
     numeroDeclaration: "11770762377",
     formeJuridique: "SARL",

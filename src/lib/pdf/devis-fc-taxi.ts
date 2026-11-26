@@ -138,7 +138,7 @@ export function lignesDevisFcTaxi(input: DevisFcTaxiInput): string[] {
   return [
     "Services Pro F Transport - SASU au capital de 5 000 EUR",
     "Siège social : 86 route de Genas, 69003 Lyon",
-    "SIRET : 82346156100018 - Déclaration d'activité : 84 69 15114 69 (cet enregistrement ne vaut pas agrément de l'État) - Centre agréé par la préfecture n° 69-18-001",
+    "SIRET : 82346156100016 - Déclaration d'activité : 84 69 15114 69 (cet enregistrement ne vaut pas agrément de l'État) - Centre agréé par la préfecture n° 69-18-001",
     "Tél. : 04 28 29 60 91 - contact@ftransport.fr",
     `Date d'émission : ${input.dateDevis}${input.dateValidite ? ` - Devis valable jusqu'au ${input.dateValidite}` : ""}`,
     "FORMATION CONTINUE OBLIGATOIRE TAXI",

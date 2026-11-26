@@ -239,7 +239,7 @@ export default function ProjetProfessionnelForm({
         <CardContent className="p-5 text-center space-y-1">
           <h3 className="font-bold text-lg">QUESTIONNAIRE PROJET PROFESSIONNEL</h3>
           <p className="text-sm font-medium text-primary">Formation {formType} — {rsCode}</p>
-          <p className="text-xs text-muted-foreground">Réf. : {refDoc} | SIRET : 82346156100018 | N° déclaration : 84 69 15114 69</p>
+          <p className="text-xs text-muted-foreground">Réf. : {refDoc} | SIRET : 82346156100016 | N° déclaration : 84 69 15114 69</p>
           <p className="text-xs text-muted-foreground mt-2">Ce questionnaire permet d'évaluer la motivation, le projet professionnel et l'adéquation avec la formation.</p>
           <Button variant="outline" size="sm" className="mt-2" asChild>
             <a href={pdfUrl} target="_blank" rel="noopener noreferrer">

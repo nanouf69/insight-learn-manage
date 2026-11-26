@@ -7,7 +7,7 @@ import logoImage from '@/assets/logo-ftransport.png';
 const COMPANY = {
   name: 'Ftransport',
   address: '86 Route de Genas 69003 Lyon',
-  siret: '53516371400044',
+  siret: '82346156100016',
 };
 
 const buildDemiLabels = (isFC: boolean): Record<string, string> => ({

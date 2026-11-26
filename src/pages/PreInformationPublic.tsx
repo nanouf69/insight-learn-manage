@@ -762,7 +762,7 @@ export default function PreInformationPublic() {
           <CardContent className="p-5 text-center space-y-2">
             <h1 className="text-xl font-bold">PRÉ-INFORMATION — {formationLabel.toUpperCase()}</h1>
             <p className="text-sm text-muted-foreground">
-              FTRANSPORT — NDA : 84 69 1511469 | SIRET : 82346156100018 | Qualiopi ✓
+              FTRANSPORT — NDA : 84 69 1511469 | SIRET : 82346156100016 | Qualiopi ✓
             </p>
             <p className="text-sm">
               Bonjour <strong>{apprenant.prenom} {apprenant.nom}</strong>, merci de compléter les 3 documents ci-dessous.

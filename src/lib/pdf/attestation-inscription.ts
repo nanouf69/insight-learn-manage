@@ -10,7 +10,7 @@ import logoImage from '@/assets/logo-ftransport.png';
 const COMPANY_INFO = {
   name: 'Ftransport',
   address: '86 Route de Genas 69003 Lyon',
-  siret: '53516371400044',
+  siret: '82346156100016',
   naf: '8559A',
   declaration: '11770762377',
   phone: '09.86.22.30.62',

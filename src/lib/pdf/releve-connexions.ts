@@ -12,7 +12,7 @@ import { learningSessionWindow, getLearningHoursStartMs } from "@/lib/reports/le
 const COMPANY = {
   name: "Ftransport",
   address: "86 Route de Genas 69003 Lyon",
-  siret: "53516371400044",
+  siret: "82346156100016",
 };
 
 export interface ConnexionRow {

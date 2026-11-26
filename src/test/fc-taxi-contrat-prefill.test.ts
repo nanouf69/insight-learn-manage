@@ -12,7 +12,7 @@ describe('Contrat FC TAXI — pré-remplissage', () => {
   });
   it('remplit SIRET, NDA et dates depuis les sources', () => {
     const c = appliquerChampsVides(base(), champsSourcesFcTaxi({ prix: 200, selectionDates: '19 novembre 2026 + 20 novembre 2026', mode: 'centre' }));
-    expect(c.fields.registration).toContain('82346156100018');
+    expect(c.fields.registration).toContain('82346156100016');
     expect(c.fields.nda).toContain('84 69 15114 69');
     expect(c.fields.start).toBe('2026-11-19');
     expect(c.fields.end).toBe('2026-11-20');

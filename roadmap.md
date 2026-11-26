@@ -1,4 +1,8 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## SIRET centre — 26/11 15:57
+- [x] Mentions du centre corrigées dans les modèles devis/documents futurs ; générateurs facture déjà corrects, clients/financeurs et historiques conservés. Quatre anciennes signatures de modèles de convocation retirées par le rendu existant, aucune écriture en base.
+- [x] Tests ciblés et extraction des PDF fictifs ; état aperçu vérifié, sans publication. Rapport docs/siret-centre-2026-11-26.md.
+- [ ] Pied de mail send-notification-admin corrigé dans le code, activation attend autorisation de déploiement ; neuf anciennes adresses d’offres CPF hors correction des mentions documentaires, destinations à vérifier séparément.
 ## Exhaustivité lettre CMA — 26/11 15:44
 - [x] Source partagée avant rendu lettre/liste, union par ID, VA conservé et inconnu visible ; Ayoub BENAKKI admis retrouvé, ajout CMA déjà enregistré conservé. Aucun dossier/envoi/publication modifié.
 - [x] 33 tests PASS et PC/mobile simulés 50/50 noms dans les deux listes, build OK ; consultation réelle refusée par le rôle disponible, aucune permission élargie. Rapport docs/cma-lettre-exhaustivite-2026-11-26.md ; territoire/inscription à vérifier toujours bloquants.

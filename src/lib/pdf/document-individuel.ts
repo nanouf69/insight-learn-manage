@@ -38,7 +38,7 @@ function isDateExamenTheoriqueLabel(label: string): boolean {
 const COMPANY_INFO = {
   name: 'Ftransport',
   address: '86 Route de Genas 69003 Lyon',
-  siret: '53516371400044',
+  siret: '82346156100016',
   naf: '8559A',
   declaration: '11770762377',
 };

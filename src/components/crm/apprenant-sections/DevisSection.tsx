@@ -721,7 +721,7 @@ const CGV_TEXT = `CONDITIONS GENERALES DE VENTE - FTRANSPORT
 
 FTRANSPORT est un organisme de formation professionnelle specialise dans le secteur du transport.
 Siege social : 86 route de Genas, 69003 Lyon
-Numero SIRET : 82346156100018
+Numero SIRET : 82346156100016
 Numero de declaration d'activite : 84 69 15114 69
 (Cet enregistrement ne vaut pas agrement de l'Etat)
 Organisme non assujetti a la TVA
@@ -800,7 +800,7 @@ Les presentes conditions generales de vente sont regies par le droit francais. E
 Numero de declaration d'activite : 84 69 15114 69 - Cet enregistrement ne vaut pas agrement de l'Etat
 Ftransport n'est pas assujetti a la TVA
 Services Pro - FTransport - SASU au capital social de 5 000 euros
-SIRET : 82346156100018 | 86 route de Genas - 69003 LYON | Tel : 04.28.29.60.91 | contact@ftransport.fr`;
+SIRET : 82346156100016 | 86 route de Genas - 69003 LYON | Tel : 04.28.29.60.91 | contact@ftransport.fr`;
 
 // Formatteur de nombre compatible jsPDF (pas d'espaces insécables)
 const formatEUR = (n: number): string => {

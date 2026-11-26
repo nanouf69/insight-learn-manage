@@ -469,7 +469,7 @@ function buildEmailHtml(data: NotificationPayload): string {
                     <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#6C3FA0">FTRANSPORT – Services Pro</p>
                     <p style="margin:0 0 2px;font-size:12px;color:#6b7280">86 Route de Genas, 69003 Lyon</p>
                     <p style="margin:0 0 2px;font-size:12px;color:#6b7280">Tél : 04 28 29 60 91</p>
-                    <p style="margin:0 0 2px;font-size:12px;color:#6b7280">SIRET : 82346156100018 — NDA : 84 69 15114 69</p>
+                    <p style="margin:0 0 2px;font-size:12px;color:#6b7280">SIRET : 82346156100016 — NDA : 84 69 15114 69</p>
                     <p style="margin:8px 0 0;font-size:11px;color:#9ca3af;font-style:italic">Email automatique envoyé par la plateforme FTRANSPORT</p>
                   </td>
                 </tr>

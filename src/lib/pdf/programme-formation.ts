@@ -6,7 +6,7 @@ import logoImage from "@/assets/logo-ftransport.png";
 const COMPANY = {
   name: "Ftransport",
   address: "86 Route de Genas 69003 Lyon",
-  siret: "53516371400044",
+  siret: "82346156100016",
   siren: "823 461 561",
   declarationActivite: "84 69 17 911 69",
   agrement: "69-16-15",

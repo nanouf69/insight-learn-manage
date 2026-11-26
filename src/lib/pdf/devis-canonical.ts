@@ -41,7 +41,7 @@ export const CGV_TEXT = `CONDITIONS GENERALES DE VENTE - FTRANSPORT
 
 FTRANSPORT est un organisme de formation professionnelle specialise dans le secteur du transport de personnes.
 Siege social : 86 route de Genas, 69003 Lyon
-Numero SIRET : 82346156100018
+Numero SIRET : 82346156100016
 Numero de declaration d'activite : 84 69 15114 69
 (Cet enregistrement ne vaut pas agrement de l'Etat)
 Organisme non assujetti a la TVA
@@ -136,7 +136,7 @@ Les presentes CGV sont regies par le droit francais. A defaut d'accord amiable s
 Numero de declaration d'activite : 84 69 15114 69 - Cet enregistrement ne vaut pas agrement de l'Etat
 Ftransport n'est pas assujetti a la TVA
 Services Pro - FTransport - SASU au capital social de 5 000 euros
-SIRET : 82346156100018 | 86 route de Genas - 69003 LYON | Tel : 04.28.29.60.91 | contact@ftransport.fr`;
+SIRET : 82346156100016 | 86 route de Genas - 69003 LYON | Tel : 04.28.29.60.91 | contact@ftransport.fr`;
 
 export const formatEUR = (n: number): string => {
   const parts = n.toFixed(2).replace(".", ",").split(",");
@@ -259,7 +259,7 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
   doc.setFontSize(8);
   doc.text("SERVICES PRO FTRANSPORT", margin + 3, y + 10);
   doc.text("SASU au capital de 5 000 EUR", margin + 3, y + 14);
-  doc.text("SIRET : 82346156100018", margin + 3, y + 18);
+  doc.text("SIRET : 82346156100016", margin + 3, y + 18);
   doc.text("86 route de Genas - 69003 Lyon", margin + 3, y + 22);
   doc.text("N° decl. activite : 84 69 15114 69", margin + 3, y + 26);
   doc.setFontSize(7);
@@ -502,7 +502,7 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
   [
     "Conformement a l'article L6353-5 du Code du travail, le client beneficie d'un delai de retractation de 10 jours.",
     "Conformement a l'article L6353-6, aucun paiement ne peut etre exige avant l'expiration du delai de retractation.",
-    "Organisme de formation : SERVICES PRO FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018",
+    "Organisme de formation : SERVICES PRO FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100016",
     "N° de declaration d'activite : 84 69 15114 69 aupres du Prefet de la region Auvergne-Rhone-Alpes",
     "Non assujetti a la TVA (Art. 261-4-4° du CGI).",
   ].forEach(m => {
@@ -558,7 +558,7 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
   // === FOOTER ===
   doc.setFontSize(6.5);
   doc.setTextColor(140, 140, 140);
-  doc.text("FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018 - N Decl. : 84 69 15114 69", margin, 288);
+  doc.text("FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100016 - N Decl. : 84 69 15114 69", margin, 288);
   doc.text("Non assujetti TVA | contact@ftransport.fr | 04.28.29.60.91 | 86 route de Genas, 69003 Lyon", margin, 293);
 
   if (input.contractPages) {
@@ -704,7 +704,7 @@ export function buildCanonicalDevisPDF(input: CanonicalDevisInput): jsPDF {
 
   doc.setFontSize(6.5);
   doc.setTextColor(140, 140, 140);
-  doc.text("FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100018 - N Decl. : 84 69 15114 69", margin, 288);
+  doc.text("FTRANSPORT - SASU au capital de 5 000 EUR - SIRET : 82346156100016 - N Decl. : 84 69 15114 69", margin, 288);
   doc.text("Non assujetti TVA | contact@ftransport.fr | 04.28.29.60.91 | 86 route de Genas, 69003 Lyon", margin, 293);
 
   }

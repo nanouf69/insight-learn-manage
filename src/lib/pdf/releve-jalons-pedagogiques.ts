@@ -27,7 +27,7 @@ export interface ReleveJalonsData {
   etatGel?: string;
 }
 
-const COMPANY = { name: "Ftransport", address: "86 Route de Genas 69003 Lyon", siret: "53516371400044" };
+const COMPANY = { name: "Ftransport", address: "86 Route de Genas 69003 Lyon", siret: "82346156100016" };
 const CPOF_URL = "https://www.moncompteformation.gouv.fr/espace-public/sites/mcf/files/2026-05/CPOF_MCF_V15_VF.pdf";
 const CG_URL = "https://www.moncompteformation.gouv.fr/espace-public/sites/mcf/files/2026-05/CG_MCF_V15_VF.pdf";
 

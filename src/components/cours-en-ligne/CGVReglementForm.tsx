@@ -366,7 +366,7 @@ export default function CGVReglementForm({
         <CardContent className="p-6 space-y-4">
           <h3 className="text-xl font-bold text-center">Conditions Generales de Vente</h3>
           <p className="text-sm text-muted-foreground text-center">
-            FTRANSPORT — 86 route de Genas, 69003 Lyon — SIRET : 82346156100018
+            FTRANSPORT — 86 route de Genas, 69003 Lyon — SIRET : 82346156100016
           </p>
           <p className="text-xs text-muted-foreground text-center italic">
             Les conditions ci-dessous s'appliquent aux stagiaires dont le financement est effectue hors CPF.

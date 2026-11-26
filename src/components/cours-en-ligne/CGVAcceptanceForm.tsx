@@ -192,7 +192,7 @@ export default function CGVAcceptanceForm({ apprenantId, completed, onComplete }
           <h3 className="text-xl font-bold text-center">📋 Conditions Générales de Vente</h3>
           <p className="text-sm text-muted-foreground text-center">
             FTRANSPORT — Organisme de formation professionnelle<br />
-            86 route de Genas, 69003 Lyon — SIRET : 82346156100018
+            86 route de Genas, 69003 Lyon — SIRET : 82346156100016
           </p>
           <p className="text-xs text-muted-foreground text-center italic">
             Les conditions ci-dessous s'appliquent aux stagiaires dont le financement est effectué hors CPF. Pour le CPF, les conditions de Mon Compte Formation s'appliquent (voir section dédiée).
