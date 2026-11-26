@@ -2118,7 +2118,7 @@ const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/Co
 const QuizJoursFeries = lazy(() => import("./cas-pratique-feries/QuizJoursFeries"));
 import QuizExterneBilan, { quizIntegresBilan, exerciceRemplaceParQuizIntegres, etapeQuizComplementaires, ID_ETAPE_QUIZ_COMPLEMENTAIRES } from "./QuizExterneBilan";
 import { getCachedSignedUrl, signCourseObject } from "@/lib/signedCourseUrlCache";
-import { exoSauvegardable, revisionsSessionARestaurer, revisionFaussesTerminee } from "@/lib/revisionFaussesEtat";
+import { exoSauvegardable, revisionsSessionARestaurer, revisionFaussesTerminee, revisionRepriseProuvee } from "@/lib/revisionFaussesEtat";
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -7781,13 +7781,17 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // --- Révisions « Refaire les fausses » d'un quiz déjà validé ---
     // Relues depuis leur identifiant distinct et réaffichées par-dessus la
     // tentative validée (affichage seulement ; la ligne validée n'est jamais modifiée).
-    const appliquerRevisions = async (attempts: { exercice_id: string; status?: string }[]) => {
+    const appliquerRevisions = async (attempts: { exercice_id: string; status?: string; reponses?: Record<string, string | string[]> | null }[]) => {
       if (!apprenantId) return;
       const soumis: number[] = [];
+      const initialesParExo = new Map<number, Record<string, string | string[]>>();
       attempts.forEach((row) => {
         if (!isAttemptSubmitted(row as any)) return;
         const m = /^module_\d+_exo_(\d+)$/.exec(row.exercice_id);
-        if (m) soumis.push(Number(m[1]));
+        if (!m) return;
+        const exoId = Number(m[1]);
+        soumis.push(exoId);
+        initialesParExo.set(exoId, row.reponses && typeof row.reponses === "object" ? row.reponses : {});
       });
       // Discover only explicit revision identities for displayed exercises, also
       // when the original proof is an archive rather than a submitted legacy row.
@@ -7802,21 +7806,44 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         // doivent partir de son numéro d'écriture (sinon base 0 → ignorées).
         primeKnownWriteSeq(apprenantId, row.exercice_id, (row as any).write_seq);
         const rep = { ...base, ...mergeSavedAndPendingAnswers(base, apprenantId, row.exercice_id) };
-        revisionActiveRef.current.add(exoId);
-        // Quiz initial remis (preuve serveur) : la reprise enregistrée reste en
-        // attente ; les résultats initiaux restent affichés et l'élève choisit.
+        // Quiz initial remis (preuve serveur) : une ancienne copie miroir n'est
+        // pas une reprise. Seule une modification sur une question initialement
+        // fausse prouve qu'une correction a réellement été commencée.
         if (soumis.includes(exoId)) {
-          setRevisionsTerminees((prev) => ({ ...prev, [exoId]: rep }));
+          const initiales = initialesParExo.get(exoId) ?? {};
           const exoR = activeExercicesRef.current.find((e: any) => e.id === exoId);
-          const manquantesR = ((exoR?.questions ?? []) as any[])
+          const faussesInitiales = ((exoR?.questions ?? []) as any[])
             .filter((q) => Array.isArray(q?.choix) && q.choix.length > 0)
-            .map((q) => q.id)
-            .filter((qid) => { const v = rep[`${exoId}-${qid}`]; return Array.isArray(v) ? v.length === 0 : !v; });
-          if (manquantesR.length > 0) {
-            setRepriseEnAttente((prev) => ({ ...prev, [exoId]: { reponses: rep, questions: manquantesR } }));
+            .map((q) => ({ id: q.id as number | string, cle: `${exoId}-${q.id}`, question: q }))
+            .filter(({ cle, question }) => !isAnswerCorrect(initiales[cle], question));
+          const clesFausses = faussesInitiales.map(({ cle }) => cle);
+          if (!revisionRepriseProuvee(initiales, rep, clesFausses)) {
+            setRepriseEnAttente((prev) => {
+              if (!(exoId in prev)) return prev;
+              const next = { ...prev };
+              delete next[exoId];
+              return next;
+            });
+            return;
           }
+
+          revisionActiveRef.current.add(exoId);
+          setRevisionsTerminees((prev) => ({ ...prev, [exoId]: rep }));
+          // La reprise porte sur toutes les fausses encore inchangées ou vides,
+          // pas seulement sur les cases vides : une nouvelle réponse encore
+          // fausse prouve la reprise sans signifier que la correction est finie.
+          const restantes = faussesInitiales
+            .filter(({ cle }) => !revisionFaussesTerminee(initiales, rep, [cle]))
+            .map(({ id }) => id);
+          setRepriseEnAttente((prev) => {
+            const next = { ...prev };
+            if (restantes.length > 0) next[exoId] = { reponses: rep, questions: restantes };
+            else delete next[exoId];
+            return next;
+          });
           return;
         }
+        revisionActiveRef.current.add(exoId);
         setSelectedAnswers((prev) => {
           const next = { ...prev };
           Object.keys(next).forEach((k) => { if (k.startsWith(`${exoId}-`)) delete next[k]; });

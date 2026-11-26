@@ -29,6 +29,18 @@ export function revisionsSessionARestaurer<T>(
 const vide = (v: Rep) => v == null || v === "" || (Array.isArray(v) && v.length === 0);
 const norm = (v: Rep) => (Array.isArray(v) ? [...v].sort().join("|") : String(v ?? ""));
 
+export function revisionRepriseProuvee(
+  initiales: Record<string, Rep>,
+  revision: Record<string, Rep> | null | undefined,
+  clesFausses: string[],
+): boolean {
+  if (!revision || clesFausses.length === 0) return false;
+  // Une copie miroir ne prouve aucune reprise. En revanche, une réponse effacée,
+  // remplacée ou nouvellement saisie sur une question initialement fausse suffit,
+  // même si cette nouvelle réponse est encore fausse.
+  return clesFausses.some((k) => norm(revision[k]) !== norm(initiales[k]));
+}
+
 export function revisionFaussesTerminee(
   initiales: Record<string, Rep>,
   revision: Record<string, Rep> | null | undefined,
