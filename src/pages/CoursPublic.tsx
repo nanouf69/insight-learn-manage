@@ -93,6 +93,7 @@ import {
 } from "@/lib/moduleCompletion";
 
 
+import SignalementForm from "@/components/cours-en-ligne/SignalementForm";
 const StableModuleDetailView = memo(ModuleDetailView);
 
 const getConnectedDeviceDetails = (userAgent: string | null | undefined) => {
@@ -894,7 +895,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [selectedExerciseTarget, setSelectedExerciseTarget] = useState<string | null>(null);
   const [deepLinkChecked, setDeepLinkChecked] = useState(false);
   const [selectedFormation, setSelectedFormation] = useState<FormationId | null>(null);
-  const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes">("accueil");
+  const [activeTab, setActiveTab] = useState<"accueil" | "examens" | "notes" | "signaler">("accueil");
   const [completedModuleIds, setCompletedModuleIds] = useState<Set<number>>(new Set());
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
   // Liste réelle des quiz de chaque module (contenu serveur), lecture seule — affichage uniquement.
@@ -2299,15 +2300,15 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
        {modalSignature}
        {/* Top navbar */}
        <nav className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg">
-         <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
-           <div className="flex items-center gap-1">
-             {(["accueil", "examens", "notes"] as const).map((tab) => (
+         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+           <div className="flex flex-wrap items-center gap-1">
+             {(["accueil", "examens", "notes", "signaler"] as const).map((tab) => (
                <button
                  key={tab}
                  className={`px-4 py-2 text-sm rounded-lg transition-all ${activeTab === tab ? "font-bold text-white bg-white/15 shadow-inner" : "hover:bg-white/10 text-slate-400 hover:text-white"}`}
                 onClick={() => { if (tab !== activeTab) requestExamExit(() => setActiveTab(tab)); }}
                >
-                 {tab === "accueil" ? "🏠 Accueil" : tab === "examens" ? "📝 Examens" : "📊 Notes"}
+                 {tab === "accueil" ? "🏠 Accueil" : tab === "examens" ? "📝 Examens" : tab === "notes" ? "📊 Notes" : "Signaler une remarque ou un bug"}
                </button>
              ))}
              <a
@@ -2345,6 +2346,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       </div>
 
       <div className={activeTab === "examens" ? "max-w-[1760px] mx-auto px-4 py-8" : "max-w-6xl mx-auto px-4 py-8"}>
+        {activeTab === "signaler" && <SignalementForm />}
         {/* Notes tab */}
         {activeTab === "notes" && apprenant?.id && (
           <NotesView apprenantId={apprenant.id} studentName={studentName} moduleCompletionsSeed={moduleCompletionsForNotes.filter((r) => r.status === "completed") as any} />

@@ -109,3 +109,6 @@ verify_jwt = false
 
 [functions.surveillance-moteur-examen]
 verify_jwt = false
+
+[functions.signaler-remarque-bug]
+verify_jwt = false
