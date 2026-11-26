@@ -9,6 +9,7 @@ import { FTRANSPORT, construireConvocationHtml } from '@/lib/convocationFormatio
 import { buildCanonicalDevisPDF } from '@/lib/pdf/devis-canonical';
 import { buildDevisFcTaxiPdf } from '@/lib/pdf/devis-fc-taxi';
 import { generateDraftPDF } from '@/lib/pdf/draft-facture';
+import { generateFactureFC } from '@/lib/pdf/facture-fc';
 
 const SIRET = '82346156100016';
 const pdfText = (doc: { output: (type: 'arraybuffer') => ArrayBuffer }) => Buffer.from(doc.output('arraybuffer')).toString('latin1');
@@ -53,6 +54,21 @@ describe('Identité légale du centre confirmée le 26/11/2026', () => {
     });
     expect(Buffer.from(buffer).toString('latin1').replace(/ /g, '')).toContain(`SIRET:${SIRET}`);
     writeFileSync('/tmp/siret-facture.pdf', Buffer.from(buffer));
+  });
+  it.each(['VTC', 'TAXI'] as const)('facture FC %s : SIRET complet du centre dans émetteur et pied de page, financeur inchangé', async formation => {
+    const result = await generateFactureFC({
+      numero: `TEST-SIRET-FC-${formation}`, dateEmission: '2026-11-26',
+      apprenant: { nom: 'Fictif', prenom: 'Client' },
+      financeur: { type_financeur: 'professionnel', raison_sociale: 'Financeur fictif', siret: '11111111111111' },
+      formation, designation: `Formation continue ${formation}`, montantHT: 200,
+    }, { returnDoc: true });
+    if (!result.doc) throw new Error('PDF FC absent');
+    const texte = pdfText(result.doc);
+    expect(texte).toContain('SIRET : 82346156100016');
+    expect(texte).toContain('SIRET 82346156100016');
+    expect(texte).toContain('SIRET : 11111111111111');
+    expect(texte).not.toContain('82346156100018');
+    writeFileSync(`/tmp/siret-facture-fc-${formation}.pdf`, Buffer.from(result.doc.output('arraybuffer')));
   });
   it('aucun modèle de document ou signature du centre ne conserve un ancien SIRET', () => {
     const fichiers = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? fichiers(join(dir, e.name)) : /\.(tsx?|html)$/.test(e.name) ? [join(dir, e.name)] : []);

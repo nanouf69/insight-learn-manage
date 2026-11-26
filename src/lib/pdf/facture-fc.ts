@@ -9,7 +9,7 @@ const COMPANY = {
   ville: 'Lyon',
   telephone: '04 28 29 60 91',
   email: 'contact@ftransport.fr',
-  siren: '823 461 561',
+  siret: '82346156100016',
   agrement: '69-16-15',
   iban: 'FR76 ...',
   bic: 'REVOFRP2',
@@ -131,7 +131,7 @@ export async function generateFactureFC(
   doc.text(COMPANY.name, ml, y); y += 4;
   doc.text(`${COMPANY.address}`, ml, y); y += 4;
   doc.text(`${COMPANY.cp} ${COMPANY.ville}`, ml, y); y += 4;
-  doc.text(`SIREN : ${COMPANY.siren}`, ml, y); y += 4;
+  doc.text(`SIRET : ${COMPANY.siret}`, ml, y); y += 4;
   doc.text(`Tél : ${COMPANY.telephone}`, ml, y); y += 4;
   doc.text(`Email : ${COMPANY.email}`, ml, y); y += 4;
   doc.text(`Déclaration n° ${COMPANY.declaration}`, ml, y);
@@ -330,7 +330,7 @@ export async function generateFactureFC(
   doc.setFontSize(7);
   doc.setTextColor(100, 100, 100);
   doc.text(
-    `${COMPANY.name} - ${COMPANY.address} ${COMPANY.cp} ${COMPANY.ville} - SIREN ${COMPANY.siren} - Déclaration ${COMPANY.declaration}`,
+    `${COMPANY.name} - ${COMPANY.address} ${COMPANY.cp} ${COMPANY.ville} - SIRET ${COMPANY.siret} - Déclaration ${COMPANY.declaration}`,
     pw / 2, footerY, { align: 'center' }
   );
 
