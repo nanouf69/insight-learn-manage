@@ -234,8 +234,10 @@ export interface WrongAnswerReviewItem {
 }
 
 /** Mandatory "Relisez vos erreurs" dialog before redoing the wrong questions. */
-export function WrongAnswersReviewDialog({ open, onOpenChange, items, onConfirm }: {
+export function WrongAnswersReviewDialog({ open, onOpenChange, items, onConfirm, onSkip }: {
   open: boolean; onOpenChange: (open: boolean) => void; items: WrongAnswerReviewItem[]; onConfirm: () => void;
+  /** Sortie facultative : revenir aux résultats de la tentative initiale sans refaire les fausses. */
+  onSkip?: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -278,13 +280,23 @@ export function WrongAnswersReviewDialog({ open, onOpenChange, items, onConfirm 
         <Button className="mt-4 w-full gap-2" onClick={onConfirm}>
           ✅ J'ai relu mes erreurs — Refaire les fausses
         </Button>
+        {onSkip && (
+          <Button variant="outline" className="mt-2 w-full min-h-11 whitespace-normal" onClick={onSkip} data-testid="passer-correction">
+            ⏭️ Passer cette correction et continuer
+          </Button>
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
 /** Amber banner shown while only the wrong questions are displayed. */
-export function RevisionModeBanner({ count, onShowAll }: { count: number; onShowAll: () => void }) {
+export function RevisionModeBanner({ count, onShowAll, onSkip, onHome }: {
+  count: number; onShowAll: () => void;
+  /** Sortie facultative (quiz initial déjà remis) : retour aux résultats initiaux confirmés. */
+  onSkip?: () => void;
+  onHome?: () => void;
+}) {
   return (
     <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-300 space-y-2">
       <div className="flex items-center justify-between gap-3">
@@ -294,6 +306,17 @@ export function RevisionModeBanner({ count, onShowAll }: { count: number; onShow
       <div className="font-semibold text-amber-900 dark:text-amber-200">
         📖 Relisez vos erreurs avant de recommencer les questions fausses.
       </div>
+      {onSkip && (
+        <div className="flex flex-col sm:flex-row gap-2 pt-1">
+          <Button className="w-full sm:w-auto min-h-11 whitespace-normal" onClick={onSkip} data-testid="passer-correction">
+            ⏭️ Passer cette correction et continuer
+          </Button>
+          {onHome && (
+            <Button variant="outline" className="w-full sm:w-auto min-h-11" onClick={onHome}>🏠 Retour à l'accueil</Button>
+          )}
+        </div>
+      )}
+      {onSkip && <p className="text-xs">Cette correction est facultative : votre note et votre quiz remis restent inchangés.</p>}
     </div>
   );
 }

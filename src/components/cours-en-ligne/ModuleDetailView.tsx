@@ -48,6 +48,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { SESSION_EXPIREE_MESSAGE, isLearnerSessionExpired, assurerSessionFraiche } from "@/lib/sessionExpiree";
 import { supabase } from "@/integrations/supabase/client";
+import { reponsesInitialesPourSortie, sortieRevisionAutorisee } from "@/lib/sortieRevisionFacultative";
 import { diffModuleData, publishModuleChangeNotification } from "@/lib/moduleChangeNotifications";
 import { logModuleAudit, logAdminEditsDiff } from "@/lib/moduleAuditLog";
 import { RichText } from "@/lib/richText";
@@ -7198,6 +7199,36 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       scheduleScrollToRevisionStart(pending.exoId);
     };
 
+    // Sortie facultative d'une reprise des fausses (quiz initial déjà remis) :
+    // relit la tentative initiale exacte côté serveur et réaffiche ses résultats.
+    // Aucune écriture : brouillons/preuves de révision et tentative initiale intacts.
+    const quitterRevisionFacultative = async (exoId: number) => {
+      if (!apprenantId) return;
+      const { data, error } = await (supabase as any)
+        .from("reponses_apprenants")
+        .select("exercice_id, status, submitted_at, reponses")
+        .eq("apprenant_id", apprenantId)
+        .eq("exercice_id", buildExerciceId(module.id, exoId))
+        .maybeSingle();
+      const hist = (attemptHistoryFor[exoId] ?? []).filter((a) => a.mode === "complet");
+      const snap = hist.length > 0 ? (hist[hist.length - 1].answers as Record<string, string | string[]>) : null;
+      const initiales = reponsesInitialesPourSortie(exoId, error ? null : data, snap);
+      if (!initiales) {
+        toast.error("Vos résultats initiaux n'ont pas pu être relus : votre quiz remis reste validé. Revenez à l'accueil puis rouvrez le module.");
+        return;
+      }
+      setSelectedAnswers((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((k) => { if (k.startsWith(`${exoId}-`)) delete next[k]; });
+        return { ...next, ...initiales };
+      });
+      setUnansweredKeys(new Set());
+      setRevisionQuestionsFor((prev) => { const n = { ...prev }; delete n[exoId]; return n; });
+      setPendingWrongQuestionRevision(null);
+      setShowResultsFor((prev) => new Set(prev).add(exoId));
+      toast.success("Correction passée — résultats de votre quiz remis");
+    };
+
     // Backward-compat alias — the confirmation banner still calls this name.
     const confirmWrongQuestionRevision = () => {
       const pending = pendingWrongQuestionRevision;
@@ -9455,7 +9486,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                   return (
                     <RevisionModeBanner count={revisionSet.size} onShowAll={() => {
                       setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
-                    }} />
+                    }}
+                      onSkip={sortieRevisionAutorisee(submittedExoIdsRef.current.has(exo.id) || !!passagesFiges[exo.id] || revisionActiveRef.current.has(exo.id), true) && !apercuAdmin
+                        ? () => { void quitterRevisionFacultative(exo.id); } : undefined}
+                      onHome={() => onBack()} />
                   );
                 }
                 return null;
@@ -10014,6 +10048,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                           startWrongQuestionRevision(pending);
                           window.scrollTo({ top: 0, behavior: "smooth" });
                         }}
+                        onSkip={() => setWrongReviewFor(null)}
                       />
                       {(attemptHistoryFor[exo.id]?.length ?? 0) > 0 && (
                         <div className="mt-4 rounded-lg border bg-muted/30 p-4">

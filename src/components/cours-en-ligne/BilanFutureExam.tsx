@@ -403,7 +403,9 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                   <QuestionsFaussesEffectuees confirme={reprise.revision?.submitted === true} />
                   {enRevision && (
                     <div data-testid="bilan-future-revision" className="space-y-2">
-                      <RevisionModeBanner count={revision!.ids.length} onShowAll={() => setRevisionMode(false)} />
+                      <RevisionModeBanner count={revision!.ids.length} onShowAll={() => setRevisionMode(false)}
+                        onSkip={() => { setRevisionMode(false); window.scrollTo?.({ top: 0, behavior: "smooth" }); }}
+                        onHome={onBack ? () => onBack() : undefined} />
                       <p className="text-xs text-muted-foreground">Entraînement : votre note et votre copie remise ne changent pas.</p>
                       <p role="status" className="text-sm text-muted-foreground">{revision?.validee ? 'Déjà effectué — reprise confirmée' : reprise.statut === 'saved' ? 'Réponse enregistrée et relue' : reprise.statut === 'saving' ? 'Enregistrement en cours…' : 'Reprise en cours'}</p>
                       {reprise.erreur && <div role="alert" className="text-destructive"><p>{reprise.erreur}</p><Button variant="outline" onClick={reprise.retry}>Réessayer l’enregistrement</Button></div>}
@@ -514,7 +516,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                           {/* Separate persisted revision against the current official key; the local review above is unchanged. */}
                           {correction && apprenantId && <RevisionCopieCorrigee owner={apprenantId} copies={[{ type: "bilan_future", id: passage.receipt.passageId }]} />}
                           <WrongAnswersReviewDialog open={relecture} onOpenChange={(o) => { if (!o) setRelecture(false); }}
-                            items={relecture ? relireItems(idsARelire) : []} onConfirm={demarrerRevision} />
+                            items={relecture ? relireItems(idsARelire) : []} onConfirm={demarrerRevision} onSkip={() => setRelecture(false)} />
                         </div>
                       )}
                     </div>
