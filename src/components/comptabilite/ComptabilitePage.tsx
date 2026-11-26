@@ -213,28 +213,43 @@ export function ComptabilitePage() {
   const factureEditOperation = useRef<string>(crypto.randomUUID());
   const emailFactureModifie = useRef(false);
   const [emailFactureLoading, setEmailFactureLoading] = useState(false);
+  const [emailFactureErreur, setEmailFactureErreur] = useState(false);
   useEffect(() => {
     let actif = true;
     const id = editingFacture?.apprenant_id;
+    setEmailFactureErreur(false);
     if (!id) { setEmailFactureLoading(false); return; }
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      controller.abort();
+      if (actif) {
+        setEmailFactureLoading(false);
+        setEmailFactureErreur(true);
+      }
+    }, 10000);
     setEmailFactureLoading(true);
     void (async () => {
       try {
         const [financeur, stagiaire] = await Promise.all([
-          supabase.from('financeurs_fc').select('type_financeur,email_facturation,contact_email').eq('apprenant_id', id).maybeSingle(),
-          supabase.from('apprenants').select('email,facture_contact_email,societe_nom,organisme_financeur').eq('id', id).single(),
+          supabase.from('financeurs_fc').select('type_financeur,email_facturation,contact_email').eq('apprenant_id', id).abortSignal(controller.signal).maybeSingle(),
+          supabase.from('apprenants').select('email,facture_contact_email,societe_nom,organisme_financeur').eq('id', id).abortSignal(controller.signal).single(),
         ]);
-        if (!actif) return;
+        if (!actif || controller.signal.aborted) return;
         if (financeur.error || stagiaire.error) throw financeur.error || stagiaire.error;
         const email = destinataireFactureParDefaut(financeur.data, stagiaire.data, editingFacture?.type_financement ?? 'particulier');
         if (!emailFactureModifie.current) setEditFactureForm(form => ({ ...form, client_email: email }));
+        setEmailFactureErreur(!email);
       } catch {
-        if (actif) toast.error('Impossible de lire les coordonnées du financeur ou du stagiaire. Vérifiez le destinataire avant l’envoi.');
+        if (actif && !controller.signal.aborted) {
+          setEmailFactureErreur(true);
+          toast.error('Impossible de lire les coordonnées du financeur ou du stagiaire. Vérifiez le destinataire avant l’envoi.');
+        }
       } finally {
+        window.clearTimeout(timeout);
         if (actif) setEmailFactureLoading(false);
       }
     })();
-    return () => { actif = false; };
+    return () => { actif = false; window.clearTimeout(timeout); controller.abort(); };
   }, [editingFacture?.id, editingFacture?.apprenant_id]);
   const [revisionsFacture, setRevisionsFacture] = useState<any[]>([]);
   const [revisionBusy, setRevisionBusy] = useState<string | null>(null);
@@ -2820,7 +2835,8 @@ export function ComptabilitePage() {
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Email du destinataire de la facture</label>
-              <Input aria-label="Email du destinataire de la facture" type="email" disabled={emailFactureLoading} placeholder={emailFactureLoading ? 'Chargement de l’adresse…' : ''} value={editFactureForm.client_email} onChange={e=>{emailFactureModifie.current = true; setEditFactureForm(f=>({...f,client_email:e.target.value}));}} />
+              <Input aria-label="Email du destinataire de la facture" type="email" placeholder={emailFactureLoading ? 'Chargement de l’adresse…' : 'Adresse du financeur ou de l’apprenant'} value={editFactureForm.client_email} onChange={e=>{emailFactureModifie.current = true; setEmailFactureErreur(false); setEditFactureForm(f=>({...f,client_email:e.target.value}));}} />
+              {emailFactureErreur && <p role="alert" className="text-xs text-destructive">Adresse non confirmée : vérifiez le mail du financeur ou, sans financeur, celui de l’apprenant.</p>}
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Type de financement</label>
