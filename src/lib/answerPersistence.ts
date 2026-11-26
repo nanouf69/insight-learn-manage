@@ -26,6 +26,10 @@ const QUEUE_KEY = "answer_save_queue_v1";
 const ITEM_PREFIX = 'answer_save_item_v2:';
 const ACK_PREFIX = 'answer_save_ack_v2:';
 let lastReadIds = new Set<string>();
+let queueReadFailed = false;
+let legacyQueueUnreadable = false;
+let lastReadableQueue: QueueItem[] = [];
+let unreadableItemKeys = new Set<string>();
 /**
  * Dernier numéro d'écriture SERVEUR connu, par (apprenant, exercice).
  * C'est le serveur — jamais l'horloge de l'appareil — qui décide de l'ordre des
@@ -396,33 +400,66 @@ export const __testConfirmSave = (userId: string, apprenantId: string, exerciceI
 
 function readQueue(): QueueItem[] {
   if (memoryQueue) return memoryQueue;
+  queueReadFailed = false;
+  legacyQueueUnreadable = false;
+  unreadableItemKeys = new Set<string>();
   try {
     const raw = localStorage.getItem(QUEUE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    const merged = new Map<string, QueueItem>((Array.isArray(parsed) ? parsed : []).map(item => [item.id, item]));
+    const merged = new Map<string, QueueItem>();
+    const add = (value: unknown, legacy: boolean) => {
+      if (!estObjet(value) || typeof value.id !== 'string' || typeof value.queued_at !== 'string' ||
+          !estObjet(value.payload) || typeof value.payload.apprenant_id !== 'string' || typeof value.payload.exercice_id !== 'string') {
+        queueReadFailed = true;
+        if (legacy) legacyQueueUnreadable = true;
+        return;
+      }
+      merged.set(value.id, value as unknown as QueueItem);
+    };
+    // A damaged legacy array must never hide independent durable operations.
+    // Keep its exact bytes, and refuse any claim that the whole queue is saved.
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) throw new Error('File illisible');
+        for (const item of parsed) add(item, true);
+      } catch { queueReadFailed = true; legacyQueueUnreadable = true; }
+    }
     // Per-operation records prevent two tabs replacing the whole legacy array.
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key?.startsWith(ITEM_PREFIX)) {
-        const item = JSON.parse(localStorage.getItem(key) ?? 'null');
-        if (item?.id) merged.set(item.id, item);
+        try {
+          const value = JSON.parse(localStorage.getItem(key) ?? 'null');
+          const valid = estObjet(value) && typeof value.id === 'string' && typeof value.queued_at === 'string' &&
+            estObjet(value.payload) && typeof value.payload.apprenant_id === 'string' && typeof value.payload.exercice_id === 'string';
+          if (!valid) unreadableItemKeys.add(key);
+          add(value, false);
+        } catch { queueReadFailed = true; unreadableItemKeys.add(key); }
       }
     }
     const items = [...merged.values()].filter(item => !localStorage.getItem(ACK_PREFIX + item.id));
     lastReadIds = new Set(items.map(item => item.id));
-    return items.sort((a, b) => a.queued_at.localeCompare(b.queued_at));
+    lastReadableQueue = items.sort((a, b) => a.queued_at.localeCompare(b.queued_at));
+    return lastReadableQueue;
   } catch {
-    return [];
+    queueReadFailed = true;
+    legacyQueueUnreadable = true;
+    return lastReadableQueue;
   }
 }
 
 const writeQueue = (items: QueueItem[]) => {
   try {
     const kept = new Set(items.map(item => item.id));
-    // Receipts/compaction markers never delete the original per-operation bytes.
+    // First persist successors; only then mark originals superseded/acknowledged.
+    // A quota exception in the middle must leave the old durable operation active.
+    for (const item of items) {
+      const key = ITEM_PREFIX + item.id;
+      if (!unreadableItemKeys.has(key)) localStorage.setItem(key, JSON.stringify(item));
+    }
     for (const id of lastReadIds) if (!kept.has(id)) localStorage.setItem(ACK_PREFIX + id, '1');
-    for (const item of items) localStorage.setItem(ITEM_PREFIX + item.id, JSON.stringify(item));
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(items));
+    if (!legacyQueueUnreadable) localStorage.setItem(QUEUE_KEY, JSON.stringify(items));
+    lastReadableQueue = items;
     // Écriture réussie : le miroir mémoire n'est plus nécessaire.
     memoryQueue = null;
     if (storageSaturated) {
@@ -446,7 +483,7 @@ const emit = () => {
   const pendingAnswers = countPendingAnswers(activeQueue);
   listeners.forEach((l) => {
     try {
-      l(state, pending, pendingAnswers);
+      l(queueReadFailed ? 'error' : state, pending, pendingAnswers);
     } catch {
       /* noop */
     }
@@ -454,7 +491,7 @@ const emit = () => {
 };
 
 const setState = (next: AnswerSaveState) => {
-  state = next;
+  state = queueReadFailed && next === 'saved' ? 'error' : next;
   emit();
 };
 
@@ -462,7 +499,7 @@ const setState = (next: AnswerSaveState) => {
 export function subscribeAnswerSaveState(listener: Listener): () => void {
   listeners.add(listener);
   const activeQueue = readQueue().filter(isActivelyPending);
-  listener(state, activeQueue.length, countPendingAnswers(activeQueue));
+  listener(queueReadFailed ? 'error' : state, activeQueue.length, countPendingAnswers(activeQueue));
   return () => listeners.delete(listener);
 }
 
@@ -733,15 +770,15 @@ function reponsesContiennentSansConflit(candidate: unknown, previous: unknown, o
 export async function flushOwnAnswerSavesBeforeLogout(timeoutMs = 8000): Promise<boolean> {
   if (!canSynchronizeAnswers()) return true;
   const hasOwn = () => readQueue().some(item => item.payload.apprenant_id === sessionApprenantId && isOwnedByCurrentUser(item));
-  if (!hasOwn()) return true;
+  if (!hasOwn()) return !queueReadFailed;
   void processQueue();
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
-    if (!hasOwn()) return true;
+    if (!hasOwn()) return !queueReadFailed;
     await new Promise((resolve) => setTimeout(resolve, 100));
     if (!processing) void processQueue();
   }
-  return !hasOwn();
+  return !hasOwn() && !queueReadFailed;
 }
 
 export async function flushAnswerSavesAndWait(
@@ -759,7 +796,8 @@ export async function flushAnswerSavesAndWait(
         item.payload.exercice_id === exerciceId &&
         isActivelyPending(item)
     );
-    if (!pending) return getBlockedAnswerSavesFor(apprenantId, exerciceId) === 0;
+    if (queueReadFailed) return false;
+    if (!pending) return getBlockedAnswerSavesFor(apprenantId, exerciceId) === 0 && !queueReadFailed;
     await new Promise((resolve) => setTimeout(resolve, 100));
     if (!processing) void processQueue();
   }

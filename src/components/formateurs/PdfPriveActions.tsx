@@ -52,7 +52,7 @@ export function PdfPriveActions({ titre, nomFichier, chargerUrl, ouvrirLabel = "
     });
     observer.observe(element);
     return () => observer.disconnect();
-  }, [ouvert]);
+  }, [ouvert, urlBlob]);
 
   const charger = useCallback(() => {
     if (blobRef.current) return Promise.resolve(blobRef.current);
@@ -101,7 +101,7 @@ export function PdfPriveActions({ titre, nomFichier, chargerUrl, ouvrirLabel = "
     <Dialog open={ouvert} onOpenChange={value => { setOuvert(value); if (!value) liberer(); }}>
       <DialogContent className="flex h-[92vh] w-[calc(100vw-1rem)] max-w-4xl flex-col p-4 sm:p-6">
         <DialogHeader>
-          <DialogTitle>{titre}</DialogTitle>
+          <DialogTitle className="pr-8">{titre}</DialogTitle>
           <DialogDescription>Lecture privée dans la plateforme. Aucun nouvel onglet vers le stockage n’est ouvert.</DialogDescription>
         </DialogHeader>
         {chargement && <p className="text-sm text-muted-foreground">Chargement sécurisé du PDF…</p>}

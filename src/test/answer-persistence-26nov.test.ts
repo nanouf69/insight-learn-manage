@@ -12,6 +12,54 @@ beforeEach(async()=>{
 });
 afterEach(()=>{api.setAnswerSaveAuthToken(null,null);vi.useRealTimers();vi.unstubAllGlobals();});
 describe('26 novembre: durable receipts and identity',()=>{
+  it('malformed legacy JSON and one malformed record cannot hide the other durable operation or allow finalization',async()=>{
+    api.setAnswerSaveAuthToken(null,'U');api.enqueueAnswerSave(payload());
+    const badLegacy='{JSON INCOMPLET FICTIF';
+    localStorage.setItem('answer_save_queue_v1',badLegacy);
+    localStorage.setItem('answer_save_item_v2:CORROMPU','{');
+    expect(api.getPendingAnswerSaves()).toBe(1);
+    expect(api.getPendingAnswers('A','module_4_exo_105')).toEqual({q:['A']});
+    await expect(api.flushAnswerSavesAndWait('A','AUTRE')).resolves.toBe(false);
+    api.enqueueAnswerSave(payload({q:['B']},'AUTRE'));
+    expect(localStorage.getItem('answer_save_queue_v1')).toBe(badLegacy);
+    expect(localStorage.getItem('answer_save_item_v2:CORROMPU')).toBe('{');
+    expect(api.getPendingAnswerSaves()).toBe(2);
+  });
+  it('malformed legacy entry retains exact bytes and never reports saved',async()=>{
+    api.setAnswerSaveAuthToken(null,'U');api.enqueueAnswerSave(payload());
+    const original=JSON.parse(localStorage.getItem('answer_save_queue_v1')??'[]')[0];
+    const damaged=JSON.stringify([null,original]);localStorage.setItem('answer_save_queue_v1',damaged);
+    const states:string[]=[];api.subscribeAnswerSaveState(s=>states.push(s));
+    expect(api.getPendingAnswers('A','module_4_exo_105')).toEqual({q:['A']});
+    expect(states).toEqual(['error']);
+    expect(localStorage.getItem('answer_save_queue_v1')).toBe(damaged);
+  });
+  it('a corrupted per-operation record is not overwritten by its surviving legacy mirror',()=>{
+    api.setAnswerSaveAuthToken(null,'U');api.enqueueAnswerSave(payload());
+    const original=JSON.parse(localStorage.getItem('answer_save_queue_v1')??'[]')[0];
+    const key='answer_save_item_v2:'+original.id;
+    localStorage.setItem(key,'{OCTETS FICTIFS INCOMPLETS');
+    api.enqueueAnswerSave(payload({q:['B']},'AUTRE'));
+    expect(localStorage.getItem(key)).toBe('{OCTETS FICTIFS INCOMPLETS');
+    expect(api.getPendingAnswers('A','module_4_exo_105')).toEqual({q:['A']});
+    expect(api.getPendingAnswers('A','AUTRE')).toEqual({q:['B']});
+  });
+  it('quota failure while storing a successor never acknowledges the durable original before its successor exists',async()=>{
+    api.setAnswerSaveAuthToken(null,'U');api.enqueueAnswerSave(payload());
+    const original=JSON.parse(localStorage.getItem('answer_save_queue_v1')??'[]')[0];
+    const write=localStorage.setItem.bind(localStorage);
+    vi.spyOn(localStorage,'setItem').mockImplementation((key,value)=>{
+      if(key.startsWith('answer_save_item_v2:')&&key!=='answer_save_item_v2:'+original.id)throw new DOMException('quota','QuotaExceededError');
+      write(key,value);
+    });
+    api.enqueueAnswerSave(payload({q:['B']}));
+    expect(api.isAnswerStorageSaturated()).toBe(true);
+    expect(api.getPendingAnswers('A','module_4_exo_105')).toEqual({q:['B']});
+    expect(localStorage.getItem('answer_save_ack_v2:'+original.id)).toBeNull();
+    vi.resetModules();const reloaded=await import('@/lib/answerPersistence');
+    reloaded.setAnswerSaveAuthToken(null,'U');reloaded.setAnswerSaveOwnership({apprenantId:'A'});
+    expect(reloaded.getPendingAnswers('A','module_4_exo_105')).toEqual({q:['A']});
+  });
   it('frozen journal acknowledgement never becomes saved or permits finalization',async()=>{
     vi.stubGlobal('fetch',vi.fn(async()=>({ok:true,json:async()=>({success:true,confirmed:true,frozen:true})})));
     const states:string[]=[];api.subscribeAnswerSaveState(s=>states.push(s));states.length=0;api.enqueueAnswerSave(payload());

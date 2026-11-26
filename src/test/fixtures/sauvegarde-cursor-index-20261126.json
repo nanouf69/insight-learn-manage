@@ -1,0 +1,3 @@
+[
+  {"table":"module_editor_state","columns":["module_id"],"partial":false,"primary":false,"definition":"CREATE UNIQUE INDEX module_editor_state_module_id_key ON public.module_editor_state USING btree (module_id)"}
+]

@@ -11,7 +11,7 @@ class Sync(base.Contract):
 CREATE TABLE bilan_sync_liens(id uuid PRIMARY KEY,matiere_key text,vtc_module_id int,taxi_module_id int,vtc_exercice_id int,taxi_exercice_id int,vtc_question_id int,taxi_question_id int,statut text,empreinte_vtc_ref text,empreinte_taxi_ref text);
 CREATE TABLE bilan_sync_journal(lien_id uuid,evenement text,sens text,source_module_id int,cible_module_id int,question_id int,avant jsonb,apres jsonb,empreinte_avant text,empreinte_apres text,auteur uuid,motif text);
 ALTER TABLE bilan_sync_journal ADD CHECK(sens IS NULL OR sens IN ('vtc_vers_taxi','taxi_vers_vtc'));
-ALTER TABLE reponses_apprenants ADD id uuid PRIMARY KEY,ADD tentative int,ADD submitted_at timestamptz,ADD score numeric,ADD write_seq bigint,ADD reponses jsonb;
+ALTER TABLE reponses_apprenants ADD id uuid DEFAULT gen_random_uuid() PRIMARY KEY,ADD tentative int,ADD submitted_at timestamptz,ADD score numeric,ADD write_seq bigint,ADD reponses jsonb;
 CREATE TABLE bilan_505_remise_copies(row_id uuid PRIMARY KEY,apprenant_id uuid,tentative int,mode text,motif text);
 CREATE FUNCTION jsonb_as_array(j jsonb) RETURNS jsonb LANGUAGE sql AS $$SELECT CASE WHEN jsonb_typeof(j)='array' THEN j ELSE '[]'::jsonb END$$;
 """)

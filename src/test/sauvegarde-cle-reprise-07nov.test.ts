@@ -50,7 +50,7 @@ export function harness(opts: { rows?: Record<string, any[]>; echec?: Echec; eta
         },
         limit: async (n: number) => {
           const e = opts.echec?.({ table, kind: 'read', gt: st.gt }); if (e) return { data: null, error: e };
-          return { data: data().filter((r) => (!st.predicate || st.predicate(r)) && (st.gt === null || String(r[pk]) > String(st.gt))).slice(0, n), error: null };
+          return { data: data().filter((r) => (!st.predicate || st.predicate(r)) && (st.gt === null || (typeof r[pk] === 'number' && typeof st.gt === 'number' ? r[pk] > st.gt : String(r[pk]) > String(st.gt)))).slice(0, n), error: null };
         },
         range: async (a: number, b: number) => {
           const e = opts.echec?.({ table, kind: 'read', gt: null, offset: a }); if (e) return { data: null, error: e };

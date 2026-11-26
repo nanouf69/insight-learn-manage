@@ -1,0 +1,2646 @@
+{
+  "enums": [
+    {
+      "name": "app_role",
+      "values": [
+        "admin",
+        "moderator",
+        "user"
+      ]
+    },
+    {
+      "name": "qrc_instance_etat",
+      "values": [
+        "en_attente",
+        "corrigee"
+      ]
+    }
+  ],
+  "tables": [
+    {
+      "name": "answer_events",
+      "columns": [
+        {
+          "name": "event_id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "response_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "attempt_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "question_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "valeur_precedente",
+          "type": "jsonb",
+          "not_null": false
+        },
+        {
+          "name": "valeur_nouvelle",
+          "type": "jsonb",
+          "not_null": false
+        },
+        {
+          "name": "revision_precedente",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "revision_nouvelle",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "origine",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "session_origine",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "auteur",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (event_id)"
+    },
+    {
+      "name": "answer_state",
+      "columns": [
+        {
+          "name": "response_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "attempt_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "question_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "valeur",
+          "type": "jsonb",
+          "not_null": false
+        },
+        {
+          "name": "revision",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "updated_by",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "session_origine",
+          "type": "text",
+          "not_null": false
+        }
+      ],
+      "primary_key": "PRIMARY KEY (response_id)"
+    },
+    {
+      "name": "answer_state_historique",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "response_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "question_id",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "ancienne_ligne",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "nouvelle_ligne",
+          "type": "jsonb",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "apprenant_connexions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "ended_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "last_seen_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "source",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "end_reason",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "current_module",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "last_action_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "ip_address",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "client_session_id",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "user_agent",
+          "type": "text",
+          "not_null": false
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "apprenant_documents_completes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "type_document",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "titre",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "donnees",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "module_id",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "apprenant_module_activites",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "connexion_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "module_id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "module_nom",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "action_type",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "metadata",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "apprenant_module_completion",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "module_id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "score_obtenu",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "score_max",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "details",
+          "type": "jsonb",
+          "not_null": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "progress",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "pages_completees",
+          "type": "jsonb",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "apprenant_question_temps",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "module_id",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "module_nom",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "exercice_id",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "question_key",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "question_num",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "seconds",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "answered",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "correct",
+          "type": "boolean",
+          "not_null": false
+        },
+        {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "apprenant_quiz_results",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "quiz_type",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "quiz_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "quiz_titre",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "matiere_id",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "matiere_nom",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "score_obtenu",
+          "type": "numeric",
+          "not_null": true
+        },
+        {
+          "name": "score_max",
+          "type": "numeric",
+          "not_null": true
+        },
+        {
+          "name": "note_sur_20",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "reussi",
+          "type": "boolean",
+          "not_null": false
+        },
+        {
+          "name": "details",
+          "type": "jsonb",
+          "not_null": false
+        },
+        {
+          "name": "duree_secondes",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "tentative",
+          "type": "integer",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "apprenants",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "nom",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "prenom",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "email",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "telephone",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "adresse",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "code_postal",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "ville",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "date_naissance",
+          "type": "date",
+          "not_null": false
+        },
+        {
+          "name": "numero_dossier_cma",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "statut",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "mode_financement",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "civilite",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "organisme_financeur",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "type_apprenant",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "formation_choisie",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "montant_ttc",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "date_debut_formation",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "date_fin_formation",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "creneau_horaire",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "date_examen_theorique",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "date_formation_catalogue",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "montant_paye",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "moyen_paiement",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "date_paiement",
+          "type": "date",
+          "not_null": false
+        },
+        {
+          "name": "type_examen",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "lieu_examen",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "b2_vierge",
+          "type": "boolean",
+          "not_null": false
+        },
+        {
+          "name": "resultat_examen",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "inscrit_france_travail",
+          "type": "boolean",
+          "not_null": false
+        },
+        {
+          "name": "date_examen_pratique",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "documents_complets",
+          "type": "boolean",
+          "not_null": false
+        },
+        {
+          "name": "heure_examen_pratique",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "resultat_examen_pratique",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "auth_user_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "date_debut_cours_en_ligne",
+          "type": "date",
+          "not_null": false
+        },
+        {
+          "name": "date_fin_cours_en_ligne",
+          "type": "date",
+          "not_null": false
+        },
+        {
+          "name": "modules_autorises",
+          "type": "integer[]",
+          "not_null": false
+        },
+        {
+          "name": "mot_de_passe_cma",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "societe_nom",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "societe_siret",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "societe_tva_intra",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "societe_adresse",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "societe_code_postal",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "societe_ville",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "facture_contact_nom",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "facture_contact_email",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "facture_contact_telephone",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "responsable_contact_centre",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "relance_dossier_bienvenue_exclu",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "heures_elearning",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "heures_presentiel",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "heures_totales",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "heures_pratique",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "source_inscription",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "mot_de_passe_plateforme",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "emails_bloques",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "statut_suivi",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "modalite_formation",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "frais_examen",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "abandonnee",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "date_abandon",
+          "type": "date",
+          "not_null": false
+        },
+        {
+          "name": "identifiant_cma",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "compte_cours_archive_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "compte_cours_archive_par",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "date_acceptation_cpf",
+          "type": "date",
+          "not_null": false
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "bilan_future_active",
+      "columns": [
+        {
+          "name": "subject",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "version_id",
+          "type": "uuid",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (subject)"
+    },
+    {
+      "name": "bilan_future_common_releases",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "subject",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "version_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "activated_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "bilan_future_drafts",
+      "columns": [
+        {
+          "name": "receipt_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "version_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "question_id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "revision",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "answer",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "client_token",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "saved_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (receipt_id, question_id, revision)"
+    },
+    {
+      "name": "bilan_future_eligibility",
+      "columns": [
+        {
+          "name": "owner_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "module_id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "exercise_id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "version_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "authorized_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (owner_id, module_id, exercise_id)"
+    },
+    {
+      "name": "bilan_future_french_releases",
+      "columns": [
+        {
+          "name": "version_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "activated_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (version_id)"
+    },
+    {
+      "name": "bilan_future_opening",
+      "columns": [
+        {
+          "name": "id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "open_to_new",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "changed_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "bilan_future_receipts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "owner_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "module_id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "exercise_id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "version_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "bilan_future_submissions",
+      "columns": [
+        {
+          "name": "receipt_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "answers",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "correct_count",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "question_count",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "submitted_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (receipt_id)"
+    },
+    {
+      "name": "bilan_future_versions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "subject",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "questions",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "fingerprint",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "bilan_passage_snapshots",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "module_id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "exercice_id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "filiere",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "matiere",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "tentative",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "passage_cle",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "questions",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "nb_questions",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "bareme",
+          "type": "jsonb",
+          "not_null": false
+        },
+        {
+          "name": "empreinte",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "empreinte_source",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "operation_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "bilan_passages_figes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "reponse_apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "module_id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "exercice_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "statut_passage",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "tentative",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "passage_created_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "passage_updated_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "reponses",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "cle_figee",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "score_bonnes",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "nb_repondues",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "nb_questions",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "empreinte_passage",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "motif",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "fige_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "cma_planning_attente",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "date_examen",
+          "type": "date",
+          "not_null": true
+        },
+        {
+          "name": "heure",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "filiere",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "jury",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "numero",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "prenom_pdf",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "nom_pdf",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "nom_normalise",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "statut_rapprochement",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "raison",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "candidats_ids",
+          "type": "uuid[]",
+          "not_null": true
+        },
+        {
+          "name": "source_fichier",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "cma_planning_attente_rattachements",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "attente_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "ligne_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "cma_planning_lignes",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "date_examen",
+          "type": "date",
+          "not_null": true
+        },
+        {
+          "name": "heure",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "filiere",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "jury",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "numero",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "prenom_pdf",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "nom_pdf",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "raison_rapprochement",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "source_fichier",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "core_exam_results",
+      "columns": [
+        {
+          "name": "result_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "attempt_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "result_revision",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "score",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "total",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "qrc_restantes",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (result_id)"
+    },
+    {
+      "name": "core_operations",
+      "columns": [
+        {
+          "name": "operation_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "operation_type",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "attempt_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "auteur",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "cible",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "resultat",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (operation_id)"
+    },
+    {
+      "name": "documents_inscription",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "type_document",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "titre",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "url",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "nom_fichier",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "statut",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "motif_refus",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "analyse_ia_date",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "analyse_ia_details",
+          "type": "jsonb",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "donnees_eleves_suppressions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "table_nom",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "ligne",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "auteur_uid",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "auteur_role",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "compte_test",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "motif",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "alerte_envoyee_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "emargements_fc",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "date_emargement",
+          "type": "date",
+          "not_null": true
+        },
+        {
+          "name": "demi_journee",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "signature_data_url",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "signed_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "user_agent",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "absent",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "justificatif_url",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "motif_absence",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "confirme_presence_lieu",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "confirme_identite",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "masque",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "masque_motif",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "masque_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "regularisation_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "confirme_presence_creneau",
+          "type": "boolean",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "exam_attempts_v2",
+      "columns": [
+        {
+          "name": "attempt_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "exam_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "exam_version_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "snapshot",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "snapshot_fingerprint",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "etat",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "is_test",
+          "type": "boolean",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (attempt_id)"
+    },
+    {
+      "name": "exam_content_shares",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "source_exam_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "source_matiere",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "target_exam_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "target_matiere",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "actif",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "declared_by",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "declared_email",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "motif",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "exam_content_versions",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "filiere",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "exam_numero",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "module_id",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "exam_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "version_number",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "statut",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "content",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "fingerprint",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "motif",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "created_email",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "published_by",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "published_email",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "retired_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "is_test",
+          "type": "boolean",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "module_editor_state",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "module_id",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "module_data",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "deleted_cours",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "deleted_exercices",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "source_fingerprint",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "qrc_correction_events",
+      "columns": [
+        {
+          "name": "correction_event_id",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "qrc_instance_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "attempt_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "question_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "etat_precedent",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "etat_nouveau",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "note_precedente",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "note_nouvelle",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "commentaire",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "corrige_par",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "corrige_email",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "operation_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (correction_event_id)"
+    },
+    {
+      "name": "qrc_instances_v2",
+      "columns": [
+        {
+          "name": "qrc_instance_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "attempt_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "question_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "reponse",
+          "type": "jsonb",
+          "not_null": false
+        },
+        {
+          "name": "etat",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "note",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "corrige_par",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "corrige_email",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "corrige_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (qrc_instance_id)"
+    },
+    {
+      "name": "reponses_apprenants",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "exercice_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "exercice_type",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "reponses",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "score",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "completed",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "submitted_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "tentative",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "bonnes_reponses",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "total_questions",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "reponses_meta",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "write_seq",
+          "type": "bigint",
+          "not_null": true
+        },
+        {
+          "name": "source_noyau",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "originaux_exacts",
+          "type": "jsonb",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "reponses_apprenants_historique",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "exercice_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "exercice_type",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "tentative",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "reponses",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "score",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "bonnes_reponses",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "total_questions",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "status",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "submitted_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "reponses_apprenants_journal",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "user_id",
+          "type": "uuid",
+          "not_null": false
+        },
+        {
+          "name": "module_id",
+          "type": "integer",
+          "not_null": false
+        },
+        {
+          "name": "exercice_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "exercice_type",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "question_id",
+          "type": "text",
+          "not_null": true
+        },
+        {
+          "name": "valeur",
+          "type": "jsonb",
+          "not_null": true
+        },
+        {
+          "name": "tentative",
+          "type": "integer",
+          "not_null": true
+        },
+        {
+          "name": "client_saved_at",
+          "type": "timestamp with time zone",
+          "not_null": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "event_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "valeur_originale",
+          "type": "jsonb",
+          "not_null": false
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "session_apprenants",
+      "columns": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "session_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "apprenant_id",
+          "type": "uuid",
+          "not_null": true
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "not_null": true
+        },
+        {
+          "name": "date_debut",
+          "type": "date",
+          "not_null": false
+        },
+        {
+          "name": "date_fin",
+          "type": "date",
+          "not_null": false
+        },
+        {
+          "name": "mode_financement",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "montant_paye",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "moyen_paiement",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "montant_total",
+          "type": "numeric",
+          "not_null": false
+        },
+        {
+          "name": "presence_pratique",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "statut_suivi",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "date_fin_personnalisee",
+          "type": "date",
+          "not_null": false
+        },
+        {
+          "name": "heure_debut_personnalisee",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "heure_fin_personnalisee",
+          "type": "text",
+          "not_null": false
+        },
+        {
+          "name": "liste_attente",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "emargements_exclus",
+          "type": "boolean",
+          "not_null": true
+        },
+        {
+          "name": "objectif_signatures_ta_historique",
+          "type": "smallint",
+          "not_null": false
+        }
+      ],
+      "primary_key": "PRIMARY KEY (id)"
+    }
+  ],
+  "captured_at": "2026-11-26T09:07:47.284085+00:00"
+}

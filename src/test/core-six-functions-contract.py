@@ -1,5 +1,5 @@
 """Execute the staged six-function delta only on a disposable, socket-only cluster."""
-import os, pathlib, subprocess, tempfile, unittest, uuid
+import json, os, pathlib, subprocess, tempfile, unittest, uuid
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 OWNER, OTHER, ADMIN, APP, ATT = [str(uuid.uuid4()) for _ in range(5)]
 
@@ -89,5 +89,23 @@ CREATE FUNCTION exam_numero_from_id(t text) RETURNS text LANGUAGE sql AS $$SELEC
         for uid in [OWNER,OTHER,ADMIN,'']: self.call('authenticated',uid,'SELECT core_purge_donnees_test()',False)
         self.assertIn('"tentatives": 0',self.call('service_role','','SELECT core_purge_donnees_test()',True))
         self.assertEqual(self.sql('SELECT count(*) FROM exam_attempts_v2').stdout.strip(),'1')
+
+    def test_07_legitimate_admin_service_import_requires_same_attempt_and_preserves_exact_answers(self):
+        result=str(uuid.uuid4())
+        details={'snapshot':{'questions':[{'id':'1','type':'QRC','enonce':'QUESTION FICTIVE','points':2},{'id':'2','type':'QCM','enonce':'QCM FICTIF','points':2,'choix':[{'lettre':'A','correct':True}]}]},'reponses':{'1':'TEXTE FICTIF EXACT','2':['A']}}
+        raw=json.dumps(details)
+        self.sql(f"INSERT INTO apprenant_quiz_results VALUES('{result}','examen_blanc','FICTIF-IMPORT','matiere-fictive','F - Test','{APP}',2,'{raw}','2026-01-01T12:00:00Z');INSERT INTO reponses_apprenants VALUES('{APP}','examen_blanc','FICTIF-IMPORT__matiere-fictive','submitted',true)")
+        before=self.sql(f"SELECT md5(details::text) FROM apprenant_quiz_results WHERE id='{result}'").stdout
+        # A proof for tentative 1 must not authorize importing tentative 2.
+        out=self.call('authenticated',ADMIN,f"SELECT core_import_passage_finalise('{result}')",True)
+        self.assertIn('MATIERE_NON_FINALISEE',out)
+        self.sql(f"INSERT INTO reponses_apprenants VALUES('{APP}','examen_blanc','FICTIF-IMPORT__matiere-fictive__t2','submitted',true)")
+        for role,uid in [('authenticated',ADMIN),('service_role','')]:
+            out=self.call(role,uid,f"SELECT core_import_passage_finalise('{result}');SELECT core_import_passage_finalise('{result}');RESET ROLE;SELECT jsonb_object_agg(question_id,valeur) FROM answer_state WHERE attempt_id=(SELECT attempt_id FROM exam_attempts_v2 WHERE snapshot->'source_historique'->>'result_id'='{result}');SELECT count(*) FROM exam_attempts_v2 WHERE snapshot->'source_historique'->>'result_id'='{result}'",True)
+            self.assertIn('deja_importe',out);self.assertIn('TEXTE FICTIF EXACT',out);self.assertIn('"2": ["A"]',out)
+            observed=[line for line in out.strip().splitlines() if line not in ('BEGIN','SET','RESET','ROLLBACK')]
+            self.assertEqual(observed[-1],'1')
+        self.assertEqual(self.sql(f"SELECT md5(details::text) FROM apprenant_quiz_results WHERE id='{result}'").stdout,before)
+        self.assertEqual(self.sql(f"SELECT count(*) FROM exam_attempts_v2 WHERE snapshot->'source_historique'->>'result_id'='{result}'").stdout.strip(),'0')
 
 if __name__=='__main__': unittest.main(verbosity=2)

@@ -1,5 +1,10 @@
 # Roadmap — chantiers ouverts (13/11/2026)
 ## Corrections techniques du bilan — 26/11/2026
+- [x] Suite du lot après 09:05 : quatre protections stockage ajoutées (JSON/entrée illisible, conservation octets, quota avant ACK) ; 148/148 Vitest PASS.
+- [x] Restauration fidèle types/NULL/PK : 39 tables, 478 colonnes capturées, index UNIQUE module_id vérifié, chaque SHA-256 et lignes restaurées comparés ; transport fictif, pas de restauration réelle.
+- [x] Candidats testés avec gardes capturés : lot505-catalogue 2/2, sync-identite-catalogue 3/3 ; activation off, aucune réponse/remise réelle.
+- [x] Six RPC 7/7 ; sync 11/11 dont 7 hérités ; import admin/service réellement parcouru sur fictifs, même tentative et réponses exactes.
+- [x] I21 souris/tactile PC/mobile : refus sans preuve, même opération au réessai, PDF/download identiques ; débordement lecteur corrigé et contrôlé.
 - [x] Sauvegarde : reprise bornée et curseur composé, couverture additive, export/restauration PostgreSQL jetables (16 tests) ; aucun export réel lancé.
 - [x] Réponses : refus figés/backoff/propriété préservés, opérations durables et Web Lock ; tests réseau, expiration/reconnexion et rechargement, sans purge.
 - [x] Examens : null.nonPassee et helper de statut sécurisés, absence de version distincte d'expiration ; EB1/3/5 PC/mobile, aucune note inventée.
@@ -10,7 +15,7 @@
 - [x] Rapport exact : docs/incident-bilan-2026-11-26.md ; 144/144 tests ciblés et build OK.
 - [ ] Activation serveur/cron/écrans : attend l'accord sur le delta précis ; export réel complet et accès authentifiés réels non prouvés avant activation, aucune publication globale permise.
 - [x] Deux vrais onglets Chromium : 2 opérations exactes, une seule requête simultanée, ACK conservé après reload ; aucun trafic backend réel.
-- [ ] 505 et références : candidats du 26/11 testés avec empreintes de fixtures fictives ; validation SQL complète sur catalogue jetable reste nécessaire avant accord ; reprise 505 exige le clic/revue de l'élève concerné, jamais une remise administrative.
+- [ ] Activation 505/références : attend revue du delta ; tests avec paramètres fictifs et gardes capturés PASS, relecture des préconditions exactes requise à l'activation ; reprise exige le clic/revue de l'élève concerné, jamais une remise administrative.
 - [ ] Safari sans Web Locks/stockage privé et capture physique iPhone : non prouvés ; limites d'activation documentées.
 ## Preuves Qualiopi I22/I32 — 25/11/2026 18:14 UTC
 - [x] Enregistrer sans doublon « 32.docx » (I32) et « CCF_000546(1).pdf » (I22) comme pièces reçues/inspectées dans ChatGPT, originaux binaires non transférés, avec réserves et métadonnées complètes.

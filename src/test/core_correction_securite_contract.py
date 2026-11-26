@@ -47,16 +47,16 @@ INSERT INTO public.qrc_instances_v2 (qrc_instance_id, attempt_id, apprenant_id) 
 class Pg:
     def __init__(self):
         self.dir = tempfile.mkdtemp(prefix='pg-secu-', dir='/tmp')
+        self.env = {k: v for k, v in os.environ.items() if not k.startswith('PG') and k not in ('DATABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY')}
         self.user = [] if os.geteuid() else ['setpriv', '--reuid=1000', '--regid=1000', '--clear-groups']
         if self.user: os.chown(self.dir, 1000, 1000)
-        subprocess.run(self.user + ['initdb', '-D', self.dir + '/d', '-U', 'postgres', '-A', 'trust', '--no-locale'], check=True, capture_output=True)
-        subprocess.run(self.user + ['pg_ctl', '-D', self.dir + '/d', '-o', f"-k {self.dir} -p 55461 -h ''", '-w', 'start', '-l', self.dir + '/log'], check=True, capture_output=True)
+        subprocess.run(self.user + ['initdb', '-D', self.dir + '/d', '-U', 'postgres', '-A', 'trust', '--no-locale', '--encoding=UTF8'], check=True, capture_output=True, env=self.env)
+        subprocess.run(self.user + ['pg_ctl', '-D', self.dir + '/d', '-o', f"-k {self.dir} -p 55461 -h ''", '-w', 'start', '-l', self.dir + '/log'], check=True, capture_output=True, env=self.env)
     def sql(self, q):
-        env = {k: v for k, v in os.environ.items() if not k.startswith('PG')}
-        r = subprocess.run(['psql', '-X', '-At', '-h', self.dir, '-p', '55461', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True, env=env)
+        r = subprocess.run(['psql', '-X', '-At', '-h', self.dir, '-p', '55461', '-U', 'postgres', '-d', 'postgres', '-v', 'ON_ERROR_STOP=1', '-c', q], capture_output=True, text=True, env=self.env)
         return r.returncode, (r.stdout + r.stderr).strip()
     def stop(self):
-        subprocess.run(self.user + ['pg_ctl', '-D', self.dir + '/d', '-m', 'immediate', 'stop'], capture_output=True)
+        subprocess.run(self.user + ['pg_ctl', '-D', self.dir + '/d', '-m', 'immediate', 'stop'], capture_output=True, env=self.env)
 
 def as_ctx(role, claims, call):
     c = '' if claims is None else (claims if isinstance(claims, str) else json.dumps(claims)).replace("'", "''")
