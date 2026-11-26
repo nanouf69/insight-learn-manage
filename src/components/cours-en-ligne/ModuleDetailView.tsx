@@ -1,6 +1,7 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
 import { ajouterLyonVtc, COURS_LYON_VTC_ID, PDF_LYON_VTC, estPdfLyonVtc } from '@/lib/pratiqueVtcLyonRessource';
 import { fusionnerQuizLyon, retirerAjoutsQuizLyon } from '@/lib/pratiqueVtcLyonFusion';
+import { lireVersionQuizLyon, type VersionQuizLyon } from '@/lib/pratiqueVtcLyonVersion';
 import { FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
 import { Bilan505Desactive, couperBilan505, remettreBilan505, useBilan505Active, type RevueItem } from '@/lib/bilan505Remise';
 import { Bilan505RevuePanel } from './Bilan505RevuePanel';
@@ -1155,7 +1156,7 @@ const buildSiblingBilanSecurityModule = (
 
 const forceSourceExerciseTitles = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
   if (Number(moduleId) === 8 && loadedData.cours.some(c => c.id === COURS_LYON_VTC_ID)) {
-    return fusionnerQuizLyon(ajouterLyonVtc(loadedData));
+    return ajouterLyonVtc(loadedData);
   }
   if (Number(moduleId) !== 9) return loadedData;
 
@@ -6933,6 +6934,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
   };
   const etatSnapshotsRef = useRef<EtatSnapshotsEleve>(etatSnapshotsEleve);
   etatSnapshotsRef.current = etatSnapshotsEleve;
+  // Quiz Lyon 99/138 choisi par apprenant (lecture seule) ; sans apprenant (aperçu admin) = 138.
+  const lyonParApprenant = module.id === 8 && !!apprenantId;
+  const [versionLyon, setVersionLyon] = useState<VersionQuizLyon | null>(lyonParApprenant ? null : 'enrichie');
+  useEffect(() => {
+    if (!lyonParApprenant) { setVersionLyon('enrichie'); return; }
+    let annule = false;
+    setVersionLyon(null);
+    void lireVersionQuizLyon(apprenantId!).then((v) => { if (!annule) setVersionLyon(v); });
+    return () => { annule = true; };
+  }, [lyonParApprenant, apprenantId]);
+  const versionLyonRef = useRef<VersionQuizLyon | null>(versionLyon);
+  versionLyonRef.current = versionLyon;
   // La ref doit être synchronisée AVANT le rendu de LearnerPreview. Un useEffect
   // arrive après ce rendu et laissait donc systématiquement l'apprenant sur la
   // version précédente des questions jusqu'à une seconde mise à jour.
@@ -6951,7 +6964,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const onModuleCompleted = (moduleId: number) => rappelsEleveRef.current.onModuleCompleted?.(moduleId);
     const LearnerPreviewComponent = ({ secureMode = true, complementsVtc = false, cibleComplement = null }: { secureMode?: boolean; complementsVtc?: boolean; cibleComplement?: CibleComplementVtc | null }) => {
     const moduleData = (() => {
-      const base = moduleDataRef.current;
+      const base = versionLyonRef.current === 'enrichie' ? fusionnerQuizLyon(moduleDataRef.current) : moduleDataRef.current;
       const etat = etatSnapshotsRef.current;
       if (etat.statut !== "pret" || Object.keys(etat.parExo).length === 0) return base;
       return {
@@ -10479,7 +10492,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : routeFutureConcernee && routeFuture?.route === "future" ? (
           module.id === 5 ? <BilanVtcComplements apprenantId={apprenantId ?? undefined} future={<BilanFutureExam moduleId={5} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />} legacy={cible => <ActivitesModuleContext.Provider value={activitesEtat}><LearnerPreview secureMode complementsVtc cibleComplement={cible} /></ActivitesModuleContext.Provider>} /> : <BilanFutureExam moduleId={11} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />
-        ) : etatSnapshotsEleve.statut === "chargement" ? (
+        ) : versionLyon === null || etatSnapshotsEleve.statut === "chargement" ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
         ) : etatSnapshotsEleve.statut === "bloque" ? (
           <div className="m-6 p-6 rounded-lg border border-destructive/40 bg-destructive/5 text-center space-y-3">
@@ -10931,7 +10944,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         </TabsContent>
 
         <TabsContent value="apercu">
-          <LearnerPreview secureMode />
+          {versionLyon === null ? <div className="p-8 text-center text-muted-foreground">Chargement…</div> : <LearnerPreview secureMode />}
         </TabsContent>
         <TabsContent value="resultats">
           <ModuleResultsTab moduleId={module.id} moduleName={module.nom} />
