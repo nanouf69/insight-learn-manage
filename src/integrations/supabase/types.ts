@@ -10029,6 +10029,57 @@ export type Database = {
           },
         ]
       }
+      signalements_apprenants: {
+        Row: {
+          apprenant_email: string | null
+          apprenant_id: string
+          apprenant_nom: string | null
+          auth_user_id: string
+          captures: Json
+          created_at: string
+          envoi_erreur: string | null
+          envoi_le: string | null
+          envoi_statut: string
+          explication: string
+          id: string
+          pieces_jointes: boolean | null
+          qualiopi_preuve_id: string | null
+          type: string
+        }
+        Insert: {
+          apprenant_email?: string | null
+          apprenant_id: string
+          apprenant_nom?: string | null
+          auth_user_id: string
+          captures?: Json
+          created_at?: string
+          envoi_erreur?: string | null
+          envoi_le?: string | null
+          envoi_statut?: string
+          explication: string
+          id?: string
+          pieces_jointes?: boolean | null
+          qualiopi_preuve_id?: string | null
+          type: string
+        }
+        Update: {
+          apprenant_email?: string | null
+          apprenant_id?: string
+          apprenant_nom?: string | null
+          auth_user_id?: string
+          captures?: Json
+          created_at?: string
+          envoi_erreur?: string | null
+          envoi_le?: string | null
+          envoi_statut?: string
+          explication?: string
+          id?: string
+          pieces_jointes?: boolean | null
+          qualiopi_preuve_id?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       sms_envois: {
         Row: {
           created_at: string

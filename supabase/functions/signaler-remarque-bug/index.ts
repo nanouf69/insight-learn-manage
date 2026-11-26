@@ -71,13 +71,46 @@ Deno.serve(async (req) => {
 ${images.length ? `<p><strong>Captures (${images.length})</strong> ${joindre ? "jointes à ce mail ; " : "trop volumineuses pour être jointes ; "}liens privés valables 7 jours :</p><ul>${liens}</ul>` : "<p>Aucune capture.</p>"}
 </div>`;
 
-    await sendBrandedEmail({
+    // Trace privée conservée AVANT l'envoi (registre interne, jamais visible de l'apprenant).
+    const captures = (chemins as string[]).map((c, n) => ({ bucket: BUCKET, chemin: c, mime: images[n].mime, octets: images[n].octets.length }));
+    const { data: trace, error: tErr } = await admin.from("signalements_apprenants").insert({
+      apprenant_id: app.id, auth_user_id: uid, type, apprenant_nom: nom, apprenant_email: app.email ?? null,
+      explication, captures, pieces_jointes: joindre,
+    }).select("id, created_at").single();
+    if (tErr || !trace) { console.error("[signaler-remarque-bug] trace", tErr); return json(500, { error: "Le signalement n'a pas pu être enregistré. Réessayez plus tard." }); }
+
+    // Rattachement interne au registre Qualiopi existant : indicateur 32, reçu NON analysé.
+    try {
+      const { data: preuve } = await admin.from("qualiopi_preuves").insert({
+        titre: `Signalement apprenant (${libelle}) – ${nom}`,
+        description: explication.slice(0, 500),
+        date_preuve: String(trace.created_at).slice(0, 10),
+        source_type: "signalement_apprenant", source_table: "signalements_apprenants", source_id: trace.id,
+        source_libelle: "Onglet « Signaler une remarque ou un bug » (espace apprenant)",
+        ce_que_demontre: "Réception d'une appréciation/réclamation. Reçu non analysé : ne démontre pas à lui seul l'indicateur 32 (analyse, mesure d'amélioration et suivi restent à formaliser).",
+        emplacement: `signalements_apprenants/${trace.id}`,
+        remarque_interne: "Statut : reçu, non vérifié, non analysé.",
+        ref_key: `signalement:${trace.id}`,
+      }).select("id").single();
+      if (preuve) {
+        await admin.from("qualiopi_preuve_liens").insert({ preuve_id: preuve.id, indicateur: 32, justification: "Qualiopi — indicateur 32 : signalement apprenant reçu, à analyser." });
+        await admin.from("signalements_apprenants").update({ qualiopi_preuve_id: preuve.id }).eq("id", trace.id);
+      }
+    } catch (e) { console.error("[signaler-remarque-bug] qualiopi", e); }
+
+    try {
+      await sendBrandedEmail({
       to: DESTINATAIRE,
       subject: `[${libelle}] ${nom}`,
       html,
       replyTo: app.email ?? undefined,
       attachments: joindre ? images.map((i) => ({ name: i.nom, contentType: i.mime, contentBytes: toBase64(i.octets) })) : [],
-    });
+      });
+    } catch (e) {
+      await admin.from("signalements_apprenants").update({ envoi_statut: "echec", envoi_erreur: String((e as Error)?.message ?? e).slice(0, 500), envoi_le: new Date().toISOString() }).eq("id", trace.id);
+      throw e;
+    }
+    await admin.from("signalements_apprenants").update({ envoi_statut: "envoye", envoi_le: new Date().toISOString() }).eq("id", trace.id);
     return json(200, { ok: true, joint: joindre });
   } catch (e) {
     console.error("[signaler-remarque-bug]", e);
