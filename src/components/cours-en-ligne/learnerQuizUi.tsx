@@ -470,8 +470,10 @@ export function QuizPageNavigation({ onPrev, prevDisabled, current, total, child
  * serveur : relire/refaire les fausses (facultatif) OU continuer. Affichage
  * seul : aucune écriture, aucune validation inventée.
  */
-export function ChoixApresQuiz({ fausses, onRelire, repriseEnCours, onSuivant, fin, noteSpecifique }: {
+export function ChoixApresQuiz({ fausses, onRelire, repriseEnCours, revisionTerminee, onSuivant, fin, noteSpecifique }: {
   fausses: number;
+  /** Révision des fausses déjà terminée : jamais redemandée, note initiale conservée. */
+  revisionTerminee?: boolean;
   /** Absent = parcours de reprise spécifique affiché ailleurs (Bilans). */
   onRelire?: () => void;
   repriseEnCours?: boolean;
@@ -487,11 +489,14 @@ export function ChoixApresQuiz({ fausses, onRelire, repriseEnCours, onSuivant, f
           ? `Quiz remis et validé. ${fausses} question${fausses > 1 ? "s" : ""} fausse${fausses > 1 ? "s" : ""} : la correction est facultative.`
           : "Quiz remis et validé. Aucune question fausse à reprendre."}
       </p>
+      {revisionTerminee && (
+        <p data-testid="revision-terminee" className="text-sm text-muted-foreground">✅ Correction des questions fausses déjà effectuée. Votre note initiale reste inchangée ; vous pouvez continuer.</p>
+      )}
       {noteSpecifique}
       <div className={`grid gap-2 ${fausses > 0 && onRelire ? "sm:grid-cols-2" : ""}`}>
         {fausses > 0 && onRelire && (
           <Button variant="outline" className="w-full min-h-11 whitespace-normal" data-testid="choix-relire" onClick={onRelire}>
-            {repriseEnCours ? "🎯 Reprendre la correction des questions fausses" : "🎯 Relire et refaire les questions fausses"}
+            {repriseEnCours ? "🎯 Reprendre la correction des questions fausses" : revisionTerminee ? "🔁 Refaire encore les questions fausses (facultatif)" : "🎯 Relire et refaire les questions fausses"}
           </Button>
         )}
         {onSuivant ? (

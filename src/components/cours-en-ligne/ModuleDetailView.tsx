@@ -2118,6 +2118,7 @@ const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/Co
 const QuizJoursFeries = lazy(() => import("./cas-pratique-feries/QuizJoursFeries"));
 import QuizExterneBilan, { quizIntegresBilan, exerciceRemplaceParQuizIntegres, etapeQuizComplementaires, ID_ETAPE_QUIZ_COMPLEMENTAIRES } from "./QuizExterneBilan";
 import { getCachedSignedUrl, signCourseObject } from "@/lib/signedCourseUrlCache";
+import { exoSauvegardable, revisionsSessionARestaurer, revisionFaussesTerminee } from "@/lib/revisionFaussesEtat";
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -7033,6 +7034,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // Quiz validés côté serveur (status submitted) et révisions en cours sur ces quiz.
     const submittedExoIdsRef = useRef<Set<number>>(new Set());
     const revisionActiveRef = useRef<Set<number>>(new Set());
+    // Révision « refaire les fausses » réellement ouverte à l'écran (seule autorisée à écrire).
+    const revisionOuverteRef = useRef<Set<number>>(new Set());
+    // Révisions terminées relues/confirmées (affichage seul ; la note initiale reste figée).
+    const [revisionsTerminees, setRevisionsTerminees] = useState<Record<number, Record<string, string | string[]>>>({});
+    const peutSauvegarderExo = (exoId: number, force = false) => exoSauvegardable({
+      soumis: submittedExoIdsRef.current.has(exoId),
+      fige: !!passagesFiges[exoId],
+      revisionOuverte: revisionOuverteRef.current.has(exoId),
+      force,
+    });
     // Original archive is immutable evidence, not the current revision answer state.
     useEffect(() => {
       const active = new Set([...revisionActiveRef.current, ...Object.keys(revisionQuestionsFor).map(Number)]);
@@ -7192,6 +7203,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       // Quiz déjà validé : la révision part sous son propre identifiant,
       // la tentative validée reste intacte (« Refaire les fausses » toujours cliquable).
       if (submittedExoIdsRef.current.has(pending.exoId) || passagesFiges[pending.exoId]) revisionActiveRef.current.add(pending.exoId);
+      revisionOuverteRef.current.add(pending.exoId);
       // Persist the wiped selections after state has settled.
       autoSaveAnswers(clearedSelected, [pending.exoId], selectedAnswers);
 
@@ -7208,6 +7220,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       const r = repriseEnAttente[exoId];
       if (!r) return;
       revisionActiveRef.current.add(exoId);
+      revisionOuverteRef.current.add(exoId);
       setSelectedAnswers((prev) => {
         const next = { ...prev };
         Object.keys(next).forEach((k) => { if (k.startsWith(`${exoId}-`)) delete next[k]; });
@@ -7245,6 +7258,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         return { ...next, ...initiales };
       });
       setUnansweredKeys(new Set());
+      revisionOuverteRef.current.delete(exoId);
       setRevisionQuestionsFor((prev) => { const n = { ...prev }; delete n[exoId]; return n; });
       setPendingWrongQuestionRevision(null);
       setShowResultsFor((prev) => new Set(prev).add(exoId));
@@ -7491,7 +7505,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         }
         if (parsed.revisionQuestionsFor && typeof parsed.revisionQuestionsFor === "object") {
           const restored: Record<number, Set<number | string>> = {};
-          for (const [k, v] of Object.entries(parsed.revisionQuestionsFor)) {
+          // Une révision dont les résultats étaient affichés est terminée : jamais rouverte.
+          const aRestaurer = revisionsSessionARestaurer(parsed.revisionQuestionsFor as Record<string, unknown>, Array.isArray(parsed.showResultsFor) ? parsed.showResultsFor : []);
+          for (const [k, v] of Object.entries(aRestaurer)) {
             const exoId = Number(k);
             if (Number.isFinite(exoId) && Array.isArray(v)) {
               restored[exoId] = new Set(v);
@@ -7790,6 +7806,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         // Quiz initial remis (preuve serveur) : la reprise enregistrée reste en
         // attente ; les résultats initiaux restent affichés et l'élève choisit.
         if (soumis.includes(exoId)) {
+          setRevisionsTerminees((prev) => ({ ...prev, [exoId]: rep }));
           const exoR = activeExercicesRef.current.find((e: any) => e.id === exoId);
           const manquantesR = ((exoR?.questions ?? []) as any[])
             .filter((q) => Array.isArray(q?.choix) && q.choix.length > 0)
@@ -7812,6 +7829,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           .filter((qid) => { const v = rep[`${exoId}-${qid}`]; return Array.isArray(v) ? v.length === 0 : !v; });
         if (manquantes.length > 0) {
           setShowResultsFor((prev) => { const n = new Set(prev); n.delete(exoId); return n; });
+          revisionOuverteRef.current.add(exoId);
           setRevisionQuestionsFor((prev) => ({ ...prev, [exoId]: new Set(manquantes) }));
         }
       });
@@ -8151,6 +8169,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           const nowIso = new Date().toISOString();
 
           Array.from(byExo.entries()).forEach(([exoId, exoAnswers]) => {
+            // Quiz remis : seule une révision ouverte (ou une remise à zéro explicite) écrit.
+            if (!peutSauvegarderExo(exoId, forceExerciceIds.includes(exoId))) return;
             const events = Object.entries(exoAnswers)
               .filter(([key, val]) => JSON.stringify(previous[key]) !== JSON.stringify(val))
               .map(([key, val]) => ({
@@ -8252,6 +8272,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         }
         const nowIso = new Date().toISOString();
         Array.from(byExo.entries()).forEach(([exoId, exoAnswers]) => {
+          if (!peutSauvegarderExo(exoId)) return;
           enqueueAnswerSave({
             apprenant_id: apprenantId,
             user_id: userIdForSaveRef.current as string,
@@ -9667,6 +9688,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                         setValidatingExo(exo.id);
                         // Affichage du résultat : appelé UNIQUEMENT après confirmation serveur.
                         const afficherResultatValide = () => {
+                        // Révision terminée (preuve : envoi + relecture identique confirmés).
+                        const etaitRevision = revisionOuverteRef.current.has(exo.id);
+                        revisionOuverteRef.current.delete(exo.id);
+                        if (etaitRevision) {
+                          const repRev: Record<string, string | string[]> = {};
+                          Object.entries(selectedAnswers).forEach(([k, v]) => { if (k.startsWith(`${exo.id}-`)) repRev[k] = v; });
+                          setRevisionsTerminees((prev) => ({ ...prev, [exo.id]: repRev }));
+                          setRepriseEnAttente((prev) => { const n = { ...prev }; delete n[exo.id]; return n; });
+                        }
+                        const revisionsRestantes = { ...revisionQuestionsFor };
+                        delete revisionsRestantes[exo.id];
+                        setRevisionQuestionsFor(revisionsRestantes);
                         const validatedResultState = { exoId: exo.id, page: currentPage, validatedAt: Date.now() };
 
                         const nextShowResults = new Set(showResultsFor);
@@ -9680,7 +9713,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
                         try {
                           const revisionSerialized: Record<string, (number | string)[]> = {};
-                          for (const [k, v] of Object.entries(revisionQuestionsFor)) {
+                          for (const [k, v] of Object.entries(revisionsRestantes)) {
                             revisionSerialized[k] = Array.from(v as Set<number | string>);
                           }
                           window.sessionStorage.setItem(
@@ -9979,6 +10012,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                           <ChoixApresQuiz
                             fausses={compterFausses(questionsSafe)}
                             repriseEnCours={!!reprise}
+                            revisionTerminee={!reprise && !revisionOuverteRef.current.has(exo.id) && revisionFaussesTerminee(
+                              selectedAnswers,
+                              revisionsTerminees[exo.id],
+                              questionsSafe.filter((q: any) => Array.isArray(q?.choix) && q.choix.length > 0 && !isAnswerCorrect(selectedAnswers[`${exo.id}-${q.id}`], q)).map((q: any) => `${exo.id}-${q.id}`),
+                            )}
                             onRelire={specifique ? undefined : () => {
                               if (reprise) reprendreRevisionEnAttente(exo.id);
                               else ouvrirRelectureFausses(exo, questionsSafe);
@@ -10030,6 +10068,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               // Quiz déjà validé : la nouvelle tentative part sur l'identifiant de révision,
                               // la tentative validée reste intacte.
                               if (submittedExoIdsRef.current.has(exo.id)) revisionActiveRef.current.add(exo.id);
+                              revisionOuverteRef.current.add(exo.id);
                               autoSaveAnswers(cleared, [exo.id], selectedAnswers);
                               setShowResultsFor(prev => { const next = new Set(prev); next.delete(exo.id); return next; });
                               setPendingResultRestore((prev) => (prev?.exoId === exo.id ? null : prev));
