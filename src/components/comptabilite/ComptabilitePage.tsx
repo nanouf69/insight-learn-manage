@@ -36,6 +36,7 @@ import { dateEmissionFactureFournisseur } from "@/lib/comptabilite/factureFourni
 import { lignesFactureCommune } from "@/lib/comptabilite/factureCommune";
 import { apprenantsRattachesFacture, type RattachementFacture } from "@/lib/comptabilite/rattachementsFacture";
 import { RattachementsFacture } from "./RattachementsFacture";
+import { DestinataireSuppressionFacture } from "./DestinataireSuppressionFacture";
 import { PRESTATIONS_FACTURE, notificationFacture } from '@/lib/comptabilite/prestationsFacture';
 import { lireDestinataireFacture } from '@/lib/comptabilite/destinataireFacture';
 import { lignesDestinataireBrouillon } from '@/lib/comptabilite/adresseFacture';
@@ -3006,11 +3007,12 @@ export function ComptabilitePage() {
               <p className="text-xs text-muted-foreground">
                 La facture sera placée dans la corbeille. Vous pourrez la remettre ; l’original, les paiements et les apprenants rattachés seront conservés. Un mail « Facture supprimée » sera envoyé au destinataire après confirmation. Cette action n’est pas un avoir ni une annulation comptable.
               </p>
-              {destinataireAvisSuppression(deletingTarget) ? (
-                <p className="text-sm break-all">Destinataire : <strong>{destinataireAvisSuppression(deletingTarget)}</strong></p>
-              ) : (
-                <p role="alert" className="text-sm text-destructive">L’adresse du destinataire manque ou est invalide. Renseignez-la dans « Modifier la facture » avant de supprimer et avertir le destinataire.</p>
-              )}
+              <DestinataireSuppressionFacture key={deletingTarget.id} facture={deletingTarget} onEdit={() => {
+                const facture = deletingTarget;
+                setDeletingTarget(null);
+                setDeleteMotif('');
+                openEditFacture(facture);
+              }} />
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Motif de la suppression (recommandé)</label>
                 <Input

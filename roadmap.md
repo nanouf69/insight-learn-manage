@@ -1,5 +1,6 @@
 # Roadmap — chantiers ouverts (13/11/2026)
 ## Adresse facture Farouk — 26/11 16:49
+- [x] Demande 17:10 : confirmation de suppression distingue mail du dossier existant et destinataire facture non enregistré ; lecture seule et accès direct à la vérification, aucun enregistrement/envoi automatique.
 - [x] Demande 17:01 : mail financeur confirmé sans attente inutile du dossier, relecture explicite après erreur, saisie manuelle protégée des alertes tardives ; tests PC/mobile fictifs et 59 Vitest PASS. Aucune nouvelle confirmation demandée, aucune activation présumée.
 - [x] Adresse enregistrée de la facture retrouvée en lecture seule ; champ postal ajouté dans Modifier la facture sans mutation ni remplacement par les coordonnées actuelles du dossier.
 - [x] 14 tests et formulaire fictif PC/mobile vérifiés, build OK ; accès réel au formulaire non prouvé. Audit des autres lecteurs dans docs/facture-adresse-postale-2026-11-26.md.

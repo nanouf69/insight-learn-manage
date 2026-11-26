@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 import { destinataireFactureParDefaut as adresse, lireDestinataireFacture } from '@/lib/comptabilite/destinataireFacture';
+import { destinataireAvisSuppression } from '../../supabase/functions/_shared/factureSuppressionAvis';
 
 describe('Destinataire de la facture', () => {
+  it('retrouve le mail du financeur malgré un destinataire facture vide sans modifier la facture', async () => {
+    const facture = { client_email: null };
+    const mail = await lireDestinataireFacture(async () => ({ type_financeur: 'professionnel', email_facturation: 'financeur@example.fr' }), async () => null, 'professionnel');
+    expect(destinataireAvisSuppression({ client_email: mail })).toBe('financeur@example.fr');
+    expect(facture.client_email).toBeNull();
+    expect(destinataireAvisSuppression(facture)).toBeNull();
+  });
   it('préfère le mail de facturation du financeur au stagiaire', () => {
     expect(adresse({type_financeur:'professionnel', email_facturation:'financeur@example.fr', contact_email:'contact@example.fr'}, {email:'stagiaire@example.fr'}, 'professionnel')).toBe('financeur@example.fr');
   });
