@@ -1,4 +1,5 @@
 # Persistence boundaries
+- The autonomous Lyon QCM bank and its unmounted review UI stay outside course/progression imports; PDF-only projection lives in pratiqueVtcLyonRessource. Why: support access must not associate the bank with learner status, attempts or milestones.
 - CMA fee estimates use an explicit exam-session date and a shared Paris-boundary helper; stored financial evidence is never repriced and unknown dates stay labelled for review. Why: future tariffs must not alter historical obligations.
 - Quote signature display uses the quote's own dated image or signed file, never shared form signatures; preparation reuses the validated personal contract and sends a frozen unsigned PDF only after explicit review. Why: a prepared quote is neither a signature nor proof of regulatory approval.
 - T3P local groups in course modules 2/10 render each question through its original exercise context; controls submit full original arrays and missing/review links route to its displayed part. Why: displayed parts never become persistence, score or completion identities, and both originals contain Q59.

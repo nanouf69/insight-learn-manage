@@ -1,5 +1,6 @@
 # Roadmap — chantiers ouverts (13/11/2026)
 ## Pratique VTC — PDF Lyon et QCM 2 (26/11)
+- [x] Rectification 09:46 : accès/imports/exception QCM retirés du module 8 ; banque et revue conservées non intégrées, aucune route pour l’ouvrir ; PDF seul sur cours existant. 58 tests PASS, PC/mobile PDF et absence QCM vérifiés, build OK ; zéro production/publication.
 - [x] Rectification 09:41 : PDF sur cours existant ; QCM 2 séparé en mémoire, hors pages/jalons, sans tentative ni écriture ; 59 tests PASS, PC/mobile vérifiés, HTTP 200 PDF exact, build OK. Historique et autres lots conservés, aperçu uniquement.
 - [x] 76 questions comparées au quiz serveur de 99 questions : 39 QCM nouveaux, 37 objectifs déjà couverts exclus, ancien quiz intact.
 - [x] Rattachement source/projection préparé, PDF HTTP 200 identique ; PC/mobile lecture/download et 39/39 réponses fictives remises/rechargées ; 57 tests PASS, build OK.

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ajouterLyonVtc, COURS_LYON_VTC_ID, PDF_LYON_VTC, QCM2_LYON, estQcm2Lyon, estPdfLyonVtc, noteEntrainementLyon } from '@/lib/pratiqueVtcLyonQcm2';
+import { QCM2_LYON, noteEntrainementLyon } from '@/lib/pratiqueVtcLyonQcm2';
+import { ajouterLyonVtc, COURS_LYON_VTC_ID, PDF_LYON_VTC, estPdfLyonVtc } from '@/lib/pratiqueVtcLyonRessource';
 
 describe('Ajout complémentaire Lyon VTC', () => {
   it('convertit uniquement les 39 objectifs absents sur les 76 du PDF', () => {
@@ -42,11 +43,6 @@ describe('Ajout complémentaire Lyon VTC', () => {
     expect(noteEntrainementLyon({ 826110001: 'A' })).toBe(1);
     expect(noteEntrainementLyon({ 826110001: 'B' })).toBe(0);
     expect(noteEntrainementLyon({ 826110001: 'A,B' })).toBe(0);
-  });
-  it('réserve la sélection unique au nouveau quiz du module 8', () => {
-    expect(estQcm2Lyon(8, 826110201)).toBe(true);
-    expect(estQcm2Lyon(8, 1785332774763)).toBe(false);
-    expect(estQcm2Lyon(6, 826110201)).toBe(false);
   });
   it('autorise le téléchargement uniquement du nouveau PDF exact', () => {
     expect(estPdfLyonVtc(PDF_LYON_VTC.url)).toBe(true);

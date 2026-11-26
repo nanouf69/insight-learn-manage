@@ -1,6 +1,6 @@
 // Real ModuleDetailView + persistence queue. Fictional SDK, Edge transport and server rows only.
 import fixture from "./module-fixture.json";
-import { ajouterLyonVtc } from "@/lib/pratiqueVtcLyonQcm2";
+import { ajouterLyonVtc } from "@/lib/pratiqueVtcLyonRessource";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ModuleDetailView from "@/components/cours-en-ligne/ModuleDetailView";

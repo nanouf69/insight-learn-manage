@@ -1,5 +1,13 @@
 # Pratique VTC — PDF Lyon et QCM 2, 26/11/2026
 
+## Correction prioritaire 09:46 UTC — banque préparée, non intégrée
+- Tout rattachement du QCM au module 8 est retiré, y compris le bouton facultatif, les imports de banque, le prédicat module/exercice et les exceptions du moteur de quiz/progression.
+- Le module importe seulement pratiqueVtcLyonRessource.ts : PDF sur cours existant, sans ajout/modification des identités de cours ou exercices. La projection de lecture ne dépend plus, même indirectement, de QCM2_LYON.
+- Les 39 questions restent inchangées dans src/components/cours-en-ligne/exercices/pratique-vtc-lyon-qcm2.json ; export autonome src/lib/pratiqueVtcLyonQcm2.ts. Le composant de revue PratiqueVtcLyonQcm2.tsx est conservé mais n’est importé/monté par aucun écran ni route. **La banque ne peut donc pas actuellement être ouverte dans l’application ; elle est préparée, non intégrée.** Aucun lien associé à un élève n’est ajouté.
+- Contrôle rg : aucune occurrence QCM2_LYON/estQcm2Lyon/PratiqueVtcLyonQcm2/826110201 dans ModuleDetailView, le support, le registre ou la progression. Occurrences restantes : banque, export autonome, composant non monté et tests.
+- 58/58 tests ciblés exécutés ; build OK 09:47:56 UTC ; diff --check OK. Chromium PC/mobile avec transports fictifs : bouton QCM absent, aucune ligne pour ce quiz, 7 cours/1 quiz historique conservés, PDF rendu et téléchargement identique, pas de débordement. Aucun test sur compte réel ni aucune mutation de production.
+- Aucune publication, migration, sauvegarde apprenant, tentative ou communication. Les sections précédentes ci-dessous sont historiques et remplacées par cette correction.
+
 ## Rectification du périmètre confirmé à 09:41 UTC — aperçu uniquement
 Cette section remplace le raccordement et la persistance décrits dans la livraison précédente ci-dessous (conservée comme historique).
 - Le PDF reste une pièce du cours existant : cours Lyon 1785334184827 dans la projection serveur, cours 2 dans PRATIQUE_VTC_DATA. La page supplémentaire de support et l’exercice QCM 2 ont été retirés du modèle requis préparé. Aucun cours/jalon existant n’est réordonné ; les exercices d’origine restent la même référence dans la projection.

@@ -1,6 +1,5 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
-import { ajouterLyonVtc, QCM2_LYON, COURS_LYON_VTC_ID, PDF_LYON_VTC, estQcm2Lyon, estPdfLyonVtc } from '@/lib/pratiqueVtcLyonQcm2';
-import PratiqueVtcLyonQcm2 from './PratiqueVtcLyonQcm2';
+import { ajouterLyonVtc, COURS_LYON_VTC_ID, PDF_LYON_VTC, estPdfLyonVtc } from '@/lib/pratiqueVtcLyonRessource';
 import { FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
 import { Bilan505Desactive, couperBilan505, remettreBilan505, useBilan505Active, type RevueItem } from '@/lib/bilan505Remise';
 import { Bilan505RevuePanel } from './Bilan505RevuePanel';
@@ -9336,7 +9335,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                   );
                 }
 
-                const multi = estQcm2Lyon(Number(module.id), exo.id) ? false : isMultiAnswer(q);
+                const multi = isMultiAnswer(q);
                 const selectedArr = Array.isArray(selected) ? selected : selected ? [selected] : [];
                 const exoShowResults = showResultsFor.has(exo.id);
                 const answerIsCorrect = isAnswerCorrect(selected, q);
@@ -9372,7 +9371,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       if (display?.questionId !== undefined) return <>{renderOriginalQuestions()}</>;
 
       return (
-      <div className={display?.controlsOnly ? "w-full" : estQcm2Lyon(Number(module.id), exo.id) ? "grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4 min-w-0" : "grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4"}>
+      <div className={display?.controlsOnly ? "w-full" : "grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4"}>
         <div className="space-y-4 min-w-0">
           <Card key={exo.id} id={`exo-revision-top-${exo.id}`} className="scroll-mt-4 transition-all">
             <CardContent className="p-6 space-y-4">
@@ -9945,7 +9944,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               </Button>
                             )}
                             {currentPage === totalPages - 1 && (
-                              <Button size="sm" variant="secondary" className={estQcm2Lyon(Number(module.id), exo.id) ? "gap-2 whitespace-normal h-auto py-2 max-w-full" : "gap-2"} onClick={async () => {
+                              <Button size="sm" variant="secondary" className="gap-2" onClick={async () => {
                                 const ok = await persistModuleCompletion();
                                 onBack();
                                 if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current, activitesDuModule(Number(module.id)).length > 0).toast);
@@ -10020,7 +10019,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </CardContent>
           </Card>
         </div>
-        {!display?.controlsOnly && <div className={estQcm2Lyon(Number(module.id), exo.id) ? 'hidden sm:block' : undefined}><QuizQuestionSidebar
+        {!display?.controlsOnly && <div><QuizQuestionSidebar
           onJump={scrollToExerciseQuestion}
           items={questionsSafe.map((q: any, qi: number) => {
             const isAnswered = isQuestionAnsweredForSidebar(q);
@@ -10203,7 +10202,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
           {/* Grilles d'évaluation pratique (tous les passages) */}
           {Number(module.id) === 8 && <PratiqueVtcLyonSupport key={`support-vtc-${apprenantId ?? "apercu"}`} moduleId={8} />}
-          {Number(module.id) === 8 && <PratiqueVtcLyonQcm2 key={`qcm2-lyon-${apprenantId ?? "apercu"}`} />}
           {Number(module.id) === 6 && <PratiqueTaxiLyonSupport key={`support-taxi-${apprenantId ?? "apercu"}`} moduleId={6} />}
           {Number(module.id) === 6 && (
             <Suspense fallback={<p role="status">Chargement des exercices TAXI…</p>}>
@@ -10411,7 +10409,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </Button>
             );
           })() : (
-            <Button variant="secondary" className={currentPageData?.type === "exercice-single" && estQcm2Lyon(Number(module.id), currentPageData.exercice.id) ? "gap-2 whitespace-normal h-auto py-2 max-w-[55%]" : "gap-2"} disabled={savingCompletion || !!historicalQuizProof?.remainingQuizzes.some(q => !submittedExoIdsRef.current.has(Number(q.id)))} onClick={async () => {
+            <Button variant="secondary" className="gap-2" disabled={savingCompletion || !!historicalQuizProof?.remainingQuizzes.some(q => !submittedExoIdsRef.current.has(Number(q.id)))} onClick={async () => {
               const ok = await persistModuleCompletion();
               if (!ok) return; // on reste sur la page tant que le serveur n'a pas confirmé
               onBack();
