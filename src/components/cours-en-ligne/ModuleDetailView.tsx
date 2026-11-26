@@ -8444,6 +8444,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     };
 
 
+    // Fin de module : on ne quitte l'écran et n'annonce la réussite qu'après
+    // confirmation serveur. Refus/échec : on reste sur le quiz (choix Relire /
+    // Suivant visible), persistModuleCompletion a déjà affiché l'erreur.
+    // Aperçu admin / compléments : aucune écriture, sortie inchangée.
+    const terminerModuleEtQuitter = async (messageSucces?: string) => {
+      if (complementsVtc || apercuAdmin) { onBack(); return; }
+      const ok = await persistModuleCompletion();
+      if (!ok) return;
+      onBack();
+      toast.success(messageSucces ?? libelleFinQuiz(activitesEtatRef.current, activitesDuModule(Number(module.id)).length > 0).toast);
+    };
+
     const persistModuleCompletion = async () => {
       if (complementsVtc || apercuAdmin) return false;
       if (module.id === 8 && versionLyonRef.current === 'enrichie'
@@ -8814,9 +8826,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
               if (currentPage < totalPages - 1) {
                 goToPage(currentPage + 1);
               } else {
-                persistModuleCompletion();
-                onBack();
-                toast.success("🎉 Formation terminée ! Merci pour vos retours.");
+                void terminerModuleEtQuitter("🎉 Formation terminée ! Merci pour vos retours.");
               }
             }}
           />
@@ -9428,9 +9438,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                   )}
                   {completedPages.has(currentPage) && currentPage === totalPages - 1 && (
                     <Button size="lg" variant="secondary" className="gap-2" onClick={async () => {
-                      const ok = await persistModuleCompletion();
-                      onBack();
-                      if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current, activitesDuModule(Number(module.id)).length > 0).toast);
+                      await terminerModuleEtQuitter();
                     }}>
                       <CheckCircle2 className="w-4 h-4" /> <LibelleFin moduleId={Number(module.id)} />
                     </Button>
@@ -10052,9 +10060,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             onSuivant={currentPage < totalPages - 1 ? () => goToPage(currentPage + 1) : undefined}
                             fin={currentPage === totalPages - 1 ? (
                               <Button variant="secondary" className="w-full min-h-11 gap-2" onClick={async () => {
-                                const ok = await persistModuleCompletion();
-                                onBack();
-                                if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current, activitesDuModule(Number(module.id)).length > 0).toast);
+                                await terminerModuleEtQuitter();
                               }}>
                                 <CheckCircle2 className="w-4 h-4" /> <LibelleFin moduleId={Number(module.id)} />
                               </Button>
@@ -10129,9 +10135,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             )}
                             {currentPage === totalPages - 1 && (
                               <Button size="sm" variant="secondary" className="gap-2" onClick={async () => {
-                                const ok = await persistModuleCompletion();
-                                onBack();
-                                if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current, activitesDuModule(Number(module.id)).length > 0).toast);
+                                await terminerModuleEtQuitter();
                               }}>
                                 <CheckCircle2 className="w-4 h-4" /> <LibelleFin moduleId={Number(module.id)} />
                               </Button>
@@ -10595,10 +10599,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             );
           })() : (
             <Button variant="secondary" className="gap-2" disabled={savingCompletion || !!historicalQuizProof?.remainingQuizzes.some(q => !submittedExoIdsRef.current.has(Number(q.id)))} onClick={async () => {
-              const ok = await persistModuleCompletion();
-              if (!ok) return; // on reste sur la page tant que le serveur n'a pas confirmé
-              onBack();
-              toast.success(libelleFinQuiz(activitesEtatRef.current, activitesDuModule(Number(module.id)).length > 0).toast);
+              await terminerModuleEtQuitter();
             }}>
               <CheckCircle2 className="w-4 h-4" />
               {savingCompletion ? "Enregistrement…" : <LibelleFin moduleId={Number(module.id)} />}
