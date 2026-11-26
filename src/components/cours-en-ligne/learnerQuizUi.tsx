@@ -463,3 +463,41 @@ export function QuizPageNavigation({ onPrev, prevDisabled, current, total, child
     </div>
   );
 }
+
+
+/**
+ * Choix pédagogique affiché immédiatement après un quiz initial validé côté
+ * serveur : relire/refaire les fausses (facultatif) OU continuer. Affichage
+ * seul : aucune écriture, aucune validation inventée.
+ */
+export function ChoixApresQuiz({ fausses, onRelire, repriseEnCours, onSuivant, fin, noteSpecifique }: {
+  fausses: number;
+  /** Absent = parcours de reprise spécifique affiché ailleurs (Bilans). */
+  onRelire?: () => void;
+  repriseEnCours?: boolean;
+  /** Absent = dernier quiz : l'action de fin existante est passée dans `fin`. */
+  onSuivant?: () => void;
+  fin?: ReactNode;
+  noteSpecifique?: ReactNode;
+}) {
+  return (
+    <div data-testid="choix-apres-quiz" className="w-full rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-3">
+      <p className="text-sm font-medium">
+        {fausses > 0
+          ? `Quiz remis et validé. ${fausses} question${fausses > 1 ? "s" : ""} fausse${fausses > 1 ? "s" : ""} : la correction est facultative.`
+          : "Quiz remis et validé. Aucune question fausse à reprendre."}
+      </p>
+      {noteSpecifique}
+      <div className={`grid gap-2 ${fausses > 0 && onRelire ? "sm:grid-cols-2" : ""}`}>
+        {fausses > 0 && onRelire && (
+          <Button variant="outline" className="w-full min-h-11 whitespace-normal" data-testid="choix-relire" onClick={onRelire}>
+            {repriseEnCours ? "🎯 Reprendre la correction des questions fausses" : "🎯 Relire et refaire les questions fausses"}
+          </Button>
+        )}
+        {onSuivant ? (
+          <Button className="w-full min-h-11" data-testid="choix-suivant" onClick={onSuivant}>Suivant ➡️</Button>
+        ) : fin}
+      </div>
+    </div>
+  );
+}

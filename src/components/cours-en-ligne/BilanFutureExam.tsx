@@ -16,7 +16,7 @@ import { ExamQuestionImage } from "./ExamQuestionImage";
 import Calculatrice from "./Calculatrice";
 import {
   ExerciseQuestionPrompt, QcmChoiceButtons, QuizQuestionSidebar, QuizScoreSummary, QuizAnswerGrid, flashQuestionAnchor,
-  QuizResultPanels, WrongAnswersReviewDialog, RevisionModeBanner, ProgressionStep, ProgressionBar, AnswersCompletionStrip,
+  QuizResultPanels, WrongAnswersReviewDialog, RevisionModeBanner, ChoixApresQuiz, ProgressionStep, ProgressionBar, AnswersCompletionStrip,
   QuizPageNavigation, QUESTION_IMAGE_SIZES,
 } from "./learnerQuizUi";
 import { enqueueDraft, flushQueue, readQueue } from "@/lib/bilanFutureTransport";
@@ -117,7 +117,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
   const revision: Revision | null = revisionMode && reprise.revision ? {
     ids: reprise.revision.source.questions.map(Number), answers: reprise.revision.answers as Record<string,string[]>, validee: reprise.revision.submitted,
   } : null;
-  useEffect(() => { if (reprise.revision) setRevisionMode(true); }, [reprise.revision?.id]);
+  // Une reprise enregistrée ne se rouvre jamais seule : l'élève choisit depuis les résultats.
   const [relecture, setRelecture] = useState(false);
   const [nonRepondues, setNonRepondues] = useState<Set<number>>(new Set());
   const [erreur, setErreur] = useState<string | null>(null);
@@ -487,6 +487,22 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
                           {!correction && <p className="text-sm text-muted-foreground text-center">Chargement de la correction…</p>}
                           {BILAN_CORRIGE_ACTUEL_ACTIF && correction && <BilanCorrigeActuel key={passage.receipt.passageId} sourceType="future" snapshotId={passage.receipt.passageId} />}
                           {enRevision && reprise.revision?.submitted && <Button variant="outline" onClick={() => reprise.start()}>Refaire les questions fausses</Button>}
+                          {correction && soumis && !enRevision && (
+                            <ChoixApresQuiz
+                              fausses={idsARelire.length}
+                              repriseEnCours={!!reprise.revision && !reprise.revision.submitted}
+                              onRelire={BILAN_SR_TRAINING_ACTIF && moduleId === 5 && exoId === 502 ? undefined : () => {
+                                if (reprise.revision && !reprise.revision.submitted) { setRevisionMode(true); window.scrollTo?.({ top: 0, behavior: "smooth" }); }
+                                else setRelecture(true);
+                              }}
+                              onSuivant={pageCourante < total - 1 ? () => allerA(pageCourante + 1) : undefined}
+                              fin={pageCourante === total - 1 ? (
+                                <Button variant="secondary" className="w-full min-h-11 gap-2" disabled={remises < total || !onBack} onClick={() => onBack?.()}>
+                                  <CheckCircle2 className="w-4 h-4" /> Terminé
+                                </Button>
+                              ) : undefined}
+                            />
+                          )}
                           <QuizResultPanels>
                             {BILAN_SR_TRAINING_ACTIF && correction && moduleId === 5 && exoId === 502 ? <BilanSrTraining key={passage.receipt.passageId} sourceType="future" sourceId={passage.receipt.passageId} /> : correction && (
                               <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" data-testid="refaire-fausses"

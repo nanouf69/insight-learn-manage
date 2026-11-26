@@ -124,7 +124,7 @@ import { ImageLightbox } from "./ImageLightbox";
 import { ExamQuestionImage } from "./ExamQuestionImage";
 import {
   ExerciseQuestionPrompt as ExerciseQuestionPromptView, QcmChoiceButtons, QuizQuestionSidebar, QuizScoreSummary, QuizAnswerGrid,
-  flashQuestionAnchor, QuizResultPanels, WrongAnswersReviewDialog, RevisionModeBanner, ProgressionStep, ProgressionBar,
+  flashQuestionAnchor, QuizResultPanels, WrongAnswersReviewDialog, RevisionModeBanner, ChoixApresQuiz, ProgressionStep, ProgressionBar,
   AnswersCompletionStrip, QuizPageNavigation, QUESTION_IMAGE_SIZES,
 } from "./learnerQuizUi";
 import { isRoadSafetyCourseExercise } from "./roadSafetyQuestionImage";
@@ -7202,6 +7202,22 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // Sortie facultative d'une reprise des fausses (quiz initial déjà remis) :
     // relit la tentative initiale exacte côté serveur et réaffiche ses résultats.
     // Aucune écriture : brouillons/preuves de révision et tentative initiale intacts.
+    // Reprise « refaire les fausses » enregistrée mais non rouverte (après rechargement).
+    const [repriseEnAttente, setRepriseEnAttente] = useState<Record<number, { reponses: Record<string, string | string[]>; questions: (number | string)[] }>>({});
+    const reprendreRevisionEnAttente = (exoId: number) => {
+      const r = repriseEnAttente[exoId];
+      if (!r) return;
+      revisionActiveRef.current.add(exoId);
+      setSelectedAnswers((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((k) => { if (k.startsWith(`${exoId}-`)) delete next[k]; });
+        return { ...next, ...r.reponses };
+      });
+      setShowResultsFor((prev) => { const n = new Set(prev); n.delete(exoId); return n; });
+      setRevisionQuestionsFor((prev) => ({ ...prev, [exoId]: new Set(r.questions) }));
+      setRepriseEnAttente((prev) => { const n = { ...prev }; delete n[exoId]; return n; });
+      scheduleScrollToRevisionStart(exoId);
+    };
     const preuveInitialeConfirmeeRef = useRef<Map<number, Record<string, string | string[]>>>(new Map());
     const quitterRevisionFacultative = async (exoId: number) => {
       if (!apprenantId) return;
@@ -7771,6 +7787,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         primeKnownWriteSeq(apprenantId, row.exercice_id, (row as any).write_seq);
         const rep = { ...base, ...mergeSavedAndPendingAnswers(base, apprenantId, row.exercice_id) };
         revisionActiveRef.current.add(exoId);
+        // Quiz initial remis (preuve serveur) : la reprise enregistrée reste en
+        // attente ; les résultats initiaux restent affichés et l'élève choisit.
+        if (soumis.includes(exoId)) {
+          const exoR = activeExercicesRef.current.find((e: any) => e.id === exoId);
+          const manquantesR = ((exoR?.questions ?? []) as any[])
+            .filter((q) => Array.isArray(q?.choix) && q.choix.length > 0)
+            .map((q) => q.id)
+            .filter((qid) => { const v = rep[`${exoId}-${qid}`]; return Array.isArray(v) ? v.length === 0 : !v; });
+          if (manquantesR.length > 0) {
+            setRepriseEnAttente((prev) => ({ ...prev, [exoId]: { reponses: rep, questions: manquantesR } }));
+          }
+          return;
+        }
         setSelectedAnswers((prev) => {
           const next = { ...prev };
           Object.keys(next).forEach((k) => { if (k.startsWith(`${exoId}-`)) delete next[k]; });
@@ -9140,6 +9169,39 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         const r = qrcResults[key];
         return estQuestionQrc(q) && typeof r === "object" && r !== null && r.estCorrect === true;
       };
+      const compterFausses = (questionsSafe: any[]) => questionsSafe.filter((q: any) => !justePourRefaire(`${exo.id}-${q.id}`, q)).length;
+      const ouvrirRelectureFausses = (exo: ExerciceItem, questionsSafe: any[]) => {
+                              const snapshot: Record<string, string | string[]> = {};
+                              let snapCorrect = 0;
+                              const wrongIds: (number | string)[] = [];
+                              const wrongKeys: string[] = [];
+                              questionsSafe.forEach((q: any) => {
+                                const key = `${exo.id}-${q.id}`;
+                                if (selectedAnswers[key] !== undefined) snapshot[key] = selectedAnswers[key];
+                                if (justePourRefaire(key, q)) {
+                                  snapCorrect++;
+                                } else {
+                                  wrongKeys.push(key);
+                                  wrongIds.push(q.id);
+                                }
+                              });
+                              if (wrongKeys.length === 0) {
+                                toast.success("🎉 Aucune question fausse à refaire !");
+                                return;
+                              }
+                              // Étape obligatoire : relire ses erreurs avant de refaire les fausses
+                              setWrongReviewFor({
+                                exoId: exo.id,
+                                pending: {
+                                  exoId: exo.id,
+                                  total: questionsSafe.length,
+                                  snapCorrect,
+                                  snapshot,
+                                  wrongKeys,
+                                  wrongIds,
+                                },
+                              });
+                            };
       if (etatSnap.statut === "pret" && etatSnap.rouges?.includes(Number(exo.id))) {
         return (
           <div className="m-6 p-6 rounded-lg border bg-muted/40 text-center space-y-2">
@@ -9909,6 +9971,32 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                         onJump={(qi) => display?.controlsOnly ? scrollToExerciseQuestion(qi) : flashQuestionAnchor(`exo-q-${exo.id}-${qi}`)}
                       />
 
+                      {/* Choix immédiat après un quiz initial validé côté serveur */}
+                      {!apercuAdmin && (submittedExoIdsRef.current.has(exo.id) || !!passagesFiges[exo.id]) && (() => {
+                        const specifique = (BILAN_SR_TRAINING_ACTIF && module.id === 5 && [502,505,506].includes(Number(exo.id)));
+                        const reprise = repriseEnAttente[exo.id];
+                        return (
+                          <ChoixApresQuiz
+                            fausses={compterFausses(questionsSafe)}
+                            repriseEnCours={!!reprise}
+                            onRelire={specifique ? undefined : () => {
+                              if (reprise) reprendreRevisionEnAttente(exo.id);
+                              else ouvrirRelectureFausses(exo, questionsSafe);
+                            }}
+                            noteSpecifique={specifique ? <p className="text-xs text-muted-foreground">L'entraînement sur les questions fausses est proposé ci-dessous.</p> : undefined}
+                            onSuivant={currentPage < totalPages - 1 ? () => goToPage(currentPage + 1) : undefined}
+                            fin={currentPage === totalPages - 1 ? (
+                              <Button variant="secondary" className="w-full min-h-11 gap-2" onClick={async () => {
+                                const ok = await persistModuleCompletion();
+                                onBack();
+                                if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current, activitesDuModule(Number(module.id)).length > 0).toast);
+                              }}>
+                                <CheckCircle2 className="w-4 h-4" /> <LibelleFin moduleId={Number(module.id)} />
+                              </Button>
+                            ) : undefined}
+                          />
+                        );
+                      })()}
                       {/* Progress + Actions */}
                       <QuizResultPanels>
                             <Button disabled={complementsVtc || apercuAdmin} variant="outline" size="sm" className="gap-2" onClick={() => {
@@ -9956,38 +10044,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                                 : <p role="status" className="text-sm text-muted-foreground">Correction actuelle indisponible : aucun passage remis identifiable pour cet entraînement.</p>
                             ) : BILAN_SR_TRAINING_ACTIF && module.id === 5 && Number(exo.id) === 502 && !apercuAdmin && etatSnap.statut === "pret" && etatSnap.parExo[502] ? (
                               <BilanSrTraining key={etatSnap.parExo[502].snapshotId} sourceType="snapshot" sourceId={etatSnap.parExo[502].snapshotId} />
-                            ) : <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {
-                              const snapshot: Record<string, string | string[]> = {};
-                              let snapCorrect = 0;
-                              const wrongIds: (number | string)[] = [];
-                              const wrongKeys: string[] = [];
-                              questionsSafe.forEach((q: any) => {
-                                const key = `${exo.id}-${q.id}`;
-                                if (selectedAnswers[key] !== undefined) snapshot[key] = selectedAnswers[key];
-                                if (justePourRefaire(key, q)) {
-                                  snapCorrect++;
-                                } else {
-                                  wrongKeys.push(key);
-                                  wrongIds.push(q.id);
-                                }
-                              });
-                              if (wrongKeys.length === 0) {
-                                toast.success("🎉 Aucune question fausse à refaire !");
-                                return;
-                              }
-                              // Étape obligatoire : relire ses erreurs avant de refaire les fausses
-                              setWrongReviewFor({
-                                exoId: exo.id,
-                                pending: {
-                                  exoId: exo.id,
-                                  total: questionsSafe.length,
-                                  snapCorrect,
-                                  snapshot,
-                                  wrongKeys,
-                                  wrongIds,
-                                },
-                              });
-                            }}>
+                            ) : repriseEnAttente[exo.id] ? null : <Button variant="outline" size="sm" className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50" onClick={() => {ouvrirRelectureFausses(exo, questionsSafe);}}>
                               🎯 Refaire les fausses ({(() => {
                                 let count = 0;
                                 questionsSafe.forEach((q: any) => {
