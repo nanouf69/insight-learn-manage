@@ -77,6 +77,7 @@ export function BilanCorrigeActuel({ snapshotId, sourceType = "snapshot", lectur
         onSelect={(l: string) => setLocal(prev => { const o = choixDe(q); return { ...prev, [q.cle]: { signature: q.signature, choix: o.includes(l) ? o.filter(x => x !== l) : [...o, l] } }; })} />)}
       {round && !checked && <Button disabled={busy} onClick={() => { void run("check"); }}>{busy ? "Lecture du corrigé…" : "Vérifier"}</Button>}
       {round && checked && <Button disabled={busy || !restantes.length} onClick={() => { void run("start"); }}>Refaire les fausses restantes ({restantes.length})</Button>}
+      {round && <Button variant="outline" className="w-full sm:w-auto min-h-11 whitespace-normal" data-testid="passer-correction" onClick={() => { setRound(null); setChecked(false); }}>⏭️ Passer cette correction et continuer</Button>}
     </>}
   </div>;
 }
