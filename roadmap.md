@@ -1,8 +1,10 @@
 # Roadmap — chantiers ouverts (13/11/2026)
 ## Adresse facture Farouk — 26/11 16:49
+- [x] Demande 17:01 : mail financeur confirmé sans attente inutile du dossier, relecture explicite après erreur, saisie manuelle protégée des alertes tardives ; tests PC/mobile fictifs et 59 Vitest PASS. Aucune nouvelle confirmation demandée, aucune activation présumée.
 - [x] Adresse enregistrée de la facture retrouvée en lecture seule ; champ postal ajouté dans Modifier la facture sans mutation ni remplacement par les coordonnées actuelles du dossier.
 - [x] 14 tests et formulaire fictif PC/mobile vérifiés, build OK ; accès réel au formulaire non prouvé. Audit des autres lecteurs dans docs/facture-adresse-postale-2026-11-26.md.
-- [ ] Autres circuits (brouillon FC, anciens aperçus, envoi depuis DocumentsFormation et XML électronique) : écarts lus, correction prospective attend choix utilisateur ; aucune facture réglée/envoyée ni permission modifiée.
+- [x] Accord 16:53 : prochaines créations individuelles/FC, brouillons locaux, aperçus et PDF/envois partagent l'adresse du destinataire ; PDF FC futurs utilisent la ligne enregistrée, anciens adaptateurs inchangés. Tests JS/SQL jetables, PDF extraits et parcours fictif PC/mobile vérifiés ; sans envoi/publication.
+- [ ] Activation ciblée collective/électronique : candidat SQL sans modification de lignes + fonction électronique préparés/testés, attend autorisation explicite ; aucune migration/déploiement appliqué. Accès réel de création non prouvé, aucun dossier réel créé.
 ## SIRET centre — 26/11 15:57
 - [x] Mentions du centre corrigées dans les modèles devis/documents futurs ; générateurs facture déjà corrects, clients/financeurs et historiques conservés. Quatre anciennes signatures de modèles de convocation retirées par le rendu existant, aucune écriture en base.
 - [x] Tests ciblés et extraction des PDF fictifs ; état aperçu vérifié, sans publication. Rapport docs/siret-centre-2026-11-26.md.

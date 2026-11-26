@@ -80,6 +80,7 @@ import { isPratiqueType } from "@/lib/sessionTypes";
 import { heuresSessionAffichees, libelleHeuresSessionMixte } from "@/lib/sessionHeures";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
+import { adresseDestinataireFacture, destinataireFactureFige, type FactureAdresseEnregistree } from '@/lib/comptabilite/adresseFacture';
 import { saveFactureToCRM } from "@/lib/saveFactureToCRM";
 import { saveAttestationToCRM } from "@/lib/saveAttestationToCRM";
 import { controlerAttestationFC, messageRefusAttestationFC } from "@/lib/attestationFcVerrou";
@@ -2908,7 +2909,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return `${yyyymmdd}${String(next).padStart(3, '0')}`;
   };
 
-  const buildFactureDataForApprenant = (apprenant: any, sessionApprenant: any, indexInSession: number, overrides?: { numero?: string; dateEmission?: string }) => {
+  const buildFactureDataForApprenant = (apprenant: any, sessionApprenant: any, indexInSession: number, overrides?: { numero?: string; dateEmission?: string; factureEnregistree?: FactureAdresseEnregistree }) => {
     const fc: any = (financeursFCMap as any)?.[apprenant.id] || null;
     const typeApp = `${apprenant.type_apprenant || ''} ${apprenant.formation_choisie || ''}`.toUpperCase();
     const formation: 'VTC' | 'TAXI' = typeApp.includes('TAXI') ? 'TAXI' : 'VTC';
@@ -2920,7 +2921,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     // Détermine si la facture est acquittée à partir du statut + paiements
-    const facture: any = (facturesFCMap as any)?.[apprenant.id] || null;
+    const facture: any = overrides?.factureEnregistree || (facturesFCMap as any)?.[apprenant.id] || null;
     const paiements: any[] = (facture?.id && (paiementsByFactureId as any)?.[facture.id]) || [];
     const totalPaye = paiements.reduce((s: number, p: any) => s + Number(p?.montant || 0), 0);
     const isAcquittee = facture?.statut === 'payee' || (totalPaye + 0.001 >= montantTTC && paiements.length > 0);
@@ -2940,6 +2941,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         telephone: apprenant.telephone,
       },
       financeur: fc,
+      destinataireEnregistre: facture ? destinataireFactureFige(facture) : {
+        nom: fc?.type_financeur === 'professionnel' ? (fc.raison_sociale || '') : `${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim(),
+        adresse: adresseDestinataireFacture(fc, apprenant),
+        siret: fc?.type_financeur === 'professionnel' ? (fc.siret || fc.siren || '') : '',
+      },
       formation,
       designation: `Formation Continue Obligatoire ${formation} - 14h`,
       montantHT,
@@ -2982,9 +2988,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
             ? (fc?.raison_sociale || fc?.contact_nom || `${apprenant.prenom} ${apprenant.nom}`)
             : (fc?.contact_nom || fc?.raison_sociale || `${apprenant.prenom} ${apprenant.nom}`))
         : `${apprenant.prenom} ${apprenant.nom}`;
-      const clientAdresse = fc
-        ? [fc?.adresse || '', [fc?.code_postal || '', fc?.ville || ''].filter(Boolean).join(' ')].filter(Boolean).join(', ')
-        : [apprenant.adresse || '', [apprenant.code_postal || '', apprenant.ville || ''].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+      const clientAdresse = adresseDestinataireFacture(fc, apprenant, { financeurParticulierDestinataire: true });
       const payload: any = {
         numero,
         date_emission: new Date().toISOString().split('T')[0],
@@ -3058,6 +3062,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         telephone: apprenant.telephone,
       },
       financeur: fc,
+      destinataireEnregistre: destinataireFactureFige(ef),
       formation,
       designation: libelle,
       montantHT: montantTTC,
@@ -3162,10 +3167,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     const clientNom = isPro
       ? (fc?.raison_sociale || `${apprenant.prenom} ${apprenant.nom}`)
       : `${apprenant.prenom} ${apprenant.nom}`;
-    const clientAdresse = [
-      (apprenant.adresse || fc?.adresse) || '',
-      [(apprenant.code_postal || fc?.code_postal) || '', (apprenant.ville || fc?.ville) || ''].filter(Boolean).join(' ')
-    ].filter(Boolean).join(', ');
+    const clientAdresse = adresseDestinataireFacture(fc, apprenant);
     const payload: any = {
       numero,
       date_emission: new Date().toISOString().split('T')[0],
@@ -3194,6 +3196,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       const data = buildFactureDataForApprenant(apprenant, sessionApprenant, idx, {
         numero: facture.numero,
         dateEmission: facture.date_emission,
+        factureEnregistree: facture,
       });
       // Génère le PDF et récupère le blob pour archivage CRM
       const result: any = await generateFactureFC(data, { returnBlob: true });
@@ -3240,6 +3243,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
         const data = buildFactureDataForApprenant(sa.apprenant, sa, i, {
           numero: facture.numero,
           dateEmission: facture.date_emission,
+          factureEnregistree: facture,
         });
         // 1) Génère un PDF individuel pour archivage CRM
         try {
@@ -3320,6 +3324,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
           const data = buildFactureDataForApprenant(apprenant, sa, i, {
             numero: facture.numero,
             dateEmission: facture.date_emission,
+            factureEnregistree: facture,
           });
           const result: any = await generateFactureFC(data, { returnBlob: true });
           if (!result?.blob) { failed++; continue; }

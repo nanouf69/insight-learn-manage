@@ -16,6 +16,7 @@ import { generateFicheProgressionGuenichi } from "@/lib/pdf/fiche-progression";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { controlerAttestationFC, messageRefusAttestationFC } from "@/lib/attestationFcVerrou";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
+import { destinataireFactureFige } from '@/lib/comptabilite/adresseFacture';
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { saveEmargementToCRM } from "@/lib/saveEmargementToCRM";
@@ -397,6 +398,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
           telephone: apprenant.telephone,
         },
         financeur: null,
+        destinataireEnregistre: destinataireFactureFige(facture),
         formation,
         designation: `Formation continue ${formation}`,
         montantHT,
@@ -478,7 +480,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
     queryFn: async () => {
       const { data } = await supabase
         .from('factures')
-        .select('id, numero, date_emission, montant_ttc, statut, client_nom')
+        .select('id, numero, date_emission, montant_ttc, statut, client_nom, created_at, client_adresse, client_siret')
         .eq('apprenant_id', apprenant.id)
         .order('date_emission', { ascending: false });
       return data || [];

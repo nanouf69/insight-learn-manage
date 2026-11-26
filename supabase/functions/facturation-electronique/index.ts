@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { adresseAcheteurFactureXml } from '../_shared/adresseFacture.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -121,6 +122,7 @@ function buildFacturXXml(f: Record<string, any>, vendeur: Record<string, any>): 
       </ram:SellerTradeParty>
       <ram:BuyerTradeParty>
         <ram:Name>${esc(f.client_nom)}</ram:Name>
+        ${adresseAcheteurFactureXml(f)}
         ${clientSiren ? `<ram:SpecifiedLegalOrganization><ram:ID schemeID="0002">${esc(clientSiren)}</ram:ID></ram:SpecifiedLegalOrganization>` : ""}
       </ram:BuyerTradeParty>
     </ram:ApplicableHeaderTradeAgreement>

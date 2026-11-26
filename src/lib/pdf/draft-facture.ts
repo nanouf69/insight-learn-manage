@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import logoImage from '@/assets/logo-ftransport-2.png';
 import { lignesFactureCommune } from '@/lib/comptabilite/factureCommune';
+import { lignesDestinataireBrouillon } from '@/lib/comptabilite/adresseFacture';
 
 const COMPANY = {
   name: 'FTRANSPORT',
@@ -86,7 +87,8 @@ export async function generateDraftPDF(draft: any, opts: { final?: boolean; down
   doc.text('Adressée à :', destX, yd);
   doc.setFont('helvetica', 'normal');
   yd += 5;
-  const destLines = String(draft?.refDossier || '(client non défini)').split('\n').filter(Boolean);
+  const destLines = lignesDestinataireBrouillon(draft);
+  if (!destLines.length) destLines.push('(client non défini)');
   destLines.forEach((line, idx) => {
     if (idx === 0) doc.setFont('helvetica', 'bold'); else doc.setFont('helvetica', 'normal');
     doc.text(line, destX, yd);

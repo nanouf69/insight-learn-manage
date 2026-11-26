@@ -37,7 +37,8 @@ import { lignesFactureCommune } from "@/lib/comptabilite/factureCommune";
 import { apprenantsRattachesFacture, type RattachementFacture } from "@/lib/comptabilite/rattachementsFacture";
 import { RattachementsFacture } from "./RattachementsFacture";
 import { PRESTATIONS_FACTURE, notificationFacture } from '@/lib/comptabilite/prestationsFacture';
-import { destinataireFactureParDefaut } from '@/lib/comptabilite/destinataireFacture';
+import { lireDestinataireFacture } from '@/lib/comptabilite/destinataireFacture';
+import { lignesDestinataireBrouillon } from '@/lib/comptabilite/adresseFacture';
 import { evenementCorbeille, snapshotCorbeille, suppressionsActives, type TraceCorbeilleFacture } from '@/lib/comptabilite/corbeilleFactures';
 import { destinataireAvisSuppression, metaAvis, statutAvisSuppression } from '../../../supabase/functions/_shared/factureSuppressionAvis';
 
@@ -215,9 +216,11 @@ export function ComptabilitePage() {
   const emailFactureModifie = useRef(false);
   const [emailFactureLoading, setEmailFactureLoading] = useState(false);
   const [emailFactureErreur, setEmailFactureErreur] = useState(false);
+  const [emailFactureRelance, setEmailFactureRelance] = useState(0);
   useEffect(() => {
     let actif = true;
     const id = editingFacture?.apprenant_id;
+    const avisId = `facture-coordonnees-${editingFacture?.id ?? ''}`;
     setEmailFactureErreur(false);
     if (!id) { setEmailFactureLoading(false); return; }
     const controller = new AbortController();
@@ -225,33 +228,45 @@ export function ComptabilitePage() {
       controller.abort();
       if (actif) {
         setEmailFactureLoading(false);
-        setEmailFactureErreur(true);
+        if (!emailFactureModifie.current) setEmailFactureErreur(true);
       }
     }, 10000);
     setEmailFactureLoading(true);
     void (async () => {
       try {
-        const [financeur, stagiaire] = await Promise.all([
-          supabase.from('financeurs_fc').select('type_financeur,email_facturation,contact_email').eq('apprenant_id', id).abortSignal(controller.signal).maybeSingle(),
-          supabase.from('apprenants').select('email,facture_contact_email,societe_nom,organisme_financeur').eq('id', id).abortSignal(controller.signal).single(),
-        ]);
+        const email = await lireDestinataireFacture(
+          async () => {
+            const lecture = await supabase.from('financeurs_fc').select('type_financeur,email_facturation,contact_email').eq('apprenant_id', id).abortSignal(controller.signal).maybeSingle();
+            if (lecture.error) throw lecture.error;
+            return lecture.data;
+          },
+          async () => {
+            const lecture = await supabase.from('apprenants').select('email,facture_contact_email,societe_nom,organisme_financeur').eq('id', id).abortSignal(controller.signal).single();
+            if (lecture.error) throw lecture.error;
+            return lecture.data;
+          },
+          editingFacture?.type_financement ?? 'particulier',
+        );
         if (!actif || controller.signal.aborted) return;
-        if (financeur.error || stagiaire.error) throw financeur.error || stagiaire.error;
-        const email = destinataireFactureParDefaut(financeur.data, stagiaire.data, editingFacture?.type_financement ?? 'particulier');
-        if (!emailFactureModifie.current) setEditFactureForm(form => ({ ...form, client_email: email }));
-        setEmailFactureErreur(!email);
+        if (email) toast.dismiss(avisId);
+        if (!emailFactureModifie.current) {
+          setEditFactureForm(form => ({ ...form, client_email: email }));
+          setEmailFactureErreur(!email);
+        }
       } catch {
         if (actif && !controller.signal.aborted) {
-          setEmailFactureErreur(true);
-          toast.error('Impossible de lire les coordonnées du financeur ou du stagiaire. Vérifiez le destinataire avant l’envoi.');
+          if (!emailFactureModifie.current) {
+            setEmailFactureErreur(true);
+            toast.error('Impossible de lire les coordonnées du financeur ou du stagiaire. Vérifiez le destinataire avant l’envoi.', { id: avisId });
+          }
         }
       } finally {
         window.clearTimeout(timeout);
         if (actif) setEmailFactureLoading(false);
       }
     })();
-    return () => { actif = false; window.clearTimeout(timeout); controller.abort(); };
-  }, [editingFacture?.id, editingFacture?.apprenant_id]);
+    return () => { actif = false; window.clearTimeout(timeout); controller.abort(); toast.dismiss(avisId); };
+  }, [editingFacture?.id, editingFacture?.apprenant_id, emailFactureRelance]);
   const [revisionsFacture, setRevisionsFacture] = useState<any[]>([]);
   const [revisionBusy, setRevisionBusy] = useState<string | null>(null);
   const [revisionsError, setRevisionsError] = useState(false);
@@ -620,7 +635,8 @@ export function ComptabilitePage() {
         drafts.push({
           id: `draft-${d.numeroInterne || "current"}`,
           numero: d.numeroInterne || d.numero || "BROUILLON",
-          client_nom: d.refDossier || "(client non défini)",
+          client_nom: d.client_nom ?? d.refDossier ?? "(client non défini)",
+          client_adresse: d.client_adresse ?? null,
           type_financement: d.typeFinanceur === "particulier" ? "particulier" : "professionnel",
           montant_ht: montantHT,
           montant_tva: montantTVA,
@@ -666,7 +682,8 @@ export function ComptabilitePage() {
       </tr>
     `).join("");
 
-    const clientHTML = d?.refDossier ? d.refDossier : "(client non défini)";
+    const echapper = (valeur: string) => valeur.replace(/[&<>"']/g, caractere => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[caractere] ?? caractere));
+    const clientHTML = lignesDestinataireBrouillon(d).map(echapper).join('<br>') || "(client non défini)";
 
     return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Facture ${d?.numeroInterne || ""}</title><style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px;color:#111}.header{display:flex;justify-content:space-between;margin-bottom:30px}.logo{font-size:24px;font-weight:bold;color:#2563eb}.title{text-align:right}.title h1{font-size:18px;margin:0}.info-row{display:flex;justify-content:space-between;margin-bottom:20px}.info-box{width:48%}table{width:100%;border-collapse:collapse;margin:20px 0}th{background:#f3f4f6;padding:10px;border:1px solid #ddd;text-align:left}.totals{text-align:right;margin-top:20px}.bank-info{margin-top:30px;padding:15px;background:#f9fafb;border:1px solid #e5e7eb}.conditions{margin-top:20px;padding:15px;background:#fefce8;border:1px solid #fde68a;font-size:11px;line-height:1.5}.conditions h4{margin:0 0 8px 0;font-size:12px;color:#92400e}.footer{margin-top:30px;font-size:10px;color:#666;text-align:center;border-top:1px solid #ddd;padding-top:15px}.draft-banner{background:#fde68a;color:#92400e;padding:8px 12px;text-align:center;font-weight:bold;margin-bottom:12px;border-radius:4px}</style></head><body>
       <div class="draft-banner">⚠ BROUILLON — Facture non validée</div>
@@ -723,7 +740,9 @@ export function ComptabilitePage() {
         date_emission: d.date,
         date_echeance: d.dateEcheance || null,
         type_financement: d.typeFinanceur === "particulier" ? "particulier" : "professionnel",
-        client_nom: d.refDossier || "(client non défini)",
+        client_nom: d.client_nom ?? d.refDossier ?? "(client non défini)",
+        client_adresse: d.client_adresse ?? null,
+        client_siret: d.client_siret ?? null,
         montant_ht: montantHT,
         tva_taux: tvaTaux,
         montant_tva: montantTVA,
@@ -2845,8 +2864,11 @@ export function ComptabilitePage() {
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Email du destinataire de la facture</label>
-              <Input aria-label="Email du destinataire de la facture" type="email" placeholder={emailFactureLoading ? 'Chargement de l’adresse…' : 'Adresse du financeur ou de l’apprenant'} value={editFactureForm.client_email} onChange={e=>{emailFactureModifie.current = true; setEmailFactureErreur(false); setEditFactureForm(f=>({...f,client_email:e.target.value}));}} />
-              {emailFactureErreur && <p role="alert" className="text-xs text-destructive">Adresse non confirmée : vérifiez le mail du financeur ou, sans financeur, celui de l’apprenant.</p>}
+              <Input aria-label="Email du destinataire de la facture" type="email" placeholder={emailFactureLoading ? 'Chargement de l’adresse…' : 'Adresse du financeur ou de l’apprenant'} value={editFactureForm.client_email} onChange={e=>{emailFactureModifie.current = true; setEmailFactureErreur(false); toast.dismiss(`facture-coordonnees-${editingFacture?.id ?? ''}`); setEditFactureForm(f=>({...f,client_email:e.target.value}));}} />
+              {emailFactureErreur && <div className="flex items-start gap-2">
+                <p role="alert" className="flex-1 text-xs text-destructive">Adresse non confirmée : vérifiez le mail du financeur ou, sans financeur, celui de l’apprenant.</p>
+                <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0" title="Relire le mail du destinataire" aria-label="Relire le mail du destinataire" disabled={emailFactureLoading} onClick={() => setEmailFactureRelance(v => v + 1)}><RefreshCw className="h-4 w-4" /></Button>
+              </div>}
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Type de financement</label>

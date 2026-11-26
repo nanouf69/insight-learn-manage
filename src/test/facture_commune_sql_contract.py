@@ -80,7 +80,32 @@ def main():
         sql(f"UPDATE public.sessions SET nom='Formation initiale TAXI' WHERE id='{S}'")
         refuse(appel(fid='00000000-0000-0000-0000-000000000033', confirmer=True), 'réservée à une session de formation continue')
         assert sql('SELECT count(*) FROM public.factures') == '2'
-        print('14 scénarios PostgreSQL jetables PASS : montants, identités, atomicité, réessai, accès et conservation. Aucune écriture externe.')
+        sql(f"UPDATE public.sessions SET nom='Formation continue TAXI' WHERE id='{S}'; UPDATE public.factures SET statut='payee' WHERE id='{F}'; UPDATE public.apprenants SET adresse='1 rue du Stagiaire',code_postal='69003',ville='Lyon' WHERE id='{A}';")
+        originals = sql('SELECT jsonb_agg(to_jsonb(f) ORDER BY id)::text FROM public.factures f')
+        droits = sql("SELECT coalesce(proacl::text,''),prosecdef FROM pg_proc WHERE oid='public.creer_facture_commune_fc(uuid,uuid,uuid,jsonb,boolean)'::regprocedure")
+        sql((ROOT / 'docs/sql-revue/2026-11-26-facture-adresse-prospective.sql').read_text())
+        assert sql('SELECT jsonb_agg(to_jsonb(f) ORDER BY id)::text FROM public.factures f') == originals
+        assert sql("SELECT coalesce(proacl::text,''),prosecdef FROM pg_proc WHERE oid='public.creer_facture_commune_fc(uuid,uuid,uuid,jsonb,boolean)'::regprocedure") == droits
+        sql(f"UPDATE public.financeurs_fc SET adresse='820 avenue Entreprise',code_postal='69220',ville='Belleville' WHERE apprenant_id='{A}'")
+        nouveau = '00000000-0000-0000-0000-000000000041'
+        sql(appel(fid=nouveau, confirmer=True))
+        assert sql(f"SELECT client_adresse FROM public.factures WHERE id='{nouveau}'") == '820 avenue Entreprise, 69220 Belleville'
+        sql(f"UPDATE public.financeurs_fc SET code_postal=NULL,ville=NULL WHERE apprenant_id='{A}'")
+        incomplet = '00000000-0000-0000-0000-000000000042'
+        sql(appel(fid=incomplet, confirmer=True))
+        assert sql(f"SELECT client_adresse FROM public.factures WHERE id='{incomplet}'") == '820 avenue Entreprise'
+        sql(f"UPDATE public.financeurs_fc SET adresse=NULL WHERE apprenant_id='{A}'")
+        absent = '00000000-0000-0000-0000-000000000043'
+        sql(appel(fid=absent, confirmer=True))
+        assert sql(f"SELECT client_adresse='' FROM public.factures WHERE id='{absent}'") == 't'
+        sql(f"UPDATE public.financeurs_fc SET type_financeur='particulier',adresse='Adresse autre payeur',code_postal='75001',ville='Paris' WHERE apprenant_id='{A}'")
+        personnel = '00000000-0000-0000-0000-000000000044'
+        sql(appel(fid=personnel, confirmer=True))
+        assert sql(f"SELECT client_adresse FROM public.factures WHERE id='{personnel}'") == '1 rue du Stagiaire, 69003 Lyon'
+        sql(appel())
+        assert sql(f"SELECT jsonb_agg(to_jsonb(f) ORDER BY id)::text FROM public.factures f WHERE id IN ('{F}','00000000-0000-0000-0000-000000000032')") == originals
+        refuse(appel(fid='00000000-0000-0000-0000-000000000045', confirmer=True, user=A), 'Accès administrateur')
+        print('21 scénarios PostgreSQL jetables PASS : 14 règles existantes + 7 adresse prospective/conservation/ACL. Aucune écriture externe.')
     finally:
         subprocess.run(AS_USER + ['pg_ctl', '-D', TMP + '/data', '-m', 'immediate', 'stop'], env=ENV, check=True, stdout=subprocess.DEVNULL)
 

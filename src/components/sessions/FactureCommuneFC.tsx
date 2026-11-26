@@ -12,12 +12,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { generateDraftPDF, factureToDraftShape } from '@/lib/pdf/draft-facture';
 import { lignesFactureCommune, totalFactureCommune, verifierFactureCommune } from '@/lib/comptabilite/factureCommune';
+import { adresseDestinataireFacture } from '@/lib/comptabilite/adresseFacture';
 
 interface Inscription {
   montant_total?: number | null;
-  apprenant?: { id: string; nom?: string; prenom?: string };
+  apprenant?: { id: string; nom?: string; prenom?: string; adresse?: string | null; code_postal?: string | null; ville?: string | null };
 }
-interface Financeur { type_financeur?: string; raison_sociale?: string; siret?: string; siren?: string }
+interface Financeur { type_financeur?: string; raison_sociale?: string; siret?: string; siren?: string; adresse?: string | null; code_postal?: string | null; ville?: string | null }
 interface Props {
   sessionId: string;
   inscriptions: Inscription[];
@@ -125,6 +126,7 @@ export function FactureCommuneFC({ sessionId, inscriptions, selection, financeur
               <SelectContent>{ids.map(id => <SelectItem key={id} value={id}>{nomPayeur(id)}</SelectItem>)}</SelectContent>
             </Select>
             {payeur && <p className="break-words text-sm text-muted-foreground">{nomPayeur(payeur)}</p>}
+            {payeur && <p className="break-words text-sm text-muted-foreground">{adresseDestinataireFacture(financeurs[payeur], inscriptions.find(sa => sa.apprenant?.id === payeur)?.apprenant) || 'Adresse du destinataire non renseignée'}</p>}
           </div>
           {inscrits.map(sa => <div key={sa.apprenant?.id} className="space-y-1">
             <Label htmlFor={`montant-commun-${sa.apprenant?.id}`}>{sa.apprenant?.prenom} {sa.apprenant?.nom} — montant TTC (€)</Label>

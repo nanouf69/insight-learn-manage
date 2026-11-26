@@ -48,6 +48,7 @@ import {
   BookCheck
 } from "lucide-react";
 import { toast } from "sonner";
+import { assemblerAdresseFacture } from '@/lib/comptabilite/adresseFacture';
 
 // Informations de l'entreprise émettrice
 const entrepriseEmettrice = {
@@ -178,6 +179,9 @@ interface FactureData {
   selectedApprenantId: string | null;
   selectedOrganisationId: string | null;
   refDossier: string;
+  client_nom?: string;
+  client_adresse?: string;
+  client_siret?: string;
   refConvention: string;
   lignes: LigneFacture[];
   notes: string;
@@ -703,16 +707,17 @@ export function FactureForm() {
   };
 
   const handleSaveDraft = async () => {
+    const client = getClientInfo();
+    const draftAvecAdresse = { ...data, client_nom: client?.nom || '', client_adresse: client?.adresse || '', client_siret: client?.siret || '' };
     // 1) Sauvegarde locale (toujours)
     try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draftAvecAdresse));
     } catch (e) {
       console.warn("localStorage indisponible", e);
     }
 
     // 2) Sauvegarde en base avec statut "brouillon" (sans validations strictes)
     try {
-      const client = getClientInfo();
       const montantHT = calculerTotalHT();
       const montantTVA = calculerTotalTVA();
       const montantTTC = calculerTotalTTC();
@@ -796,16 +801,13 @@ export function FactureForm() {
 
       // Si l'apprenant est financé par sa société → facture au nom de la société
       if (isSociete && societeNom) {
-        const societeAdresse = selectedApprenant.societeAdresse || fin?.adresse || "";
-        const societeCP = selectedApprenant.societeCodePostal || fin?.code_postal || "";
-        const societeVille = selectedApprenant.societeVille || fin?.ville || "";
-        const adresseSociete = [
-          societeAdresse,
-          [societeCP, societeVille].filter(Boolean).join(' '),
-        ].filter(Boolean).join(', ');
+        const sourceSociete = selectedApprenant.societeAdresse?.trim()
+          ? { adresse: selectedApprenant.societeAdresse, code_postal: selectedApprenant.societeCodePostal, ville: selectedApprenant.societeVille }
+          : fin;
+        const adresseSociete = assemblerAdresseFacture(sourceSociete);
         return {
           nom: societeNom,
-          adresse: adresseSociete || selectedApprenant.address,
+          adresse: adresseSociete,
           email: selectedApprenant.factureContactEmail || fin?.email_facturation || fin?.contact_email || selectedApprenant.email,
           telephone: selectedApprenant.factureContactTelephone || fin?.contact_telephone || selectedApprenant.phone,
           siret: selectedApprenant.societeSiret || fin?.siret || "",
@@ -1089,6 +1091,7 @@ export function FactureForm() {
                       <div className="text-sm text-muted-foreground">
                         {[client.adresse, client.email, client.telephone].filter(Boolean).join(" · ")}
                       </div>
+                      {!client.adresse && <p className="text-sm text-destructive">Adresse du destinataire non renseignée</p>}
                       {(client.siret || client.tvaIntra || client.contactNom) && (
                         <div className="text-xs text-muted-foreground mt-1">
                           {[client.siret && `SIRET : ${client.siret}`, client.tvaIntra && `TVA : ${client.tvaIntra}`, client.contactNom && `Contact : ${client.contactNom}`].filter(Boolean).join(" · ")}

@@ -24,3 +24,15 @@ export function destinataireFactureParDefaut(
   }
   return stagiaire?.email?.trim() || '';
 }
+
+/** A confirmed financer email does not depend on a second learner read. */
+export async function lireDestinataireFacture(
+  lireFinanceur: () => Promise<FinanceurFacture | null>,
+  lireStagiaire: () => Promise<StagiaireFacture | null>,
+  financement: string,
+): Promise<string> {
+  const financeur = await lireFinanceur();
+  const prioritaire = destinataireFactureParDefaut(financeur, null, financement);
+  if (prioritaire) return prioritaire;
+  return destinataireFactureParDefaut(financeur, await lireStagiaire(), financement);
+}

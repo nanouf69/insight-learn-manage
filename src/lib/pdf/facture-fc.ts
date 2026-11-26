@@ -49,6 +49,7 @@ export interface FactureFCData {
     telephone?: string;
   };
   financeur: FactureFCFinanceur | null | undefined;
+  destinataireEnregistre?: { nom: string; adresse: string; siret?: string };
   formation: 'VTC' | 'TAXI';
   designation: string;
   montantHT: number;
@@ -146,7 +147,16 @@ export async function generateFactureFC(
   doc.setFont('helvetica', 'normal');
   yd += 5;
 
-  if (isPro && fin) {
+  if (data.destinataireEnregistre) {
+    const destinataire = data.destinataireEnregistre;
+    doc.setFont('helvetica', 'bold');
+    const noms: string[] = doc.splitTextToSize(destinataire.nom, pw - 15 - destX);
+    noms.forEach(line => { doc.text(line, destX, yd); yd += 4; });
+    doc.setFont('helvetica', 'normal');
+    const adresses: string[] = doc.splitTextToSize(destinataire.adresse || 'Adresse non renseignée', pw - 15 - destX);
+    adresses.forEach(line => { doc.text(line, destX, yd); yd += 4; });
+    if (destinataire.siret) { doc.text(`SIRET : ${destinataire.siret}`, destX, yd); yd += 4; }
+  } else if (isPro && fin) {
     doc.setFont('helvetica', 'bold');
     doc.text(fin.raison_sociale || '-', destX, yd);
     doc.setFont('helvetica', 'normal');

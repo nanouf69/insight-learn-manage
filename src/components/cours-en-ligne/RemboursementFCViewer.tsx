@@ -16,6 +16,7 @@ import EmargementsSignesViewer from "./EmargementsSignesViewer";
 import { generateAttestationFCVTC } from "@/lib/pdf/attestation-fc-vtc";
 import { controlerAttestationFC, messageRefusAttestationFC, type ControleAttestationFC } from "@/lib/attestationFcVerrou";
 import { generateFactureFC } from "@/lib/pdf/facture-fc";
+import { destinataireFactureFige } from '@/lib/comptabilite/adresseFacture';
 import { ouvrirPdfPriveUrl } from "@/lib/ouvrirPdfPrive";
 import { toast } from "sonner";
 import agrementVtcAsset from "@/assets/agrement-vtc-ftransport.pdf.asset.json";
@@ -29,6 +30,10 @@ interface DbFacture {
   date_paiement: string | null;
   statut: string | null;
   montant_ttc: number;
+  created_at?: string;
+  client_nom?: string | null;
+  client_adresse?: string | null;
+  client_siret?: string | null;
   financeur?: any;
   paiements?: Array<{ montant: number; date_paiement: string; moyen_paiement: string }>;
 }
@@ -206,7 +211,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
       try {
         const { data: facRows } = await supabase
           .from("factures")
-          .select("id, numero, date_emission, date_paiement, statut, montant_ttc")
+          .select("id, numero, date_emission, date_paiement, statut, montant_ttc, created_at, client_nom, client_adresse, client_siret")
           .eq("apprenant_id", apprenantId)
           .in("statut", ["payee", "acquittee"])
           .order("date_emission", { ascending: false });
@@ -339,6 +344,7 @@ export default function RemboursementFCViewer({ apprenantId, completed, onComple
             telephone: apprenant.telephone || undefined,
           },
           financeur: f.financeur || null,
+          destinataireEnregistre: destinataireFactureFige(f),
           formation: formationType,
           designation: `Formation Continue Obligatoire ${formationType} - 14h`,
           montantHT: Number(f.montant_ttc) || 200,
