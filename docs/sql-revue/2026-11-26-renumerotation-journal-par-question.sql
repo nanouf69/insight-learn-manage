@@ -2,7 +2,7 @@
 -- d'une ligne globale de réponses. Une clé non datée n'est dispensée que si, en plus des conditions
 -- de 0297/0299 (soumission sans la clé, clé répondue supprimée après, aucune soumission antérieure
 -- contenant la clé), AUCUN événement du journal par question (tous comptes) n'existe pour cette clé
--- à ou avant la soumission. Chronologie ambiguë (horodatage client antérieur) = refus conservateur.
+-- avec une valeur enregistrée (valeur ou valeur_originale) à ou avant la soumission. Chronologie ambiguë (horodatage client antérieur) = refus conservateur.
 -- Les comptes auteurs sont lus via apprenants (contrôle 26/11 : 0 événement de journal hors dossier).
 -- Lecture seule ; aucune donnée apprenant écrite.
 CREATE OR REPLACE FUNCTION public.obligations_non_datees_anterieures(_apprenant_id uuid)
@@ -59,7 +59,8 @@ BEGIN
        JOIN public.reponses_apprenants_journal j ON j.apprenant_id = au.aid
         AND j.exercice_id = c.sex AND j.question_id = c.ex || '-' || c.qid
       WHERE au.sex = c.sex AND au.sat = c.sat
-        AND LEAST(j.created_at, coalesce(j.client_saved_at, j.created_at)) <= c.sat);
+        AND LEAST(j.created_at, coalesce(j.client_saved_at, j.created_at)) <= c.sat
+        AND (public.reponse_enregistree(j.valeur) OR public.reponse_enregistree(j.valeur_originale)));
 END;
 $fn$;
 REVOKE ALL ON FUNCTION public.obligations_non_datees_anterieures(uuid) FROM PUBLIC, anon;
