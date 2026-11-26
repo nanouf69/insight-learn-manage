@@ -1,27 +1,28 @@
 import l1x from "@/assets/cours-taxi/F_Locale_1_TAXI_20261124.pptx.asset.json";
 import l1p from "@/assets/cours-taxi/F_Locale_1_TAXI_20261124.pdf.asset.json";
-import l2x from "@/assets/cours-taxi/F_Locale_2_TAXI_20261124.pptx.asset.json";
-import l2p from "@/assets/cours-taxi/F_Locale_2_TAXI_20261124.pdf.asset.json";
+import l2x from "@/assets/cours-taxi/F_Locale_2_TAXI_20261126.pptx.asset.json";
+import l2p from "@/assets/cours-taxi/F_Locale_2_TAXI_20261126.pdf.asset.json";
 import l3x from "@/assets/cours-taxi/F_Locale_3_TAXI_20261124.pptx.asset.json";
 import l3p from "@/assets/cours-taxi/F_Locale_3_TAXI_20261124.pdf.asset.json";
-import n1x from "@/assets/cours-taxi/F_Nationale_1_TAXI_20261027.pptx.asset.json";
-import n1p from "@/assets/cours-taxi/F_Nationale_1_TAXI_20261027.pdf.asset.json";
-import n2x from "@/assets/cours-taxi/F_Nationale_2_TAXI_20261027.pptx.asset.json";
-import n2p from "@/assets/cours-taxi/F_Nationale_2_TAXI_20261027.pdf.asset.json";
+import n1x from "@/assets/cours-taxi/F_Nationale_1_TAXI_20261126.pptx.asset.json";
+import n1p from "@/assets/cours-taxi/F_Nationale_1_TAXI_20261126.pdf.asset.json";
+import n2x from "@/assets/cours-taxi/F_Nationale_2_TAXI_20261126.pptx.asset.json";
+import n2p from "@/assets/cours-taxi/F_Nationale_2_TAXI_20261126.pdf.asset.json";
 
 /**
  * Supports Réglementation du module 10 (Cours et exercices TAXI) remplacés le 27/10/2026,
- * parties Locale 1/2/3 remplacées le 24/11/2026 par les versions « corrigé » (17/15/17 diapositives).
+ * parties Locale 1/3 remplacées le 24/11/2026 ; Nationale 1/2 et Locale 2 remplacées le 26/11/2026
+ * par les trois fichiers fournis (33/21/17 diapositives).
  * Projection d'AFFICHAGE seule, limitée au module 10 et aux IDs de cours 10014–10018 :
  * identité de page, titre, quiz, données enregistrées et autres modules (TA, VTC, 24) inchangés.
  * PDF = conversion fidèle du PowerPoint (même nombre de pages que de diapositives).
- * Les fichiers du 27/10/2026 restent dans le dépôt et sur le CDN (historique).
+ * Tous les fichiers antérieurs restent dans le dépôt et sur le CDN (historique).
  */
 export const SUPPORTS_TAXI_REGLEMENTATION: Record<number, { partie: string; diapositives: number; pdf: string; pptx: string }> = {
   10014: { partie: "Nationale Partie 1", diapositives: 33, pdf: n1p.url, pptx: n1x.url },
   10015: { partie: "Nationale Partie 2", diapositives: 21, pdf: n2p.url, pptx: n2x.url },
   10016: { partie: "Locale Partie 1", diapositives: 17, pdf: l1p.url, pptx: l1x.url },
-  10017: { partie: "Locale Partie 2", diapositives: 15, pdf: l2p.url, pptx: l2x.url },
+  10017: { partie: "Locale Partie 2", diapositives: 17, pdf: l2p.url, pptx: l2x.url },
   10018: { partie: "Locale Partie 3", diapositives: 17, pdf: l3p.url, pptx: l3x.url },
 };
 export const MODULE_TAXI_COURS = 10;
