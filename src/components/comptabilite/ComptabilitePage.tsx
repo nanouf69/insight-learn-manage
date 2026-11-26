@@ -38,6 +38,7 @@ import { apprenantsRattachesFacture, type RattachementFacture } from "@/lib/comp
 import { RattachementsFacture } from "./RattachementsFacture";
 import { PRESTATIONS_FACTURE, notificationFacture } from '@/lib/comptabilite/prestationsFacture';
 import { destinataireFactureParDefaut } from '@/lib/comptabilite/destinataireFacture';
+import { evenementCorbeille, snapshotCorbeille, suppressionsActives, type TraceCorbeilleFacture } from '@/lib/comptabilite/corbeilleFactures';
 
 interface Releve {
   id: string;
@@ -173,8 +174,14 @@ export function ComptabilitePage() {
   const [deleteMotif, setDeleteMotif] = useState("");
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
-  const [facturesSupprimees, setFacturesSupprimees] = useState<any[]>([]);
+  const [facturesSupprimees, setFacturesSupprimees] = useState<TraceCorbeilleFacture[]>([]);
   const [trashLoading, setTrashLoading] = useState(false);
+  const [trashError, setTrashError] = useState(false);
+  const [trashTab, setTrashTab] = useState('remettre');
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+  const corbeilleBusy = useRef(false);
+  const suppressionsEnCours = useMemo(() => suppressionsActives(facturesSupprimees), [facturesSupprimees]);
+  const facturesMasquees = useMemo(() => new Set(suppressionsEnCours.map(t => t.facture_id)), [suppressionsEnCours]);
   const [editFactureForm, setEditFactureForm] = useState<{
     numero: string;
     client_nom: string;
@@ -741,6 +748,8 @@ export function ComptabilitePage() {
     if (error) {
       toast.error("Erreur lors du chargement des factures");
     } else {
+      const traces = await fetchFacturesSupprimees();
+      if (!traces) { setLoading(false); return; }
       const liens: (RattachementFacture & { facture_id: string })[] = [];
       for (let from = 0; ; from += 1000) {
         const pageLiens = await supabase.from("facture_apprenants_rattachements")
@@ -782,61 +791,96 @@ export function ComptabilitePage() {
 
   const fetchFacturesSupprimees = useCallback(async () => {
     setTrashLoading(true);
-    const { data, error } = await supabase
-      .from("factures_supprimees")
-      .select("*")
-      .order("deleted_at", { ascending: false });
-    if (error) {
+    setTrashError(false);
+    try {
+      const traces: TraceCorbeilleFacture[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await supabase.from('factures_supprimees').select('*')
+          .order('deleted_at', { ascending: false }).order('id', { ascending: false }).range(from, from + 999);
+        if (error) throw error;
+        traces.push(...(data ?? []));
+        if ((data?.length ?? 0) < 1000) break;
+      }
+      setFacturesSupprimees(traces);
+      return traces;
+    } catch (error) {
       console.error(error);
-      toast.error("Erreur lors du chargement des factures supprimées");
-    } else {
-      setFacturesSupprimees(data || []);
+      setTrashError(true);
+      toast.error('Impossible de vérifier la corbeille. Aucune suppression ou remise ne sera effectuée.');
+      return null;
+    } finally {
+      setTrashLoading(false);
     }
-    setTrashLoading(false);
   }, []);
 
+  const enregistrerCorbeille = async (factureId: string, action: 'supprimer' | 'remettre', motif: string | null, suppressionId?: string) => {
+    const { data: f, error: readError } = await supabase.from('factures').select('*').eq('id', factureId).single();
+    if (readError || !f) throw new Error('La facture originale est introuvable. Aucune facture ni aucun paiement ne sera reconstitué.');
+    const { data: userData, error: authError } = await supabase.auth.getUser();
+    if (authError || !userData.user) throw new Error('Veuillez vous reconnecter.');
+    const id = crypto.randomUUID();
+    const { data, error } = await supabase.from('factures_supprimees').insert({
+      id, facture_id: f.id, numero: f.numero, client_nom: f.client_nom,
+      type_financement: f.type_financement, montant_ttc: f.montant_ttc,
+      date_emission: f.date_emission, statut: f.statut, motif,
+      snapshot: snapshotCorbeille(f, action, suppressionId),
+      deleted_by: userData.user.id, deleted_by_email: userData.user.email ?? null,
+    }).select('id').single();
+    if (error || data?.id !== id) throw new Error(error?.message ?? 'Enregistrement non confirmé : vérifiez la corbeille avant de réessayer.');
+  };
+
   const handleDeleteFacture = async () => {
-    if (!deletingTarget) return;
+    if (!deletingTarget || corbeilleBusy.current) return;
+    corbeilleBusy.current = true;
     setDeleteBusy(true);
     try {
       const f = deletingTarget;
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData?.user;
-
-      // 1) Trace permanente AVANT suppression
-      const { error: traceError } = await supabase.from("factures_supprimees").insert({
-        facture_id: f.id,
-        numero: f.numero,
-        client_nom: f.client_nom,
-        type_financement: f.type_financement,
-        montant_ttc: Number(f.montant_ttc),
-        date_emission: f.date_emission,
-        statut: f.statut,
-        motif: deleteMotif.trim() || null,
-        snapshot: f as any,
-        deleted_by: user?.id ?? null,
-        deleted_by_email: user?.email ?? null,
-      });
-      if (traceError) throw traceError;
-
-      // 2) Suppression des paiements liés puis de la facture
-      await supabase.from("facture_paiements").delete().eq("facture_id", f.id);
-      const { error: delError } = await supabase.from("factures").delete().eq("id", f.id);
-      if (delError) throw delError;
-
-      toast.success(`Facture ${f.numero} supprimée — trace conservée`);
+      const traces = await fetchFacturesSupprimees();
+      if (!traces) return;
+      if (!suppressionsActives(traces).some(t => t.facture_id === f.id)) {
+        await enregistrerCorbeille(f.id, 'supprimer', deleteMotif.trim() || null);
+      }
+      const confirmation = await fetchFacturesSupprimees();
+      if (!confirmation || !suppressionsActives(confirmation).some(t => t.facture_id === f.id)) {
+        throw new Error('Placement non confirmé : vérifiez la corbeille avant de réessayer.');
+      }
       setDeletingTarget(null);
       setDeleteMotif("");
       await fetchFactures();
-      await fetchFacturesSupprimees();
+      toast.success(`Facture ${f.numero} placée dans la corbeille — paiements conservés`);
     } catch (e: any) {
       console.error(e);
       toast.error(`Suppression impossible : ${e.message ?? e}`);
     } finally {
+      corbeilleBusy.current = false;
       setDeleteBusy(false);
     }
   };
 
+  const handleRemettreFacture = async (trace: TraceCorbeilleFacture) => {
+    if (!trace.facture_id || corbeilleBusy.current) return;
+    corbeilleBusy.current = true;
+    setRestoringId(trace.id);
+    try {
+      const traces = await fetchFacturesSupprimees();
+      if (!traces) return;
+      if (suppressionsActives(traces).some(t => t.id === trace.id)) {
+        await enregistrerCorbeille(trace.facture_id, 'remettre', 'Remise depuis la corbeille', trace.id);
+      }
+      const confirmation = await fetchFacturesSupprimees();
+      if (!confirmation) throw new Error('Remise enregistrée mais relecture impossible. Vérifiez la corbeille avant de réessayer.');
+      if (suppressionsActives(confirmation).some(t => t.facture_id === trace.facture_id)) {
+        throw new Error('Une autre suppression de cette facture reste active dans la corbeille.');
+      }
+      await fetchFactures();
+      toast.success(`Facture ${trace.numero} remise — original et paiements inchangés`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Remise non confirmée.');
+    } finally {
+      corbeilleBusy.current = false;
+      setRestoringId(null);
+    }
+  };
 
 
   const fetchReleves = useCallback(async () => {
@@ -1151,6 +1195,7 @@ export function ComptabilitePage() {
 
   const filteredFactures = useMemo(() => {
     return allFactures.filter((f) => {
+      if (facturesMasquees.has(f.id)) return false;
       const matchSearch =
         lignesFactureCommune(f).some(l => l.stagiaire.toLowerCase().includes(search.toLowerCase())) ||
         (f.rattachements ?? []).some(l => l.nom_apprenant.toLowerCase().includes(search.toLowerCase())) ||
@@ -1172,7 +1217,7 @@ export function ComptabilitePage() {
           : rapprochement.get(f.id)?.couleur === filterRapprochement);
       return matchSearch && matchStatut && matchFinancement && matchTypeFlux && matchAnnee && matchDoublon && matchRappr;
     });
-  }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux, filterAnnee, apprenantNames, filterDoublons, doublonsParId, rapprochement, filterRapprochement]);
+  }, [allFactures, facturesMasquees, search, filterStatut, filterFinancement, filterTypeFlux, filterAnnee, apprenantNames, filterDoublons, doublonsParId, rapprochement, filterRapprochement]);
 
   useEffect(() => {
     if (loading || activeTab !== "factures" || !factureCibleId) return;
@@ -1692,7 +1737,7 @@ export function ComptabilitePage() {
               className="gap-2 text-destructive hover:text-destructive"
               onClick={() => { setShowTrash(true); fetchFacturesSupprimees(); }}
             >
-              <Trash2 className="h-4 w-4" /> Factures supprimées
+              <Trash2 className="h-4 w-4" /> Corbeille
             </Button>
             <Button
               variant={filterDoublons ? "destructive" : "outline"}
@@ -1930,6 +1975,7 @@ export function ComptabilitePage() {
                                   onClick={() => { setDeleteMotif(""); setDeletingTarget(f); }}
                                   title="Supprimer la facture (trace conservée)"
                                   aria-label="Supprimer la facture"
+                                  disabled={trashLoading || trashError || deleteBusy || !!restoringId}
                                 >
                                   <Trash2 className="h-4 w-4 shrink-0" />
                                 </Button>
@@ -2873,7 +2919,7 @@ export function ComptabilitePage() {
       <Dialog open={!!deletingTarget} onOpenChange={(o) => { if (!o && !deleteBusy) { setDeletingTarget(null); setDeleteMotif(""); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-destructive">Supprimer la facture</DialogTitle>
+            <DialogTitle className="text-destructive">Êtes-vous sûr de supprimer cette facture ?</DialogTitle>
           </DialogHeader>
           {deletingTarget && (
             <div className="space-y-3">
@@ -2882,7 +2928,7 @@ export function ComptabilitePage() {
                 <strong>{formatMontant(Number(deletingTarget.montant_ttc))}</strong>
               </p>
               <p className="text-xs text-muted-foreground">
-                La facture sera retirée de la liste, mais une trace permanente (numéro, client, montant, date, auteur de la suppression) sera conservée dans « Factures supprimées ».
+                La facture sera placée dans la corbeille. Vous pourrez la remettre ; l’original, les paiements et les apprenants rattachés seront conservés. Cette action n’annule pas la facture et n’envoie aucun mail.
               </p>
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Motif de la suppression (recommandé)</label>
@@ -2911,14 +2957,22 @@ export function ComptabilitePage() {
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Trash2 className="h-4 w-4 text-destructive" /> Factures supprimées (trace)
-              <Badge variant="secondary">{facturesSupprimees.length}</Badge>
+              <Trash2 className="h-4 w-4 text-destructive" /> Corbeille des factures
+              <Badge variant="secondary">{suppressionsEnCours.length}</Badge>
             </DialogTitle>
           </DialogHeader>
+          <Tabs value={trashTab} onValueChange={setTrashTab}>
+            <TabsList>
+              <TabsTrigger value="remettre">Remettre ({suppressionsEnCours.length})</TabsTrigger>
+              <TabsTrigger value="historique">Historique</TabsTrigger>
+            </TabsList>
+          </Tabs>
           {trashLoading ? (
             <p className="text-sm text-muted-foreground py-6 text-center">Chargement...</p>
-          ) : facturesSupprimees.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">Aucune facture supprimée</p>
+          ) : trashError ? (
+            <p role="alert" className="text-sm text-destructive py-6 text-center">Lecture impossible. Fermez et rouvrez la corbeille pour réessayer.</p>
+          ) : (trashTab === 'remettre' ? suppressionsEnCours : facturesSupprimees).length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">{trashTab === 'remettre' ? 'Aucune facture à remettre' : 'Aucun historique'}</p>
           ) : (
             <Table>
               <TableHeader>
@@ -2928,12 +2982,13 @@ export function ComptabilitePage() {
                   <TableHead className="text-right">Montant TTC</TableHead>
                   <TableHead>Émission</TableHead>
                   <TableHead>Motif</TableHead>
-                  <TableHead>Supprimée par</TableHead>
+                  <TableHead>Auteur</TableHead>
                   <TableHead>Le</TableHead>
+                  <TableHead className="sticky right-0 bg-background">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {facturesSupprimees.map((d) => (
+                {(trashTab === 'remettre' ? suppressionsEnCours : facturesSupprimees).map((d) => (
                   <TableRow key={d.id}>
                     <TableCell className="font-medium">{d.numero}</TableCell>
                     <TableCell>{d.client_nom || "—"}</TableCell>
@@ -2943,6 +2998,15 @@ export function ComptabilitePage() {
                     <TableCell className="text-xs">{d.deleted_by_email || "—"}</TableCell>
                     <TableCell className="text-xs">
                       {d.deleted_at ? format(new Date(d.deleted_at), "dd/MM/yyyy HH:mm", { locale: fr }) : "—"}
+                    </TableCell>
+                    <TableCell className="sticky right-0 bg-background">
+                      {suppressionsEnCours.some(t => t.id === d.id) ? (
+                        <Button variant="outline" size="sm" disabled={!!restoringId || deleteBusy} onClick={() => void handleRemettreFacture(d)}>
+                          <RefreshCw className="h-4 w-4 mr-2" />{restoringId === d.id ? 'Remise…' : 'Remettre'}
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">{evenementCorbeille(d)?.action === 'remettre' ? 'Remise' : evenementCorbeille(d) ? 'Remise effectuée' : 'Ancienne suppression — restauration non garantie'}</span>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

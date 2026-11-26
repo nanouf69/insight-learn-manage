@@ -279,3 +279,6 @@ Prérequis global des lots serveur à risque : export de la base fait par l'util
 - [x] PDF original Adobe récupéré et deux pages relues : identité, SIREN, NDA 84380722238, certificat 98912-3, validité et adresses concordent avec la déclaration du dirigeant.
 - [x] Original de 154942 octets archivé en stockage privé, empreinte SHA-256 enregistrée ; preuve unique I27 et fiche formateur rattachées, ancienne réserve NDA historisée, statut À compléter conservé.
 - [x] Rappel Qualiopi à J-90 (22/12/2027) et expiration au 21/03/2028 ; NDA transmis à l’aperçu d’ordre de mission sans lever les autres blocages ; 7 tests PASS, aperçu build OK. Fiche réelle non contrôlée visuellement : session demandeur apprenant expiré. Aucun envoi externe ni publication.
+
+## Corbeille des factures (26/11)
+- [x] Confirmation explicite et onglet Remettre ; retrait réversible par journal existant, originaux/paiements/rattachements intacts, historique conservé ; 28 tests et parcours fictif PC/mobile réussis, aperçu OK, aucune écriture réelle, migration, envoi ou publication. Anciennes suppressions physiques non reconstituées.
