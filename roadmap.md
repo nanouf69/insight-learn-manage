@@ -1,4 +1,7 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Exhaustivité lettre CMA — 26/11 15:44
+- [x] Source partagée avant rendu lettre/liste, union par ID, VA conservé et inconnu visible ; Ayoub BENAKKI admis retrouvé, ajout CMA déjà enregistré conservé. Aucun dossier/envoi/publication modifié.
+- [x] 33 tests PASS et PC/mobile simulés 50/50 noms dans les deux listes, build OK ; consultation réelle refusée par le rôle disponible, aucune permission élargie. Rapport docs/cma-lettre-exhaustivite-2026-11-26.md ; territoire/inscription à vérifier toujours bloquants.
 ## Autorité serveur après relecture BENTAYEB — 26/11 15:36
 - [x] Carte sans second veto, compteur partagé RPC prioritaire, parent incomplet non contourné, projection CRM stricte ; aucun SQL/contenu/ticket modifié.
 - [x] 98 tests ciblés et PC/mobile simulé : Terminé 12/15, Formules ouvert à 4 %, build OK ; lectures réelles inchangées. RPC et connexion réelle BENTAYEB non revérifiés (rôle SQL refusé/session élève absente). Rapport docs/bentayeb-progression-2026-11-26.md, sans publication.

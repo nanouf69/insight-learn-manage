@@ -1,2 +1,3 @@
 # Exam communication boundaries
+- CMA letter display/print/email consume the same pre-render training-candidate IDs, deduplicated by dossier; unknown categories stay visible and block generation, never infer confirmed enrollment. Why: render-order refs and category filters must not omit training candidates or rewrite sent letters.
 - Practical date test emails use fictional identity and an inert booking label, a single explicit recipient, no learner ID and the existing admin-protected sender; success requires a positive non-skipped transport response. Why: a test must never reserve a real learner slot or mark their communication as sent.

@@ -1,10 +1,27 @@
 import { describe,it,expect } from 'vitest';
-import { selectionLettreCma, listeCmaAffichee, type CmaCandidat } from '@/lib/cmaLettreSelection';
+import { selectionLettreCma, listeCmaAffichee, candidatsLettreAvecFormation, type CmaCandidat } from '@/lib/cmaLettreSelection';
 const calvo:CmaCandidat={id:'calvo',nom:'Calvo',prenom:'Enzo',type_apprenant:'vtc-e',date_examen_theorique:'21 juillet 2026',date_examen_pratique:'2026-11-03',resultat_examen:'oui',resultat_examen_pratique:'non'};
 const period='Du 16 au 23 décembre 2026';
 const proof={apprenant_id:'calvo',date_examen:'2026-11-03',filiere:'VTC',territoire:'69'};
 const run=(a:CmaCandidat[]= [calvo],p=[proof])=>selectionLettreCma(a,p,[],'17 novembre 2026',period,'69');
 describe('Lettre CMA : sélection exacte non destructive',()=>{
+ it('Ayoub à former est inclus sans planning de la période cible ni confirmation inventée',()=>{
+  const ayoub={...calvo,id:'ayoub',nom:'BENAKKI',prenom:'Ayoub',type_apprenant:'vtc',date_examen_theorique:'17 novembre 2026',date_examen_pratique:'2026-11-26',resultat_examen_pratique:null};
+  const selection=run([ayoub],[]);const before=JSON.stringify(ayoub);
+  expect(selection.confirmes).toHaveLength(0);
+  expect(candidatsLettreAvecFormation(selection.confirmes,[ayoub]).map(a=>a.id)).toEqual(['ayoub']);
+  expect(JSON.stringify(ayoub)).toBe(before);
+ });
+ it('tous les IDs à former apparaissent une seule fois, y compris filière inconnue et VA',()=>{
+  const formation=[{...calvo,id:'vtc'},{...calvo,id:'taxi',type_apprenant:'taxi'},{...calvo,id:'va',type_apprenant:'va'},{...calvo,id:'inconnu',type_apprenant:null}];
+  const rows=candidatsLettreAvecFormation([formation[0]],formation);
+  expect(rows.map(a=>a.id)).toEqual(formation.map(a=>a.id));expect(new Set(rows.map(a=>a.id)).size).toBe(4);
+ });
+ it('50 candidats à former : aucune omission malgré 46 candidats déjà sélectionnés',()=>{
+  const formation=Array.from({length:50},(_,i)=>({...calvo,id:`candidat-${i}`}));
+  const rows=candidatsLettreAvecFormation(formation.slice(0,46),formation);
+  expect(rows).toHaveLength(50);expect(rows.map(a=>a.id)).toEqual(formation.map(a=>a.id));
+ });
  it('un ajout manuel reste visible sans devenir confirmé dans la lettre',()=>{const a={...calvo,resultat_examen_pratique:null};const selection=run([a],[]);const lignes=listeCmaAffichee([a],selection,['calvo'],[]);expect(lignes.map(l=>l.candidat.id)).toEqual(['calvo']);expect(selection.confirmes).toHaveLength(0);expect(selection.aRepresenter).toHaveLength(0);});
  it('les candidats à vérifier restent visibles une seule fois même ajoutés manuellement',()=>{const selection=run([calvo],[{...proof,territoire:''}]);expect(listeCmaAffichee([calvo],selection,['calvo'],[]).map(l=>l.candidat.id)).toEqual(['calvo']);});
  it('un retrait explicite masque aussi un candidat à vérifier',()=>{const selection=run([calvo],[{...proof,territoire:''}]);expect(listeCmaAffichee([calvo],selection,['calvo'],['calvo'])).toHaveLength(0);});

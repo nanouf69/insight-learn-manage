@@ -2,7 +2,7 @@ import { estCandidatElearning } from "@/lib/examenElearningRelance";
 import { ouvrirPdfPriveUrl } from "@/lib/ouvrirPdfPrive";
 import { EdofValideBadge } from "./EdofValideBadge";
 import { useCmaLettreSources } from '@/hooks/useCmaLettreSources';
-import { selectionLettreCma, listeCmaAffichee, categorieCma } from '@/lib/cmaLettreSelection';
+import { selectionLettreCma, listeCmaAffichee, categorieCma, candidatsLettreAvecFormation } from '@/lib/cmaLettreSelection';
 import { EntrainementSansExamenAlerte } from "./EntrainementSansExamenAlerte";
 import { ImportPlanningCmaDialog } from "@/components/planning/ImportPlanningCmaDialog";
 import { candidatsAPayer, tarifExamen } from "@/lib/candidatsAPayer";
@@ -1081,10 +1081,6 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
   // Note générale de la lettre CMA (distincte des notes par candidat), enregistrée par session/période.
   const [noteLettreCMA, setNoteLettreCMA] = useState("");
   const [lettreExclusIds, setLettreExclusIds] = useState<string[]>([]);
-  // Personnes « à former » (calculées dans le bloc Candidats à former) : toujours incluses en rouge dans la lettre CMA.
-  const aFormerLettreRef = useRef<ExamApprenant[]>([]);
-  const [, setAFormerLettreCle] = useState('');
-  useEffect(() => { const cle = aFormerLettreRef.current.map(a => a.id).join(','); setAFormerLettreCle(prev => prev === cle ? prev : cle); });
   // Identité exacte de la configuration chargée. Une ancienne configuration
   // ne doit jamais être sauvegardée sous une nouvelle session/période.
   const [loadedPlanningKey, setLoadedPlanningKey] = useState<string | null>(null);
@@ -2269,6 +2265,62 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
     );
   }
 
+  // Source partagée calculée avant Lettre CMA et Candidats à former.
+        // Tous les candidats à former : uniquement ceux qui ont réussi l'examen théorique.
+        const dejaFormesSet = new Set(dejaFormesPratique || []);
+        const inscritsPratiqueSet = new Set(inscritsSessionPratique || []);
+        const removedFormationSet = new Set(removedCandidatsFormation);
+        const paTypes = ['pa-vtc', 'pa-taxi'];
+        const hasEligibleTheoryStatus = (resultat: string | null | undefined) => {
+          const value = (resultat || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z_]/g, '');
+          return ['oui', 'admis', 'admise', 'reussi', 'reussie'].includes(value);
+        };
+
+        const reussisFormation = apprenants?.filter(a =>
+          !(a as any).deleted_at &&
+          hasEligibleTheoryStatus((a as any).resultat_examen) &&
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
+        ) || [];
+        const paFormation = (allApprenants || []).filter(a =>
+          paTypes.includes((a.type_apprenant || '').toLowerCase()) &&
+          a.date_examen_theorique?.includes(selectedExamDate) &&
+          !(a as any).deleted_at &&
+          hasEligibleTheoryStatus((a as any).resultat_examen) &&
+          !reussisFormation.some(r => r.id === a.id) &&
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
+        );
+        // Les candidats déplacés sont retirés de la session actuelle.
+        const deplacesFormation: ExamApprenant[] = [];
+        // Candidats ayant échoué l'examen pratique (repassage pratique)
+        // Mais s'ils ont déjà été présents en session pratique, on ne les remet pas à former
+        const echouesPratiqueFormation = (allApprenants || []).filter(a =>
+          (a as any).resultat_examen_pratique === 'non' &&
+          hasEligibleTheoryStatus((a as any).resultat_examen) &&
+          !reussisFormation.some(r => r.id === a.id) &&
+          !paFormation.some(r => r.id === a.id) &&
+          !deplacesFormation.some(r => r.id === a.id) &&
+          !dejaFormesSet.has(a.id) &&
+          !removedFormationSet.has(a.id)
+        );
+        // Extra candidats ajoutés manuellement
+        const extraFormation = (allApprenants || []).filter(a =>
+          extraCandidatsFormation.includes(a.id) &&
+          !reussisFormation.some(r => r.id === a.id) &&
+          !paFormation.some(r => r.id === a.id) &&
+          !deplacesFormation.some(r => r.id === a.id) &&
+          !echouesPratiqueFormation.some(r => r.id === a.id) &&
+          !removedFormationSet.has(a.id)
+        );
+        // tousAFormer inclut les déplacés et les échoués pratique
+        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
+
   const fsRepassage = sectionFullscreen('repassage');
   const fsPdf = sectionFullscreen('pdf-resultats');
 
@@ -3226,30 +3278,23 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         const cmaSelection = selectionLettreCma(cmaLettreSources.data?.candidats ?? [], cmaLettreSources.data?.preuves ?? [], cmaLettreSources.data?.confirmations ?? [], selectedExamDate, selectedDatePratique, '69', removedCandidatsCMA);
         const representedIds = new Set(cmaSelection.aRepresenter.map(a=>a.id));
         const selectedIds = new Set([...cmaSelection.confirmes,...cmaSelection.aRepresenter].map(a=>a.id));
-        const reussisLettreBase = (allApprenants ?? []).filter(a=>selectedIds.has(a.id));
+        const reussisLettreBase = [...cmaSelection.confirmes, ...cmaSelection.aRepresenter];
         const cmaSearchResults = mergeApprenantSearchResults(allApprenants, cmaDirectSearchResults, searchCMA);
         const candidatsAffichesCMA = listeCmaAffichee(cmaLettreSources.data?.candidats ?? allApprenants ?? [], cmaSelection, extraCandidatsCMA, removedCandidatsCMA);
         const candidatsSansPreuveCMA = candidatsAffichesCMA.filter(({ candidat }) => !selectedIds.has(candidat.id));
 
 
-        const getCategorieCMA = (type: string | null) => {
-          if (!type) return null;
-          const t = type.toLowerCase();
-          if (['taxi', 'taxi-e', 'taxi-e-presentiel', 'ta', 'ta-e', 'pa-taxi', 'rp-taxi'].includes(t)) return 'TAXI';
-          if (['vtc', 'vtc-e', 'vtc-e-presentiel', 'va-e', 'pa-vtc', 'rp-vtc'].includes(t)) return 'VTC';
-          return null;
-        };
-
-        const aFormerLettre = aFormerLettreRef.current.filter(a => !selectedIds.has(a.id) && getCategorieCMA(a.type_apprenant));
-        // Toute personne à former apparaît en rouge dans la lettre, même déjà confirmée ou à représenter.
-        const aFormerIds = new Set(aFormerLettreRef.current.map(a => a.id));
-        const aFormerHorsListeCMA = aFormerLettreRef.current.filter(a => !candidatsAffichesCMA.some(r => r.candidat.id === a.id));
-        const reussisLettre = [...reussisLettreBase, ...aFormerLettre];
+        const getCategorieCMA = categorieCma;
+        const aFormerIds = new Set(tousAFormer.map(a => a.id));
+        const aFormerHorsListeCMA = tousAFormer.filter(a => !candidatsAffichesCMA.some(r => r.candidat.id === a.id));
+        const reussisLettre = candidatsLettreAvecFormation(reussisLettreBase, tousAFormer);
+        const filieresInconnues = reussisLettre.filter(a => !getCategorieCMA(a.type_apprenant));
         const taxiReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'TAXI');
         const vtcReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'VTC');
         const maxRows = Math.max(taxiReussis.length, vtcReussis.length);
 
         const generateLettreHTML = (notes = candidateNotes.query.data, other = candidateNotes.otherQuery.data) => {
+          if (filieresInconnues.length) throw new Error('Filière de certains candidats à former à vérifier avant génération.');
           const nameHTML = (a: { id: string; nom: string; prenom: string }) => pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, candidateNotes.noteFor(a.id, notes, other)) + `<br/><small>${representedIds.has(a.id) ? 'Ajourné à représenter — inscription à confirmer' : 'Confirmé pour cette session'}</small>`;
           const rowHTML = (a: { id: string; nom: string; prenom: string }) => aFormerIds.has(a.id)
             ? `<tr><td style="padding:4px 8px;border:1px solid #ccc;color:#dc2626;font-weight:bold;">${pratiqueCandidateNameHTML(`${a.nom} ${a.prenom}`, candidateNotes.noteFor(a.id, notes, other))}<br/><small>À former — épreuve pratique${selectedIds.has(a.id) ? (representedIds.has(a.id) ? ' · Ajourné à représenter' : ' · Confirmé pour cette session') : ''}</small></td></tr>`
@@ -3410,14 +3455,14 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                 </span>
                 <div className="flex items-center gap-2">
                   {fsLettre.button}
-                  <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0 || resultatsIncomplets || !!cmaSelection.erreur || cmaSelection.aVerifier.length > 0 || candidatsSansPreuveCMA.length > 0} variant="outline" className="gap-2">
+                  <Button onClick={handlePrintLettre} disabled={reussisLettre.length === 0 || resultatsIncomplets || !!cmaSelection.erreur || cmaSelection.aVerifier.length > 0 || candidatsSansPreuveCMA.length > 0 || filieresInconnues.length > 0} variant="outline" className="gap-2">
                     <FileText className="h-4 w-4" />
                     Imprimer ({reussisLettre.length})
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button 
-                        disabled={reussisLettre.length === 0 || sendingCMAEmail || resultatsIncomplets || !!cmaSelection.erreur || cmaSelection.aVerifier.length > 0 || candidatsSansPreuveCMA.length > 0} 
+                        disabled={reussisLettre.length === 0 || sendingCMAEmail || resultatsIncomplets || !!cmaSelection.erreur || cmaSelection.aVerifier.length > 0 || candidatsSansPreuveCMA.length > 0 || filieresInconnues.length > 0}
                         className="gap-2"
                       >
                         <Mail className="h-4 w-4" />
@@ -3614,8 +3659,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               <div className="space-y-4">
                 {(['TAXI', 'VTC', 'Filière à vérifier'] as const).map(categorie => {
                   const lignes = candidatsAffichesCMA.filter(({ candidat }) => (categorieCma(candidat.type_apprenant) ?? 'Filière à vérifier') === categorie);
-                  const lignesAFormer = categorie === 'Filière à vérifier' ? [] : aFormerHorsListeCMA.filter(a => categorieCma(a.type_apprenant) === categorie);
-                  if (categorie === 'Filière à vérifier' && lignes.length === 0) return null;
+                  const lignesAFormer = aFormerHorsListeCMA.filter(a => (categorieCma(a.type_apprenant) ?? 'Filière à vérifier') === categorie);
+                  if (categorie === 'Filière à vérifier' && lignes.length + lignesAFormer.length === 0) return null;
                   return (
                     <section key={categorie} aria-label={`Liste CMA ${categorie}`}>
                       <h4 className="mb-2 border-b pb-2 text-sm font-semibold">{categorie} ({lignes.length + lignesAFormer.length})</h4>
@@ -3706,61 +3751,6 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           return false;
         };
 
-        // Tous les candidats à former : uniquement ceux qui ont réussi l'examen théorique.
-        const dejaFormesSet = new Set(dejaFormesPratique || []);
-        const inscritsPratiqueSet = new Set(inscritsSessionPratique || []);
-        const removedFormationSet = new Set(removedCandidatsFormation);
-        const paTypes = ['pa-vtc', 'pa-taxi'];
-        const hasEligibleTheoryStatus = (resultat: string | null | undefined) => {
-          const value = (resultat || '')
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .toLowerCase()
-            .trim()
-            .replace(/[^a-z_]/g, '');
-          return ['oui', 'admis', 'admise', 'reussi', 'reussie'].includes(value);
-        };
-
-        const reussisFormation = apprenants?.filter(a =>
-          !(a as any).deleted_at &&
-          hasEligibleTheoryStatus((a as any).resultat_examen) &&
-          !dejaFormesSet.has(a.id) &&
-          !removedFormationSet.has(a.id)
-        ) || [];
-        const paFormation = (allApprenants || []).filter(a => 
-          paTypes.includes((a.type_apprenant || '').toLowerCase()) && 
-          a.date_examen_theorique?.includes(selectedExamDate) &&
-          !(a as any).deleted_at &&
-          hasEligibleTheoryStatus((a as any).resultat_examen) &&
-          !reussisFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id) &&
-          !removedFormationSet.has(a.id)
-        );
-        // Les candidats déplacés sont retirés de la session actuelle.
-        const deplacesFormation: ExamApprenant[] = [];
-        // Candidats ayant échoué l'examen pratique (repassage pratique)
-        // Mais s'ils ont déjà été présents en session pratique, on ne les remet pas à former
-        const echouesPratiqueFormation = (allApprenants || []).filter(a =>
-          (a as any).resultat_examen_pratique === 'non' &&
-          hasEligibleTheoryStatus((a as any).resultat_examen) &&
-          !reussisFormation.some(r => r.id === a.id) &&
-          !paFormation.some(r => r.id === a.id) &&
-          !deplacesFormation.some(r => r.id === a.id) &&
-          !dejaFormesSet.has(a.id) &&
-          !removedFormationSet.has(a.id)
-        );
-        // Extra candidats ajoutés manuellement
-        const extraFormation = (allApprenants || []).filter(a =>
-          extraCandidatsFormation.includes(a.id) &&
-          !reussisFormation.some(r => r.id === a.id) &&
-          !paFormation.some(r => r.id === a.id) &&
-          !deplacesFormation.some(r => r.id === a.id) &&
-          !echouesPratiqueFormation.some(r => r.id === a.id) &&
-          !removedFormationSet.has(a.id)
-        );
-        // tousAFormer inclut les déplacés et les échoués pratique
-        const tousAFormer = [...reussisFormation, ...paFormation, ...deplacesFormation, ...echouesPratiqueFormation, ...extraFormation];
-        aFormerLettreRef.current = tousAFormer;
         const formationSearchResults = mergeApprenantSearchResults(allApprenants, formationDirectSearchResults, searchFormation);
 
         const vtcList = tousAFormer.filter(a => isPracticeVTCType(a.type_apprenant));

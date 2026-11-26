@@ -16,6 +16,12 @@ export function periodePratiqueCma(value:string){
  if(!m||!months[m[2]??m[4]]||!months[m[4]])return null;
  return {start:`${m[5]}-${months[m[2]??m[4]]}-${m[1].padStart(2,'0')}`,end:`${m[5]}-${months[m[4]]}-${m[3].padStart(2,'0')}`};
 }
+/** Same training-list identities in display and letter, never inferred enrollment proof. */
+export function candidatsLettreAvecFormation<T extends CmaCandidat>(selectionnes: readonly T[], aFormer: readonly T[]): T[] {
+ const candidats = new Map<string,T>();
+ for (const candidat of [...selectionnes,...aFormer]) candidats.set(candidat.id,candidat);
+ return [...candidats.values()];
+}
 /** Display only: manual additions never become evidence for generating the letter. */
 export function listeCmaAffichee(candidats: readonly CmaCandidat[], selection: ReturnType<typeof selectionLettreCma>, ajoutes: readonly string[], exclus: readonly string[]) {
  const lignes = new Map<string, { candidat: CmaCandidat; statut: string }>();
