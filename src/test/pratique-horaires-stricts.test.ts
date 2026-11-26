@@ -32,4 +32,10 @@ describe("Pratique VTC/TAXI : horaires stricts 9h-12h / 13h-16h", () => {
     expect(html).not.toContain("13:00 - 17:00");
     expect(html.split(sig).length - 1).toBe(2);
   });
+  it('feuille individuelle matin seul : aucun horaire après-midi sans obligation ni preuve', () => {
+    const html = buildEmargementHTML([['2026-12-02', { matin: { signature_data_url: 'data:image/png;base64,FICTIF' } as any, expectedSet: new Set(['matin']) }]], { nom: 'FICTIF', prenom: 'Test' } as any, { pratiqueDates: new Set(['2026-12-02']) });
+    expect(html).toContain('09:00 - 12:00');
+    expect(html).not.toContain('13:00 - 16:00');
+    expect(html).toContain('data:image/png;base64,FICTIF');
+  });
 });

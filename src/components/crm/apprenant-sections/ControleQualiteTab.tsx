@@ -422,7 +422,7 @@ export async function construireDossierControleZip(apprenant: any, formateur: st
                   absentMatin: day.matin?.absent === true,
                   absentApresMidi: day.apresMidi?.absent === true,
                 }],
-                { matin: "9h-12h", apresmidi: "13h-16h" },
+                { matin: day.detail.parts.find((p: any) => p.creneau === 'matin')?.label ?? '', apresmidi: day.detail.parts.find((p: any) => p.creneau === 'apres_midi')?.label ?? '' },
                 formateur,
                 { returnBlob: true },
               );

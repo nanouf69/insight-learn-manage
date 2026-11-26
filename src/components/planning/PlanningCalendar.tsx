@@ -12,6 +12,8 @@ import PlanningMensuelFormateurs from "@/components/agenda/PlanningMensuelFormat
 import { DayConfigDialog, type DayType } from "./DayConfigDialog";
 import { syncPratiqueSessionsFromPlanning, checkPratiqueSessionsCoherence, type PratiqueCoherenceReport } from "@/lib/syncPratiqueSessions";
 import { resolvePratiqueSlotParts, normalizePratiqueCreneau, normalizePratiqueType } from "@/lib/pratiqueSlots";
+import { creneauxFeuillePratique } from '@/lib/emargementPratiqueCreneaux';
+import { fetchAllRows } from '@/lib/supabase/fetch-all-rows';
 import { PRATIQUE_TYPES } from "@/lib/sessionTypes";
 import { EntrainementSansExamenAlerte } from "@/components/examens/EntrainementSansExamenAlerte";
 
@@ -418,20 +420,12 @@ export function PlanningCalendar({ onNavigateToApprenant }: { onNavigateToAppren
       Object.values(examByDate).forEach(list => list.sort((a, b) => a.heure.localeCompare(b.heure)));
 
       // Fetch all planning configs and merge their day_time_slots (per-day AM/PM creneaux)
-      const { data: configs } = await supabase
-        .from("planning_pratique_config")
-        .select("day_time_slots");
+      const configs = await fetchAllRows<any>((from, to) => supabase.from('planning_pratique_config').select('id,day_time_slots,updated_at').order('updated_at', { ascending: false }).order('id').range(from, to));
       const creneauxByDate: Record<string, { matin?: string; apresmidi?: string }> = {};
       (configs || []).forEach((c: any) => {
         const slots = c.day_time_slots || {};
         Object.entries(slots).forEach(([k, v]: [string, any]) => {
-          if (v && typeof v === "object") {
-            const cur = creneauxByDate[k] || {};
-            creneauxByDate[k] = {
-              matin: v.matin || cur.matin,
-              apresmidi: v.apresmidi || cur.apresmidi,
-            };
-          }
+          if (!Object.prototype.hasOwnProperty.call(creneauxByDate, k)) creneauxByDate[k] = creneauxFeuillePratique(v);
         });
       });
 

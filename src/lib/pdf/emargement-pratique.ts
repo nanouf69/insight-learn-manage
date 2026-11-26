@@ -6,6 +6,7 @@ import { fr } from "date-fns/locale";
 import logoImage from "@/assets/logo-ftransport.png";
 import tamponImage from "@/assets/tampon-entreprise.png";
 import { resolveFormateurSignature } from "@/lib/formateurSignature";
+import { creneauxFeuillePratique } from '@/lib/emargementPratiqueCreneaux';
 
 
 
@@ -51,6 +52,7 @@ function formatCreneau(raw?: string): string {
 
 /** Libellé imprimé d'un créneau pratique : toujours 09h00-12h00 / 13h00-16h00. */
 export function pratiqueCreneauLabel(part: "matin" | "apresmidi", _saisi?: string): string {
+  if (_saisi !== undefined && !_saisi.trim()) return '';
   return formatCreneau(part === "matin" ? "9h-12h" : "13h-16h");
 }
 
@@ -188,16 +190,18 @@ export function generateEmargementPratiquePDF(
 
   // Pratique VTC/TAXI : horaires stricts 9h-12h / 13h-16h, quel que soit l'ancien
   // horaire saisi dans le planning (jamais 17h). Les valeurs enregistrées ne sont pas modifiées.
-  const matinLabel = pratiqueCreneauLabel("matin", creneaux?.matin);
-  const apresLabel = pratiqueCreneauLabel("apresmidi", creneaux?.apresmidi);
+  const horaires = creneauxFeuillePratique(creneaux);
+  const matinLabel = pratiqueCreneauLabel("matin", horaires.matin);
+  const apresLabel = pratiqueCreneauLabel("apresmidi", horaires.apresmidi);
+  // Keep a historical signed/absent cell even when current planning has no hours.
+  const afficherApresMidi = !!apresLabel || candidats.some(c => c.signatureApresMidi || c.absentApresMidi);
 
   // ===== TABLEAU D'ÉMARGEMENT =====
   const emargementRows = candidats.map((c) => [
     `${c.nom.toUpperCase()} ${c.prenom}`,
     matinLabel || "—",
     c.absentMatin ? "ABSENT" : "",
-    apresLabel || "—",
-    c.absentApresMidi ? "ABSENT" : "",
+    ...(afficherApresMidi ? [apresLabel || "—", c.absentApresMidi ? "ABSENT" : ""] : []),
   ]);
 
   doc.setFont("helvetica", "bold");
@@ -212,9 +216,9 @@ export function generateEmargementPratiquePDF(
       [
         { content: "Stagiaire", rowSpan: 2, styles: { halign: "center", valign: "middle" } },
         { content: "MATIN", colSpan: 2, styles: { halign: "center" } },
-        { content: "APRÈS-MIDI", colSpan: 2, styles: { halign: "center" } },
+        ...(afficherApresMidi ? [{ content: "APRÈS-MIDI", colSpan: 2, styles: { halign: "center" as const } }] : []),
       ],
-      ["Horaire", "Signature", "Horaire", "Signature"],
+      ["Horaire", "Signature", ...(afficherApresMidi ? ["Horaire", "Signature"] : [])],
     ],
     body: emargementRows,
     theme: "grid",
@@ -236,11 +240,10 @@ export function generateEmargementPratiquePDF(
       minCellHeight: 28,
     },
     columnStyles: {
-      0: { cellWidth: 50, fontStyle: "bold" },
-      1: { cellWidth: 28, halign: "center", fontSize: 8 },
-      2: { cellWidth: 40, halign: "center" },
-      3: { cellWidth: 28, halign: "center", fontSize: 8 },
-      4: { cellWidth: 40, halign: "center" },
+      0: { cellWidth: afficherApresMidi ? 50 : 76, fontStyle: "bold" },
+      1: { cellWidth: afficherApresMidi ? 28 : 40, halign: "center", fontSize: 8 },
+      2: { cellWidth: afficherApresMidi ? 40 : 70, halign: "center" },
+      ...(afficherApresMidi ? { 3: { cellWidth: 28, halign: "center" as const, fontSize: 8 }, 4: { cellWidth: 40, halign: "center" as const } } : {}),
     },
     margin: { left: margin, right: margin },
     // Injection des signatures numériques déjà collectées côté apprenant

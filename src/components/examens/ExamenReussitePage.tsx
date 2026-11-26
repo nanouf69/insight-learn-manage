@@ -36,6 +36,7 @@ import { TestReservationPratique, TEST_PRATIQUE } from "./TestReservationPratiqu
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, Edit, IdCard, Car, Copy, KeyRound } from "lucide-react";
 import { generateEmargementPratiquePDF } from "@/lib/pdf/emargement-pratique";
+import { creneauxFeuillePratique } from '@/lib/emargementPratiqueCreneaux';
 import { fetchPratiqueSignatures } from "@/lib/pratiqueEmargements";
 import { PRATIQUE_TYPES, THEORIQUE_TYPES } from "@/lib/sessionTypes";
 import { DecalerExamenButton } from "./DecalerExamenButton";
@@ -843,18 +844,7 @@ function buildPratiqueReservationUrl(apprenantId: string, type: 'vtc' | 'taxi', 
 type PratiqueDaySlot = { matin?: string; apresmidi?: string; type?: 'vtc' | 'taxi' | 'libre'; formateur?: string } | string | undefined;
 
 function resolvePratiqueDayCreneaux(slot: PratiqueDaySlot, type: 'vtc' | 'taxi') {
-  if (typeof slot === 'string' && slot.trim()) {
-    return { matin: slot.trim() };
-  }
-
-  const matin = typeof slot === 'object' ? slot?.matin?.trim() : undefined;
-  const apresmidi = typeof slot === 'object' ? slot?.apresmidi?.trim() : undefined;
-
-  return {
-    matin: matin || '9h-12h',
-    apresmidi: apresmidi || '13h-16h',
-  };
-
+  return creneauxFeuillePratique(slot);
 }
 
 function formatPratiqueCreneauxForMessage(slot: PratiqueDaySlot, type: 'vtc' | 'taxi') {
@@ -5063,6 +5053,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                       const vtcOverbooked = vtcReserved.length > dayMax;
                       const taxiOverbooked = taxiReserved.length > dayMax;
                       const daySlot = typeof dayTimeSlots[key] === 'object' ? (dayTimeSlots[key] as any) : {};
+                      const horairesFeuille = creneauxFeuillePratique(dayTimeSlots[key]);
                       const dayFormateur: string | undefined = daySlot?.formateur;
                        const dayScheduleMode = (daySlot?.horaireMode && daySlot.horaireMode !== '9-12_13-17' ? daySlot.horaireMode : null) || (
                          (daySlot?.matin || '9h-12h') === '9h-12h' && (daySlot?.apresmidi || '13h-16h') === '13h-16h'
@@ -5136,8 +5127,8 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                   />
                                 </div>
                                 <div className="flex items-center justify-between text-[9px] text-muted-foreground">
-                                  <span>☀️ {daySlot?.matin || "9h-12h"} · {nbMatin}</span>
-                                  <span>🌙 {daySlot?.apresmidi || "13h-16h"} · {nbPm}</span>
+                                  {horairesFeuille.matin && <span>☀️ {horairesFeuille.matin} · {nbMatin}</span>}
+                                  {horairesFeuille.apresmidi && <span>🌙 {horairesFeuille.apresmidi} · {nbPm}</span>}
                                 </div>
                               </div>
                             );
@@ -5190,7 +5181,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                                   const mode = e.target.value;
                                   const hours = mode === '9-12_13-16'
                                       ? { matin: '9h-12h', apresmidi: '13h-16h' }
-                                      : { matin: current.matin || '9h-12h', apresmidi: current.apresmidi || '13h-16h' };
+                                      : creneauxFeuillePratique(current);
                                   const next = { ...prev, [key]: { ...current, ...hours, horaireMode: mode } };
                                   void saveDayTimeSlotsNow(next);
                                   return next;

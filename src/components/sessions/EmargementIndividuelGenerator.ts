@@ -20,6 +20,7 @@ export interface AgendaDaySlot {
   apremDebut?: string;
   apremFin?: string;
   isSoir?: boolean;
+  planningPratique?: boolean;
 }
 
 interface SessionData {
@@ -230,12 +231,12 @@ function generateIndividualPage(
       headRow2.push({ content: "17h-18h30", styles: { halign: "center", fontSize: 7 } });
       headRow2.push({ content: "18h30-21h", styles: { halign: "center", fontSize: 7 } });
     } else {
-      const matinLabel = isFC
+      const matinLabel = day.planningPratique && (!day.matinDebut || !day.matinFin) ? '' : isFC
         ? "Matin 9h-12h"
         : day.matinDebut && day.matinFin
           ? `Matin ${day.matinDebut}-${day.matinFin}`
           : "Matin 9h-12h";
-      const apremLabel = isFC
+      const apremLabel = day.planningPratique && (!day.apremDebut || !day.apremFin) ? '' : isFC
         ? "Apres-midi 13h-17h"
         : day.apremDebut && day.apremFin
           ? `Aprem ${day.apremDebut}-${day.apremFin}`
@@ -300,7 +301,9 @@ function generateIndividualPage(
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   const firstDay = days[0];
-  const horairesLine = allSoir
+  const horairesLine = firstDay?.planningPratique
+    ? `Horaires : ${[firstDay.matinDebut && firstDay.matinFin ? `Matin ${firstDay.matinDebut} - ${firstDay.matinFin}` : '', firstDay.apremDebut && firstDay.apremFin ? `Apres-midi ${firstDay.apremDebut} - ${firstDay.apremFin}` : ''].filter(Boolean).join(' / ')}`
+    : allSoir
     ? "Horaires : 1ere partie 17h00 - 18h30 / 2eme partie 18h30 - 21h00"
     : isFC
       ? "Horaires : Matin 09h00 - 12h00 / Apres-midi 13h00 - 17h00 - Duree totale : 14H"

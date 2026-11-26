@@ -94,6 +94,8 @@ import { filterAndSortApprenants } from "@/lib/apprenantSearch";
 import { SmallTransfersTable } from "@/components/dashboard/SmallTransfersTable";
 import GrilleNotationConduite from "./GrilleNotationConduite";
 import { fetchPlanningDaySlotsForDates, normalizePratiqueCreneau, resolvePratiqueSlotParts } from "@/lib/pratiqueSlots";
+import { generateEmargementPratiquePDF } from '@/lib/pdf/emargement-pratique';
+import { creneauxFeuillePratique } from '@/lib/emargementPratiqueCreneaux';
 import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
 import { calculerAccesCours } from "@/lib/accesCoursFenetre";
 import { construireConvocationHtml } from "@/lib/convocationFormation";
@@ -353,19 +355,19 @@ const applyPratiquePlanningSlots = async (
     .select('date_choisie, creneau')
     .eq('apprenant_id', apprenantId);
   const byDate = new Map(((reservations as any[]) || []).map((row) => [normalizeISODate(row.date_choisie), row]));
-  const dates = Array.from(byDate.keys()).filter(Boolean);
+  const dates = [...new Set([...Array.from(byDate.keys()), ...days.map(day => formatLocalDateKey(day.date))])].filter(Boolean);
   const planningSlots = await fetchPlanningDaySlotsForDates(dates);
 
   return days.map((day) => {
     const date = formatLocalDateKey(day.date);
     const reservation = byDate.get(date);
-    if (!reservation) return day;
+    if (!reservation && !planningSlots.has(date)) return day;
     const parts = resolvePratiqueSlotParts(
       planningSlots.get(date),
       isTaxi ? 'taxi' : 'vtc',
-      normalizePratiqueCreneau(reservation.creneau),
+      normalizePratiqueCreneau(reservation?.creneau),
     );
-    const result: AgendaDaySlot = { date: new Date(day.date) };
+    const result: AgendaDaySlot = { date: new Date(day.date), planningPratique: true };
     for (const part of parts) {
       const start = part.startMinute;
       const end = part.endMinute;
@@ -379,7 +381,7 @@ const applyPratiquePlanningSlots = async (
         result.apremFin = toHM(end);
       }
     }
-    return result.matinDebut || result.apremDebut ? result : day;
+    return result;
   });
 };
 
@@ -2493,7 +2495,7 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
     return new Date();
   };
 
-  const handleDownloadEmargement = () => {
+  const handleDownloadEmargement = async () => {
     if (apprenantsInSession.length === 0) {
       toast({
         title: "Aucun apprenant",
@@ -2529,7 +2531,14 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
       prenom: sa.apprenant?.prenom || "",
     }));
 
-    generateEmargementPDF(sessionData, apprenantsList);
+    if (isPratiqueType(session.type_session)) {
+      const dates: string[] = [];
+      const day = new Date(dateDebut + 'T12:00:00');
+      const fin = new Date(dateFin + 'T12:00:00');
+      while (day <= fin) { dates.push(formatLocalDateKey(day)); day.setDate(day.getDate() + 1); }
+      const slots = await fetchPlanningDaySlotsForDates(dates);
+      for (const date of dates) generateEmargementPratiquePDF(new Date(date + 'T12:00:00'), /taxi/i.test(session.formation) ? 'taxi' : 'vtc', apprenantsList.map(a => ({ ...a, telephone: '', email: '' })), creneauxFeuillePratique(slots.get(date) as { matin?: string; apresmidi?: string } | undefined), formateurNames.join(' / '));
+    } else generateEmargementPDF(sessionData, apprenantsList);
 
     toast({
       title: "Feuilles d'émargement générées",

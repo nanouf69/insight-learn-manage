@@ -1,4 +1,8 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Feuille pratique sans après-midi — 26/11 17:13
+- [x] Suppression du créneau après-midi inventé dans le résumé et les nouveaux PDF du planning quand le champ est vide ; signatures historiques et données enregistrées conservées.
+- [x] Revue des autres lecteurs : calendrier, feuille session pratique, individuel/lot, ZIP et feuille élève corrigés ; PC/mobile et PDF fictif vérifiés, 48 tests ciblés. Inventaire dans docs/emargement-matin-seul-2026-11-26.md ; aucun envoi/publication/écriture réelle.
+- [ ] Autorisation serveur inscription pratique sans réservation : SQL peut reprendre l'après-midi de la session ; migration et tests de droits dédiés attendent accord distinct, aucune activation ni changement de droits.
 ## Adresse facture Farouk — 26/11 16:49
 - [x] Demande 17:10 : confirmation de suppression distingue mail du dossier existant et destinataire facture non enregistré ; lecture seule et accès direct à la vérification, aucun enregistrement/envoi automatique.
 - [x] Demande 17:01 : mail financeur confirmé sans attente inutile du dossier, relecture explicite après erreur, saisie manuelle protégée des alertes tardives ; tests PC/mobile fictifs et 59 Vitest PASS. Aucune nouvelle confirmation demandée, aucune activation présumée.
