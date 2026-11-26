@@ -7202,21 +7202,27 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // Sortie facultative d'une reprise des fausses (quiz initial déjà remis) :
     // relit la tentative initiale exacte côté serveur et réaffiche ses résultats.
     // Aucune écriture : brouillons/preuves de révision et tentative initiale intacts.
+    const preuveInitialeConfirmeeRef = useRef<Map<number, Record<string, string | string[]>>>(new Map());
     const quitterRevisionFacultative = async (exoId: number) => {
       if (!apprenantId) return;
       const { data, error } = await (supabase as any)
         .from("reponses_apprenants")
-        .select("exercice_id, status, submitted_at, reponses")
+        .select("exercice_id, status, reponses")
         .eq("apprenant_id", apprenantId)
         .eq("exercice_id", buildExerciceId(module.id, exoId))
         .maybeSingle();
-      const hist = (attemptHistoryFor[exoId] ?? []).filter((a) => a.mode === "complet");
-      const snap = hist.length > 0 ? (hist[hist.length - 1].answers as Record<string, string | string[]>) : null;
-      const initiales = reponsesInitialesPourSortie(exoId, error ? null : data, snap);
+      const fige = passagesFiges[exoId];
+      const initiales = reponsesInitialesPourSortie(
+        exoId,
+        error ? { ok: false } : { ok: true, row: data ?? null },
+        preuveInitialeConfirmeeRef.current.get(exoId) ?? null,
+        fige ? ((fige as any).reponses ?? null) : null,
+      );
       if (!initiales) {
-        toast.error("Vos résultats initiaux n'ont pas pu être relus : votre quiz remis reste validé. Revenez à l'accueil puis rouvrez le module.");
+        toast.error("Vos résultats initiaux n'ont pas pu être confirmés par le serveur : rien n'est modifié. Utilisez « Retour à l'accueil » puis rouvrez le module.");
         return;
       }
+      if (!error && data?.status === "submitted") preuveInitialeConfirmeeRef.current.set(exoId, initiales);
       setSelectedAnswers((prev) => {
         const next = { ...prev };
         Object.keys(next).forEach((k) => { if (k.startsWith(`${exoId}-`)) delete next[k]; });
@@ -9487,7 +9493,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                     <RevisionModeBanner count={revisionSet.size} onShowAll={() => {
                       setRevisionQuestionsFor(prev => { const next = { ...prev }; delete next[exo.id]; return next; });
                     }}
-                      onSkip={sortieRevisionAutorisee(submittedExoIdsRef.current.has(exo.id) || !!passagesFiges[exo.id] || revisionActiveRef.current.has(exo.id), true) && !apercuAdmin
+                      onSkip={sortieRevisionAutorisee({ initialSoumisServeur: submittedExoIdsRef.current.has(exo.id), passageFigeServeur: !!passagesFiges[exo.id] }, true) && !apercuAdmin
                         ? () => { void quitterRevisionFacultative(exo.id); } : undefined}
                       onHome={() => onBack()} />
                   );
