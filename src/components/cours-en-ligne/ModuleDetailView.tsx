@@ -2,6 +2,7 @@ import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
 import { ajouterLyonVtc, COURS_LYON_VTC_ID, PDF_LYON_VTC, estPdfLyonVtc } from '@/lib/pratiqueVtcLyonRessource';
 import { fusionnerQuizLyon, retirerAjoutsQuizLyon } from '@/lib/pratiqueVtcLyonFusion';
 import { lireVersionQuizLyon, type VersionQuizLyon } from '@/lib/pratiqueVtcLyonVersion';
+import { reponsesQuizLyonCompletes } from '@/lib/pratiqueVtcLyonAchevement';
 import { FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
 import { Bilan505Desactive, couperBilan505, remettreBilan505, useBilan505Active, type RevueItem } from '@/lib/bilan505Remise';
 import { Bilan505RevuePanel } from './Bilan505RevuePanel';
@@ -6938,10 +6939,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
   const lyonParApprenant = module.id === 8 && !!apprenantId;
   const [versionLyon, setVersionLyon] = useState<VersionQuizLyon | null>(lyonParApprenant ? null : 'enrichie');
   useEffect(() => {
-    if (!lyonParApprenant) { setVersionLyon('enrichie'); return; }
+    if (!lyonParApprenant || !apprenantId) { setVersionLyon('enrichie'); return; }
     let annule = false;
     setVersionLyon(null);
-    void lireVersionQuizLyon(apprenantId!).then((v) => { if (!annule) setVersionLyon(v); });
+    void lireVersionQuizLyon(apprenantId).then((v) => { if (!annule) setVersionLyon(v); });
     return () => { annule = true; };
   }, [lyonParApprenant, apprenantId]);
   const versionLyonRef = useRef<VersionQuizLyon | null>(versionLyon);
@@ -6984,7 +6985,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const restoreScrollFrameRef = useRef<number | null>(null);
 
     // Always allow multiple answers (checkboxes) for all questions
-    const isMultiAnswer = (_q: { choix: { correct?: boolean }[] }) => true;
+    const isMultiAnswer = (q: { choix: { correct?: boolean }[]; sourceLivreLyon?: number }) => q.sourceLivreLyon === undefined;
 
     const getQuestionChoices = (q: { choix?: { lettre: string; texte?: string; correct?: boolean }[] } | null | undefined) =>
       Array.isArray(q?.choix) ? q.choix : [];
@@ -8331,6 +8332,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
     const persistModuleCompletion = async () => {
       if (complementsVtc || apercuAdmin) return false;
+      if (module.id === 8 && versionLyonRef.current === 'enrichie'
+          && !moduleAlreadyValidatedRef.current
+          && !reponsesQuizLyonCompletes('enrichie', selectedAnswers)) {
+        toast.error("Quiz Lyon à terminer : les 138 questions doivent avoir une réponse enregistrée.");
+        return false;
+      }
       if (historicalQuizProof?.remainingQuizzes.length) {
         const missing = historicalQuizProof.remainingQuizzes.filter(q => !submittedExoIdsRef.current.has(Number(q.id)));
         if (missing.length) {

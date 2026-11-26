@@ -16,7 +16,7 @@ function client(tables: Record<string, any[]>, ecritures: string[], erreur = fal
       };
       return q;
     },
-    rpc: () => { ecritures.push('rpc'); return Promise.resolve({}); },
+    rpc: () => Promise.resolve({ error: { code: 'PGRST202' } }),
   };
 }
 const nb = (v: string) => (v === 'enrichie' ? fusionnerQuizLyon(module8()) : module8()).exercices[0].questions.length;
@@ -46,5 +46,15 @@ describe('version du quiz Lyon par apprenant', () => {
   });
   it('erreur de lecture → 99', async () => {
     expect(nb(await lireVersionQuizLyon('a', client({}, [], true)))).toBe(99);
+  });
+  it('cohorte serveur 138 conservée dès la première réponse, sans écriture', async () => {
+    const w: string[] = []; const c = client({ reponses_apprenants: [{ reponses: rep99 }] }, w);
+    c.rpc = () => Promise.resolve({ data: 138 } as any);
+    expect(nb(await lireVersionQuizLyon('a', c))).toBe(138); expect(w).toEqual([]);
+  });
+  it('cohorte serveur historique prioritaire sur un total navigateur 138', async () => {
+    const w: string[] = []; const c = client({ reponses_apprenants: [{ total_questions: 138 }] }, w);
+    c.rpc = () => Promise.resolve({ data: 99 } as any);
+    expect(nb(await lireVersionQuizLyon('a', c))).toBe(99); expect(w).toEqual([]);
   });
 });

@@ -1,0 +1,19 @@
+{
+  "base_git_provisoire_non_certifiee": "7880b585002471a066fbab0f9b2381946c54d5a0",
+  "publication_observee": "2026-11-25T18:28:55.372891Z",
+  "bundle_public": "/assets/index-DL14sS3r.js",
+  "head_preserve": "69847782d",
+  "fichiers_client": [
+    "src/components/cours-en-ligne/ModuleDetailView.tsx",
+    "src/lib/pratiqueVtcLyonFusion.ts",
+    "src/lib/pratiqueVtcLyonQcm2.ts",
+    "src/lib/pratiqueVtcLyonVersion.ts",
+    "src/lib/pratiqueVtcLyonAchevement.ts",
+    "src/lib/pratiqueVtcLyonRessource.ts",
+    "src/components/cours-en-ligne/exercices/pratique-vtc-lyon-qcm2.json",
+    "src/assets/pratique-vtc-lyon/examen-pratique-connaissance-lyon.pdf.asset.json"
+  ],
+  "candidat_sql": "docs/candidates/quiz_lyon_cohorte_138.sql",
+  "certification_base_publiee": false,
+  "publish": false
+}

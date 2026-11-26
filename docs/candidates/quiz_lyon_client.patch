@@ -1,0 +1,1284 @@
+--- a/src/components/cours-en-ligne/ModuleDetailView.tsx
++++ b/src/components/cours-en-ligne/ModuleDetailView.tsx
+@@ -1,4 +1,8 @@
+ import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
++import { ajouterLyonVtc, COURS_LYON_VTC_ID, PDF_LYON_VTC, estPdfLyonVtc } from '@/lib/pratiqueVtcLyonRessource';
++import { fusionnerQuizLyon, retirerAjoutsQuizLyon } from '@/lib/pratiqueVtcLyonFusion';
++import { lireVersionQuizLyon, type VersionQuizLyon } from '@/lib/pratiqueVtcLyonVersion';
++import { reponsesQuizLyonCompletes } from '@/lib/pratiqueVtcLyonAchevement';
+ import { FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
+ import { Bilan505Desactive, couperBilan505, remettreBilan505, useBilan505Active, type RevueItem } from '@/lib/bilan505Remise';
+ import { Bilan505RevuePanel } from './Bilan505RevuePanel';
+@@ -466,6 +470,11 @@
+             <Maximize className="w-4 h-4" />
+             Ouvrir le livre
+           </a>
++          {estPdfLyonVtc(fichier.url) && <Button asChild variant="outline">
++            <a href={displayUrl} download="Examen pratique – Connaissance de Lyon.pdf">
++              <Download className="w-4 h-4 mr-2" /> Télécharger le PDF
++            </a>
++          </Button>}
+         </div>
+       )}
+ 
+@@ -1147,6 +1156,9 @@
+ };
+ 
+ const forceSourceExerciseTitles = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
++  if (Number(moduleId) === 8 && loadedData.cours.some(c => c.id === COURS_LYON_VTC_ID)) {
++    return ajouterLyonVtc(loadedData);
++  }
+   if (Number(moduleId) !== 9) return loadedData;
+ 
+   const sourceById = new Map(sourceData.exercices.map((exercise) => [Number(exercise.id), exercise]));
+@@ -2112,7 +2124,7 @@
+   description: "Cours et exercices pour la préparation à l'épreuve pratique VTC — Déroulement de l'examen, devis et facturation, lieux touristiques de Lyon, relation client.",
+   cours: [
+     { id: 1, titre: "1. Grille de notation de l'épreuve pratique VTC", sousTitre: "Barème : Parcours (2pts), Sécurité/Conduite (10pts), Relation client (5pts), Facturation (3pts) — Note min. 12/20", description: "L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points. Est déclaré reçu le candidat ayant obtenu au moins 12/20.", actif: true },
+-    { id: 2, titre: "2. Déroulement de l'épreuve pratique VTC", sousTitre: "Accueil des jurys, tirage au sort, devis, parcours, facture, prise de congé", description: "1) Arrangements techniques. 2) Accueil des jurys. 3) Présentation carte grise et assurance. 4) Tirage au sort destination. 5) Réalisation du devis (transfert ou mise à disposition) + GPS (6 min max). 6) Signature du devis par le client. 7) Parcours aller-retour. 8) Facturation et prise de congé.", actif: true },
++    { id: 2, titre: "2. Déroulement de l'épreuve pratique VTC", sousTitre: "Accueil des jurys, tirage au sort, devis, parcours, facture, prise de congé", description: "1) Arrangements techniques. 2) Accueil des jurys. 3) Présentation carte grise et assurance. 4) Tirage au sort destination. 5) Réalisation du devis (transfert ou mise à disposition) + GPS (6 min max). 6) Signature du devis par le client. 7) Parcours aller-retour. 8) Facturation et prise de congé.", actif: true, fichiers: [PDF_LYON_VTC] },
+     { id: 3, titre: "3. Monuments historiques de Lyon", sousTitre: "Cathédrale St Jean, Basilique de Fourvière, Église St Georges", image: imgCathedraleStJean, description: "• Cathédrale St Jean (1480) — Vieux Lyon, 5e arr., près du funiculaire de Fourvière.\n• Basilique de Fourvière (1886) — Patrimoine mondial UNESCO 1998, surplombe la ville.\n• Église St Georges (1848) — Vieux Lyon, entre Quarantaine et St-Jean.", actif: true },
+     { id: 4, titre: "4. Places et bâtiments remarquables", sousTitre: "Place Bellecour, Palais de Justice, Place des Terreaux, Opéra, Hôtel de Ville", image: imgPlaceTerreaux, description: "• Place Bellecour — 5e plus grande place de France, statue de Louis XIV.\n• Palais de Justice (1835) — 5e arr., « Palais des 24 colonnes ».\n• Place des Terreaux — 1er arr., fontaine Bartholdi.\n• Opéra de Lyon (1831) — restructuré par Jean Nouvel (1993).\n• Hôtel de Ville — entre Place des Terreaux et Place de la Comédie.\n• Hôtel-Dieu — premier hôpital lyonnais (1184), aujourd'hui InterContinental.\n• Musée des Confluences — inauguré en 2014.", actif: true },
+     { id: 5, titre: "5. Tours et architecture moderne", sousTitre: "Tour Part-Dieu (le crayon, 165m), Tour Oxygène (117m), Tour Incity (la gomme, 202m)", image: imgTourOxygene, description: "• Tour Part-Dieu « le crayon » — 42 étages, 165m, ouverte depuis 1977.\n• Tour Oxygène — 28 niveaux, 117m, inaugurée en 2010.\n• Tour Incity « la gomme » — 39 étages, 202m, 3e plus haut gratte-ciel de France, inaugurée en 2016.", actif: true },
+@@ -5846,7 +5858,7 @@
+     const fallbackSavedAt = new Date().toISOString();
+     const { data: casData, error } = await supabase.rpc("save_module_editor_state", {
+       p_module_id: moduleId,
+-      p_module_data: moduleData as any,
++      p_module_data: retirerAjoutsQuizLyon(moduleId, moduleData) as any,
+       p_deleted_cours: (deletedCours ?? []) as any,
+       p_deleted_exercices: (deletedExercices ?? []) as any,
+       p_source_fingerprint: sourceFingerprint,
+@@ -6923,6 +6935,18 @@
+   };
+   const etatSnapshotsRef = useRef<EtatSnapshotsEleve>(etatSnapshotsEleve);
+   etatSnapshotsRef.current = etatSnapshotsEleve;
++  // Quiz Lyon 99/138 choisi par apprenant (lecture seule) ; sans apprenant (aperçu admin) = 138.
++  const lyonParApprenant = module.id === 8 && !!apprenantId;
++  const [versionLyon, setVersionLyon] = useState<VersionQuizLyon | null>(lyonParApprenant ? null : 'enrichie');
++  useEffect(() => {
++    if (!lyonParApprenant || !apprenantId) { setVersionLyon('enrichie'); return; }
++    let annule = false;
++    setVersionLyon(null);
++    void lireVersionQuizLyon(apprenantId).then((v) => { if (!annule) setVersionLyon(v); });
++    return () => { annule = true; };
++  }, [lyonParApprenant, apprenantId]);
++  const versionLyonRef = useRef<VersionQuizLyon | null>(versionLyon);
++  versionLyonRef.current = versionLyon;
+   // La ref doit être synchronisée AVANT le rendu de LearnerPreview. Un useEffect
+   // arrive après ce rendu et laissait donc systématiquement l'apprenant sur la
+   // version précédente des questions jusqu'à une seconde mise à jour.
+@@ -6941,7 +6965,7 @@
+     const onModuleCompleted = (moduleId: number) => rappelsEleveRef.current.onModuleCompleted?.(moduleId);
+     const LearnerPreviewComponent = ({ secureMode = true, complementsVtc = false, cibleComplement = null }: { secureMode?: boolean; complementsVtc?: boolean; cibleComplement?: CibleComplementVtc | null }) => {
+     const moduleData = (() => {
+-      const base = moduleDataRef.current;
++      const base = versionLyonRef.current === 'enrichie' ? fusionnerQuizLyon(moduleDataRef.current) : moduleDataRef.current;
+       const etat = etatSnapshotsRef.current;
+       if (etat.statut !== "pret" || Object.keys(etat.parExo).length === 0) return base;
+       return {
+@@ -6961,7 +6985,7 @@
+     const restoreScrollFrameRef = useRef<number | null>(null);
+ 
+     // Always allow multiple answers (checkboxes) for all questions
+-    const isMultiAnswer = (_q: { choix: { correct?: boolean }[] }) => true;
++    const isMultiAnswer = (q: { choix: { correct?: boolean }[]; sourceLivreLyon?: number }) => q.sourceLivreLyon === undefined;
+ 
+     const getQuestionChoices = (q: { choix?: { lettre: string; texte?: string; correct?: boolean }[] } | null | undefined) =>
+       Array.isArray(q?.choix) ? q.choix : [];
+@@ -8308,6 +8332,12 @@
+ 
+     const persistModuleCompletion = async () => {
+       if (complementsVtc || apercuAdmin) return false;
++      if (module.id === 8 && versionLyonRef.current === 'enrichie'
++          && !moduleAlreadyValidatedRef.current
++          && !reponsesQuizLyonCompletes('enrichie', selectedAnswers)) {
++        toast.error("Quiz Lyon à terminer : les 138 questions doivent avoir une réponse enregistrée.");
++        return false;
++      }
+       if (historicalQuizProof?.remainingQuizzes.length) {
+         const missing = historicalQuizProof.remainingQuizzes.filter(q => !submittedExoIdsRef.current.has(Number(q.id)));
+         if (missing.length) {
+@@ -10469,7 +10499,7 @@
+           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
+         ) : routeFutureConcernee && routeFuture?.route === "future" ? (
+           module.id === 5 ? <BilanVtcComplements apprenantId={apprenantId ?? undefined} future={<BilanFutureExam moduleId={5} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />} legacy={cible => <ActivitesModuleContext.Provider value={activitesEtat}><LearnerPreview secureMode complementsVtc cibleComplement={cible} /></ActivitesModuleContext.Provider>} /> : <BilanFutureExam moduleId={11} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />
+-        ) : etatSnapshotsEleve.statut === "chargement" ? (
++        ) : versionLyon === null || etatSnapshotsEleve.statut === "chargement" ? (
+           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
+         ) : etatSnapshotsEleve.statut === "bloque" ? (
+           <div className="m-6 p-6 rounded-lg border border-destructive/40 bg-destructive/5 text-center space-y-3">
+@@ -10921,7 +10951,7 @@
+         </TabsContent>
+ 
+         <TabsContent value="apercu">
+-          <LearnerPreview secureMode />
++          {versionLyon === null ? <div className="p-8 text-center text-muted-foreground">Chargement…</div> : <LearnerPreview secureMode />}
+         </TabsContent>
+         <TabsContent value="resultats">
+           <ModuleResultsTab moduleId={module.id} moduleName={module.nom} />
+--- a/src/lib/pratiqueVtcLyonFusion.ts
++++ b/src/lib/pratiqueVtcLyonFusion.ts
+@@ -0,0 +1,45 @@
++import { QCM2_LYON } from '@/lib/pratiqueVtcLyonQcm2';
++
++export const QUIZ_LYON_INITIAL_ID = 1785332774763;
++/** Les 99 questions initiales gardent leurs IDs 1–99 ; les ajouts prennent 100–138, à la fin. */
++export const PREMIER_ID_AJOUT_LYON = 100;
++
++export const QUESTIONS_AJOUT_LYON = QCM2_LYON.questions.map((q, i) => ({
++  id: PREMIER_ID_AJOUT_LYON + i,
++  enonce: q.enonce,
++  choix: q.choix.map(c => ({ lettre: c.lettre, texte: c.texte, ...('correct' in c && c.correct ? { correct: true } : {}) })),
++  explication: q.explication,
++  imageSize: 'sm',
++  sourceLivreLyon: q.sourceQuestion,
++}));
++
++type Question = { id: number | string; enonce?: string; sourceLivreLyon?: number };
++type Exercice = { id: number | string; questions?: Question[] };
++
++const norm = (s?: string) => (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
++
++/** Ajout d'affichage, additif et idempotent : questions initiales intactes (même objet, même ordre). */
++export function fusionnerQuizLyon<T extends { id: number; exercices: Exercice[] }>(module: T): T {
++  if (module.id !== 8) return module;
++  return {
++    ...module,
++    exercices: module.exercices.map(exo => {
++      if (Number(exo.id) !== QUIZ_LYON_INITIAL_ID || !Array.isArray(exo.questions)) return exo;
++      const ids = new Set(exo.questions.map(q => Number(q.id)));
++      const textes = new Set(exo.questions.map(q => norm(q.enonce)));
++      const ajouts = QUESTIONS_AJOUT_LYON.filter(q => !ids.has(q.id) && !textes.has(norm(q.enonce)));
++      return ajouts.length ? { ...exo, questions: [...exo.questions, ...ajouts] } : exo;
++    }),
++  };
++}
++
++/** Avant tout enregistrement admin : retire les ajouts d'affichage pour ne jamais les écrire en base. */
++export function retirerAjoutsQuizLyon<T>(moduleId: number, data: T): T {
++  const d = data as unknown as { exercices?: Array<Exercice & { questions?: Array<Question & { sourceLivreLyon?: number }> }> };
++  if (moduleId !== 8 || !Array.isArray(d?.exercices)) return data;
++  return {
++    ...d,
++    exercices: d.exercices.map(exo => Number(exo.id) !== QUIZ_LYON_INITIAL_ID || !Array.isArray(exo.questions) ? exo
++      : { ...exo, questions: exo.questions.filter(q => q.sourceLivreLyon === undefined) }),
++  } as unknown as T;
++}
+--- a/src/lib/pratiqueVtcLyonQcm2.ts
++++ b/src/lib/pratiqueVtcLyonQcm2.ts
+@@ -0,0 +1,7 @@
++import quiz from '@/components/cours-en-ligne/exercices/pratique-vtc-lyon-qcm2.json';
++
++export const QCM2_LYON = quiz;
++
++export function noteEntrainementLyon(reponses: Record<number, string>) {
++  return quiz.questions.filter(q => q.choix.some(c => 'correct' in c && c.correct && reponses[q.id] === c.lettre)).length;
++}
+--- a/src/lib/pratiqueVtcLyonVersion.ts
++++ b/src/lib/pratiqueVtcLyonVersion.ts
+@@ -0,0 +1,65 @@
++import { supabase } from '@/integrations/supabase/client';
++import { getPendingAnswers } from '@/lib/answerPersistence';
++import { QUIZ_LYON_INITIAL_ID, PREMIER_ID_AJOUT_LYON } from '@/lib/pratiqueVtcLyonFusion';
++
++/**
++ * Choix de version du quiz Lyon (module 8) par apprenant — LECTURE SEULE.
++ * - aucune trace (réponse, tentative, révision, historique, validation de module, brouillon local) → "enrichie" (138)
++ * - une trace qui contient déjà une réponse aux questions 100+ ou total_questions ≥ 100 → "enrichie" (passage commencé sur 138)
++ * - toute autre trace → "initiale" (99, inchangée)
++ * - erreur de lecture → "initiale" (on ne change jamais le quiz d'un apprenant sans preuve).
++ */
++export type VersionQuizLyon = 'initiale' | 'enrichie';
++
++export const EXERCICES_LYON = [
++  `module_8_exo_${QUIZ_LYON_INITIAL_ID}`,
++  `module_8_revision_exo_${QUIZ_LYON_INITIAL_ID}`,
++];
++
++type Trace = { reponses?: unknown; total_questions?: number | null };
++
++export function traceSurVersionEnrichie(t: Trace): boolean {
++  if (Number(t.total_questions) >= PREMIER_ID_AJOUT_LYON) return true;
++  const r = t.reponses && typeof t.reponses === 'object' ? (t.reponses as Record<string, unknown>) : {};
++  return Object.keys(r).some((k) => {
++    const m = k.match(/-(\d+)$/);
++    return m ? Number(m[1]) >= PREMIER_ID_AJOUT_LYON : false;
++  });
++}
++
++export function deciderVersionLyon(traces: Trace[], completionMentionneQuiz: boolean): VersionQuizLyon {
++  if (traces.some(traceSurVersionEnrichie)) return 'enrichie';
++  if (traces.length > 0 || completionMentionneQuiz) return 'initiale';
++  return 'enrichie';
++}
++
++export async function lireVersionQuizLyon(apprenantId: string, client: any = supabase): Promise<VersionQuizLyon> {
++  try {
++    // Candidat serveur : cohorte figée au premier vrai enregistrement, jamais par le navigateur.
++    // RPC encore absente en production = lecture historique existante, sans activation implicite.
++    if (typeof client.rpc === 'function') {
++      const cohorte = await client.rpc('quiz_lyon_seuil', { _apprenant_id: apprenantId });
++      if (!cohorte.error && (cohorte.data === 99 || cohorte.data === 138)) {
++        return cohorte.data === 138 ? 'enrichie' : 'initiale';
++      }
++      if (cohorte.error && !['PGRST202', '42883'].includes(cohorte.error.code)) return 'initiale';
++    }
++    const [rep, hist, comp] = await Promise.all([
++      client.from('reponses_apprenants').select('reponses, total_questions').eq('apprenant_id', apprenantId).in('exercice_id', EXERCICES_LYON),
++      client.from('reponses_apprenants_historique').select('reponses, total_questions').eq('apprenant_id', apprenantId).in('exercice_id', EXERCICES_LYON),
++      client.from('apprenant_module_completion').select('details, status, completed_at').eq('apprenant_id', apprenantId).eq('module_id', 8),
++    ]);
++    if (rep.error || hist.error || comp.error) return 'initiale';
++    const traces: Trace[] = [...(rep.data ?? []), ...(hist.data ?? [])];
++    for (const id of EXERCICES_LYON) {
++      const p = getPendingAnswers(apprenantId, id);
++      if (p && Object.keys(p).length) traces.push({ reponses: p });
++    }
++    const mention = (comp.data ?? []).some((c: any) => c.status === 'completed'
++      || (c.status == null && c.completed_at != null)
++      || JSON.stringify(c?.details ?? null).includes(String(QUIZ_LYON_INITIAL_ID)));
++    return deciderVersionLyon(traces, mention);
++  } catch {
++    return 'initiale';
++  }
++}
+--- a/src/lib/pratiqueVtcLyonAchevement.ts
++++ b/src/lib/pratiqueVtcLyonAchevement.ts
+@@ -0,0 +1,11 @@
++import { hasRecordedAnswer } from '@/lib/moduleCompletionEvidence';
++import { QUIZ_LYON_INITIAL_ID } from '@/lib/pratiqueVtcLyonFusion';
++import type { VersionQuizLyon } from '@/lib/pratiqueVtcLyonVersion';
++
++export const seuilQuizLyon = (version: VersionQuizLyon): 99 | 138 => version === 'enrichie' ? 138 : 99;
++
++/** Présence de toutes les réponses attendues, pas une nouvelle règle de notation. Aucun effet de bord. */
++export function reponsesQuizLyonCompletes(version: VersionQuizLyon, reponses: Record<string, unknown>): boolean {
++  return Array.from({ length: seuilQuizLyon(version) }, (_, i) => i + 1)
++    .every(id => hasRecordedAnswer(reponses[`${QUIZ_LYON_INITIAL_ID}-${id}`]));
++}
+--- a/src/lib/pratiqueVtcLyonRessource.ts
++++ b/src/lib/pratiqueVtcLyonRessource.ts
+@@ -0,0 +1,22 @@
++import pdf from '@/assets/pratique-vtc-lyon/examen-pratique-connaissance-lyon.pdf.asset.json';
++
++export const COURS_LYON_VTC_ID = 1785334184827;
++export const PDF_LYON_VTC = { nom: 'Examen pratique – Connaissance de Lyon.pdf', url: pdf.url };
++
++export function estPdfLyonVtc(url: string) {
++  return url === pdf.url;
++}
++
++type Course = { id: number; fichiers?: { nom: string; url: string }[] };
++
++/** Explicit additive intent; never reconstruct existing course/question JSON. */
++export function ajouterLyonVtc<T extends { id: number; cours: Course[] }>(module: T): T {
++  if (module.id !== 8) throw new Error('Ajout réservé à la pratique VTC.');
++  const course = module.cours.find(c => c.id === COURS_LYON_VTC_ID);
++  if (!course) throw new Error('Cours Lyon absent : aucun rattachement implicite.');
++  return {
++    ...module,
++    cours: module.cours.map(c => c !== course || c.fichiers?.some(f => f.url === pdf.url)
++      ? c : { ...c, fichiers: [...(c.fichiers ?? []), PDF_LYON_VTC] }),
++  };
++}
+--- a/src/components/cours-en-ligne/exercices/pratique-vtc-lyon-qcm2.json
++++ b/src/components/cours-en-ligne/exercices/pratique-vtc-lyon-qcm2.json
+@@ -0,0 +1,983 @@
++{
++  "id": 826110201,
++  "titre": "QCM 2 – Examen pratique Connaissance de Lyon",
++  "sousTitre": "39 questions complémentaires · 4 choix · une seule réponse correcte",
++  "actif": true,
++  "questions": [
++    {
++      "id": 826110001,
++      "sourceQuestion": 1,
++      "enonce": "Quel quartier est cité pour aller boire un verre à Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Saint-Paul, dans le 5e arrondissement",
++          "correct": true
++        },
++        {
++          "lettre": "B",
++          "texte": "La Défense"
++        },
++        {
++          "lettre": "C",
++          "texte": "Le Vieux-Port de Marseille"
++        },
++        {
++          "lettre": "D",
++          "texte": "Montmartre"
++        }
++      ],
++      "explication": "Le support cite Saint-Paul (5e) et Hôtel de Ville (1er) pour boire un verre."
++    },
++    {
++      "id": 826110002,
++      "sourceQuestion": 2,
++      "enonce": "Quel avantage du métier de VTC par rapport au taxi est cité dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Le droit de pratiquer la maraude"
++        },
++        {
++          "lettre": "B",
++          "texte": "Pas de licence taxi à acheter ou à louer",
++          "correct": true
++        },
++        {
++          "lettre": "C",
++          "texte": "Des tarifs de course réglementés comme ceux des taxis"
++        },
++        {
++          "lettre": "D",
++          "texte": "Des stations réservées aux VTC"
++        }
++      ],
++      "explication": "Le support cite l’absence de licence taxi à acheter ou louer et le choix du tarif de la course."
++    },
++    {
++      "id": 826110003,
++      "sourceQuestion": 3,
++      "enonce": "Quelles motivations pour devenir chauffeur VTC sont citées dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Ne jamais rencontrer les clients"
++        },
++        {
++          "lettre": "B",
++          "texte": "Ne pas aimer conduire"
++        },
++        {
++          "lettre": "C",
++          "texte": "Aimer la conduite et le contact avec la clientèle",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "Éviter toute relation avec la clientèle"
++        }
++      ],
++      "explication": "Les motivations citées sont le goût de la conduite et du contact avec la clientèle."
++    },
++    {
++      "id": 826110004,
++      "sourceQuestion": 4,
++      "enonce": "Quelle différence entre taxi et VTC est citée dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Le VTC dispose de stations taxi réservées"
++        },
++        {
++          "lettre": "B",
++          "texte": "Le VTC pratique la maraude partout"
++        },
++        {
++          "lettre": "C",
++          "texte": "Les tarifs VTC sont réglementés comme les tarifs taxi"
++        },
++        {
++          "lettre": "D",
++          "texte": "Le taxi peut pratiquer la maraude dans sa zone de rattachement",
++          "correct": true
++        }
++      ],
++      "explication": "Le support cite notamment la maraude autorisée au taxi dans sa zone et ses tarifs réglementés."
++    },
++    {
++      "id": 826110005,
++      "sourceQuestion": 5,
++      "enonce": "Selon le support, que faites-vous après avoir déposé le client à destination ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Retourner au siège ou stationner hors de la chaussée",
++          "correct": true
++        },
++        {
++          "lettre": "B",
++          "texte": "Attendre de nouveaux clients sur la chaussée"
++        },
++        {
++          "lettre": "C",
++          "texte": "Pratiquer la maraude"
++        },
++        {
++          "lettre": "D",
++          "texte": "Occuper une station réservée aux taxis"
++        }
++      ],
++      "explication": "Le support indique le retour au siège ou un stationnement hors chaussée, par exemple dans un parking ou un garage."
++    },
++    {
++      "id": 826110006,
++      "sourceQuestion": 6,
++      "enonce": "Selon le support, quelle précaution prendre pour transporter un chien ou un chat ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Le laisser gêner le conducteur"
++        },
++        {
++          "lettre": "B",
++          "texte": "L’attacher avec un dispositif adapté ou utiliser une caisse de transport en veillant à son confort",
++          "correct": true
++        },
++        {
++          "lettre": "C",
++          "texte": "Le placer sur les genoux du conducteur"
++        },
++        {
++          "lettre": "D",
++          "texte": "Le laisser circuler librement entre les pédales"
++        }
++      ],
++      "explication": "Le support cite une ceinture de sécurité ou une caisse de transport, avec contrôle du confort de l’animal."
++    },
++    {
++      "id": 826110007,
++      "sourceQuestion": 7,
++      "enonce": "Selon le support, quelle précaution est indiquée pour un enfant de 4 à 10 ans ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Voyager debout à l’arrière"
++        },
++        {
++          "lettre": "B",
++          "texte": "Voyager sans dispositif de retenue"
++        },
++        {
++          "lettre": "C",
++          "texte": "Un rehausseur à l’arrière avec ceinture ou harnais",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "S’asseoir sur les genoux du conducteur"
++        }
++      ],
++      "explication": "Pour 4 à 10 ans, le support mentionne un rehausseur à l’arrière et une ceinture ou un harnais."
++    },
++    {
++      "id": 826110008,
++      "sourceQuestion": 8,
++      "enonce": "Selon le support, comment accompagner un client malvoyant ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Le laisser chercher seul l’entrée"
++        },
++        {
++          "lettre": "B",
++          "texte": "Ne pas lui parler"
++        },
++        {
++          "lettre": "C",
++          "texte": "Lui demander de guider le conducteur sans assistance"
++        },
++        {
++          "lettre": "D",
++          "texte": "Lui ouvrir la porte et l’aider jusqu’au lieu de rendez-vous",
++          "correct": true
++        }
++      ],
++      "explication": "Le support demande d’ouvrir la porte et d’aider le client dans ses mouvements jusqu’au rendez-vous."
++    },
++    {
++      "id": 826110009,
++      "sourceQuestion": 9,
++      "enonce": "Quelle démarche est citée dans le support si le client ne paie pas ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Une demande en injonction de payer devant le tribunal dont dépend le client",
++          "correct": true
++        },
++        {
++          "lettre": "B",
++          "texte": "Retenir le client de force"
++        },
++        {
++          "lettre": "C",
++          "texte": "Saisir ses objets sans décision"
++        },
++        {
++          "lettre": "D",
++          "texte": "Abandonner systématiquement toute démarche"
++        }
++      ],
++      "explication": "Le support cite le tribunal judiciaire ou de proximité dont dépend le client."
++    },
++    {
++      "id": 826110011,
++      "sourceQuestion": 11,
++      "enonce": "Quel lieu le support recommande-t-il pour une sortie avec des enfants, à La Mulatière ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "La tour Incity"
++        },
++        {
++          "lettre": "B",
++          "texte": "Le palais de justice"
++        },
++        {
++          "lettre": "C",
++          "texte": "L’Aquarium de Lyon",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "La gare de Vaise"
++        }
++      ],
++      "explication": "L’Aquarium de Lyon se trouve 7 rue Stéphane Déchant, à La Mulatière, au sud de Confluence."
++    },
++    {
++      "id": 826110014,
++      "sourceQuestion": 14,
++      "enonce": "Quel établissement figure parmi les hôtels 5 étoiles de Lyon cités dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "La Maison des Canuts"
++        },
++        {
++          "lettre": "B",
++          "texte": "La Villa Florentine",
++          "correct": true
++        },
++        {
++          "lettre": "C",
++          "texte": "La gare Jean Macé"
++        },
++        {
++          "lettre": "D",
++          "texte": "La Halle Tony Garnier"
++        }
++      ],
++      "explication": "Le support cite la Villa Florentine, 25 montée Saint-Barthélemy, Lyon 5e, parmi les hôtels 5 étoiles."
++    },
++    {
++      "id": 826110016,
++      "sourceQuestion": 16,
++      "enonce": "Quelle composition correspond à la salade lyonnaise décrite dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Riz, poisson cru et algues"
++        },
++        {
++          "lettre": "B",
++          "texte": "Semoule, pois chiches et merguez"
++        },
++        {
++          "lettre": "C",
++          "texte": "Pâtes, pesto et parmesan uniquement"
++        },
++        {
++          "lettre": "D",
++          "texte": "Salade frisée, lardons, croûtons et œuf poché ou mollet",
++          "correct": true
++        }
++      ],
++      "explication": "La salade lyonnaise associe frisée, lardons grillés, croûtons, œuf et vinaigrette à la moutarde."
++    },
++    {
++      "id": 826110019,
++      "sourceQuestion": 19,
++      "enonce": "Selon le support, quel personnage figure sur le logo permettant de reconnaître un bouchon lyonnais ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Astérix"
++        },
++        {
++          "lettre": "B",
++          "texte": "Tintin"
++        },
++        {
++          "lettre": "C",
++          "texte": "Gnafron",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "Babar"
++        }
++      ],
++      "explication": "Le support décrit un logo avec Gnafron, l’ami de Guignol, visible sur la vitrine ou la devanture."
++    },
++    {
++      "id": 826110027,
++      "sourceQuestion": 27,
++      "enonce": "Quel restaurant de poisson est cité dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Carnegie Hall, cité pour la viande"
++        },
++        {
++          "lettre": "B",
++          "texte": "La Maison des Canuts, musée du tissage"
++        },
++        {
++          "lettre": "C",
++          "texte": "Skipjack, rue d’Auvergne à Lyon",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "Lugdunum, musée et théâtres romains"
++        }
++      ],
++      "explication": "Le support cite Skipjack, 12 rue d’Auvergne, Lyon 2e, ainsi que L’Huîtrier et Jols."
++    },
++    {
++      "id": 826110031,
++      "sourceQuestion": 31,
++      "enonce": "Quel pont porte le nom d’un ancien maire de Lyon et Premier ministre ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Le pont du Gard"
++        },
++        {
++          "lettre": "B",
++          "texte": "Le pont Alexandre-III"
++        },
++        {
++          "lettre": "C",
++          "texte": "Le pont Raymond-Barre",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "Le pont de Brooklyn"
++        }
++      ],
++      "explication": "Le pont montré dans le support est le pont Raymond-Barre, maire de Lyon de 1995 à 2001."
++    },
++    {
++      "id": 826110033,
++      "sourceQuestion": 33,
++      "enonce": "Quelle liste contient uniquement des gares lyonnaises citées dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Perrache, Part-Dieu et Jean Macé",
++          "correct": true
++        },
++        {
++          "lettre": "B",
++          "texte": "Montparnasse, Saint-Lazare et Austerlitz"
++        },
++        {
++          "lettre": "C",
++          "texte": "Marseille-Saint-Charles, Nice-Ville et Toulon"
++        },
++        {
++          "lettre": "D",
++          "texte": "Bordeaux-Saint-Jean, Bayonne et Biarritz"
++        }
++      ],
++      "explication": "Le support cite Perrache, Part-Dieu, Jean Macé, Vaise et Saint-Paul."
++    },
++    {
++      "id": 826110035,
++      "sourceQuestion": 35,
++      "enonce": "Quelle liste contient uniquement des musées lyonnais cités dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Tour Incity, tour Oxygène et tour To-Lyon"
++        },
++        {
++          "lettre": "B",
++          "texte": "Gare Perrache, gare Vaise et gare Saint-Paul"
++        },
++        {
++          "lettre": "C",
++          "texte": "Musée des Confluences, musée des Beaux-Arts et musée Lugdunum",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "Halle Tony Garnier, Maison de la Danse et Transbordeur"
++        }
++      ],
++      "explication": "Le support cite le musée des Confluences (2e), les Beaux-Arts (1er) et Lugdunum (5e)."
++    },
++    {
++      "id": 826110036,
++      "sourceQuestion": 36,
++      "enonce": "Quelle association de salle de spectacle et de commune correspond au support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "LDLC Arena à Bordeaux"
++        },
++        {
++          "lettre": "B",
++          "texte": "Le Transbordeur à Nice"
++        },
++        {
++          "lettre": "C",
++          "texte": "La Maison de la Danse à Lille"
++        },
++        {
++          "lettre": "D",
++          "texte": "LDLC Arena à Décines-Charpieu",
++          "correct": true
++        }
++      ],
++      "explication": "La LDLC Arena est à Décines-Charpieu, près du Groupama Stadium ; le Transbordeur est à Villeurbanne."
++    },
++    {
++      "id": 826110040,
++      "sourceQuestion": 40,
++      "enonce": "Quel festival lyonnais consacré au cinéma a lieu en octobre selon le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Les Nuits sonores"
++        },
++        {
++          "lettre": "B",
++          "texte": "Les Nuits de Fourvière"
++        },
++        {
++          "lettre": "C",
++          "texte": "La Fête des Lumières"
++        },
++        {
++          "lettre": "D",
++          "texte": "Le Festival Lumière",
++          "correct": true
++        }
++      ],
++      "explication": "Le Festival Lumière est consacré au cinéma en octobre ; la Fête des Lumières a lieu en décembre."
++    },
++    {
++      "id": 826110043,
++      "sourceQuestion": 43,
++      "enonce": "Quelle église du Vieux Lyon se trouve près de la place Benoît-Crépu et date de 1848 ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "La basilique Saint-Martin d’Ainay"
++        },
++        {
++          "lettre": "B",
++          "texte": "La basilique Notre-Dame de Fourvière"
++        },
++        {
++          "lettre": "C",
++          "texte": "L’église Saint-Georges",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "L’église Saint-Nizier"
++        }
++      ],
++      "explication": "Le support situe l’église Saint-Georges entre la Quarantaine et Saint-Jean, près de la place Benoît-Crépu."
++    },
++    {
++      "id": 826110047,
++      "sourceQuestion": 47,
++      "enonce": "Quel bâtiment de la place de la Comédie a été restructuré par Jean Nouvel de 1989 à 1993 ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "La tour Oxygène"
++        },
++        {
++          "lettre": "B",
++          "texte": "La gare de Perrache"
++        },
++        {
++          "lettre": "C",
++          "texte": "L’Opéra de Lyon",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "Le musée des Confluences"
++        }
++      ],
++      "explication": "L’Opéra Nouvel, face à l’Hôtel de Ville, a été restructuré et agrandi par Jean Nouvel."
++    },
++    {
++      "id": 826110053,
++      "sourceQuestion": 53,
++      "enonce": "Quelle tour de la Part-Dieu a été inaugurée en 2010 et mesure 117 mètres selon le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "La tour Oxygène",
++          "correct": true
++        },
++        {
++          "lettre": "B",
++          "texte": "La tour Incity"
++        },
++        {
++          "lettre": "C",
++          "texte": "La tour To-Lyon"
++        },
++        {
++          "lettre": "D",
++          "texte": "La tour Part-Dieu"
++        }
++      ],
++      "explication": "La tour Oxygène a été inaugurée le 2 juin 2010 et compte 28 étages de bureaux."
++    },
++    {
++      "id": 826110055,
++      "sourceQuestion": 55,
++      "enonce": "Quelle tour de 171 mètres près de la gare Part-Dieu a été livrée fin 2023 ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "La tour Oxygène"
++        },
++        {
++          "lettre": "B",
++          "texte": "La tour Part-Dieu"
++        },
++        {
++          "lettre": "C",
++          "texte": "La tour To-Lyon",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "La tour métallique de Fourvière"
++        }
++      ],
++      "explication": "Le support décrit To-Lyon, une tour de bureaux et un hôtel 4 étoiles près de la gare Part-Dieu."
++    },
++    {
++      "id": 826110057,
++      "sourceQuestion": 57,
++      "enonce": "Quelles personnalités liées au football lyonnais sont citées dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Karim Benzema et Jean-Michel Aulas",
++          "correct": true
++        },
++        {
++          "lettre": "B",
++          "texte": "Paul Bocuse et Louise Labé"
++        },
++        {
++          "lettre": "C",
++          "texte": "Auguste et Louis Lumière"
++        },
++        {
++          "lettre": "D",
++          "texte": "Tony Garnier et Jean Nouvel"
++        }
++      ],
++      "explication": "Karim Benzema est né à Lyon et a joué à l’OL ; Jean-Michel Aulas en est un ancien président."
++    },
++    {
++      "id": 826110058,
++      "sourceQuestion": 58,
++      "enonce": "Quelle personnalité de la gastronomie lyonnaise est citée dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Tony Garnier"
++        },
++        {
++          "lettre": "B",
++          "texte": "Paul Bocuse",
++          "correct": true
++        },
++        {
++          "lettre": "C",
++          "texte": "Jean-Michel Aulas"
++        },
++        {
++          "lettre": "D",
++          "texte": "Antoine de Saint-Exupéry"
++        }
++      ],
++      "explication": "Paul Bocuse est présenté comme un chef cuisinier emblématique de la région lyonnaise."
++    },
++    {
++      "id": 826110061,
++      "sourceQuestion": 61,
++      "enonce": "Quels écrivain et poétesse liés à Lyon sont cités dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Antoine de Saint-Exupéry et Louise Labé",
++          "correct": true
++        },
++        {
++          "lettre": "B",
++          "texte": "Karim Benzema et Jean-Michel Aulas"
++        },
++        {
++          "lettre": "C",
++          "texte": "Denis et Eugène Bühler"
++        },
++        {
++          "lettre": "D",
++          "texte": "Auguste et Louis Lumière"
++        }
++      ],
++      "explication": "Saint-Exupéry est né à Lyon et a écrit Le Petit Prince ; Louise Labé est une poétesse lyonnaise du XVIe siècle."
++    },
++    {
++      "id": 826110062,
++      "sourceQuestion": 62,
++      "enonce": "Quelle humoriste originaire de Lyon est citée dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Louise Labé"
++        },
++        {
++          "lettre": "B",
++          "texte": "Florence Foresti",
++          "correct": true
++        },
++        {
++          "lettre": "C",
++          "texte": "Marie Curie"
++        },
++        {
++          "lettre": "D",
++          "texte": "George Sand"
++        }
++      ],
++      "explication": "La personnalité citée à la question 62 est Florence Foresti."
++    },
++    {
++      "id": 826110063,
++      "sourceQuestion": 63,
++      "enonce": "Quel lieu est cité pour profiter d’une belle vue sur Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Le hall intérieur de la gare de Perrache"
++        },
++        {
++          "lettre": "B",
++          "texte": "Un parking souterrain de la Part-Dieu"
++        },
++        {
++          "lettre": "C",
++          "texte": "L’esplanade de Fourvière",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "L’intérieur du palais de justice"
++        }
++      ],
++      "explication": "Le support cite Fourvière, les belvédères de la Croix-Rousse, Sainte-Foy-lès-Lyon et le mont Thou."
++    },
++    {
++      "id": 826110064,
++      "sourceQuestion": 64,
++      "enonce": "Comment s’appelle l’équipe de rugby de Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "L’Olympique de Marseille"
++        },
++        {
++          "lettre": "B",
++          "texte": "Le Paris Saint-Germain"
++        },
++        {
++          "lettre": "C",
++          "texte": "Le FC Nantes"
++        },
++        {
++          "lettre": "D",
++          "texte": "Le Lyon Olympique Universitaire (LOU Rugby)",
++          "correct": true
++        }
++      ],
++      "explication": "Le support donne le Lyon Olympique Universitaire, couramment appelé LOU Rugby."
++    },
++    {
++      "id": 826110067,
++      "sourceQuestion": 67,
++      "enonce": "Quelle liste de visites correspond au 1er arrondissement de Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Institut Lumière, Maison de la Danse et quartier des États-Unis"
++        },
++        {
++          "lettre": "B",
++          "texte": "Halle Tony Garnier, stade de Gerland et CHRD"
++        },
++        {
++          "lettre": "C",
++          "texte": "Place des Terreaux, musée des Beaux-Arts et amphithéâtre des Trois Gaules",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "Île Barbe, Vaise et musée Jean Couty"
++        }
++      ],
++      "explication": "Le support cite dans le 1er les Terreaux, l’Hôtel de Ville, les Beaux-Arts, l’Opéra et les Trois Gaules."
++    },
++    {
++      "id": 826110068,
++      "sourceQuestion": 68,
++      "enonce": "Quelle liste de visites correspond au 2e arrondissement de Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Croix-Rousse, mur des Canuts et Gros Caillou"
++        },
++        {
++          "lettre": "B",
++          "texte": "Part-Dieu, Auditorium et mémorial de Montluc"
++        },
++        {
++          "lettre": "C",
++          "texte": "Institut Lumière, place Ambroise-Courtois et Maison de la Danse"
++        },
++        {
++          "lettre": "D",
++          "texte": "Bellecour, Hôtel-Dieu et quartier Confluence",
++          "correct": true
++        }
++      ],
++      "explication": "Le support cite Bellecour, les Jacobins, Ainay, l’Hôtel-Dieu, Perrache et Confluence dans le 2e."
++    },
++    {
++      "id": 826110069,
++      "sourceQuestion": 69,
++      "enonce": "Quelle liste de visites correspond au 3e arrondissement de Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Part-Dieu, Halles Paul Bocuse et mémorial de Montluc",
++          "correct": true
++        },
++        {
++          "lettre": "B",
++          "texte": "Île Barbe, Vaise et Saint-Rambert"
++        },
++        {
++          "lettre": "C",
++          "texte": "Vieux Lyon, Fourvière et jardins du Rosaire"
++        },
++        {
++          "lettre": "D",
++          "texte": "Gerland, CHRD et piscine du Rhône"
++        }
++      ],
++      "explication": "Le 3e comprend notamment la Part-Dieu, sa bibliothèque, l’Auditorium, les Halles et Montluc."
++    },
++    {
++      "id": 826110070,
++      "sourceQuestion": 70,
++      "enonce": "Quelle liste de visites correspond au 4e arrondissement de Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Bellecour, Ainay et Confluence"
++        },
++        {
++          "lettre": "B",
++          "texte": "Mur des Canuts, Maison des Canuts et Gros Caillou",
++          "correct": true
++        },
++        {
++          "lettre": "C",
++          "texte": "Musée des Beaux-Arts, Opéra et Trois Gaules"
++        },
++        {
++          "lettre": "D",
++          "texte": "Part-Dieu, Auditorium et Halles Paul Bocuse"
++        }
++      ],
++      "explication": "Le support cite le plateau de la Croix-Rousse, les lieux des canuts et le Gros Caillou dans le 4e."
++    },
++    {
++      "id": 826110071,
++      "sourceQuestion": 71,
++      "enonce": "Quelle liste de visites correspond au 5e arrondissement de Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Part-Dieu, tour Incity et Montluc"
++        },
++        {
++          "lettre": "B",
++          "texte": "Parc de la Tête d’Or, Brotteaux et Cité internationale"
++        },
++        {
++          "lettre": "C",
++          "texte": "Vieux Lyon, Fourvière et musée Lugdunum",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "Île Barbe, Vaise et musée Jean Couty"
++        }
++      ],
++      "explication": "Le support cite aussi Saint-Jean, les traboules, Gadagne, les théâtres romains et les jardins du Rosaire."
++    },
++    {
++      "id": 826110072,
++      "sourceQuestion": 72,
++      "enonce": "Quelle liste de visites correspond au 6e arrondissement de Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Confluence, La Sucrière et Perrache"
++        },
++        {
++          "lettre": "B",
++          "texte": "Institut Lumière, États-Unis et Édouard-Herriot"
++        },
++        {
++          "lettre": "C",
++          "texte": "Halle Tony Garnier, Gerland et CHRD"
++        },
++        {
++          "lettre": "D",
++          "texte": "Parc de la Tête d’Or, musée d’Art contemporain et Brotteaux",
++          "correct": true
++        }
++      ],
++      "explication": "Le 6e comprend le parc de la Tête d’Or, la Cité internationale, le musée d’Art contemporain et les Brotteaux."
++    },
++    {
++      "id": 826110073,
++      "sourceQuestion": 73,
++      "enonce": "Quelle liste de visites correspond au 7e arrondissement de Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Halle Tony Garnier, stade de Gerland et CHRD",
++          "correct": true
++        },
++        {
++          "lettre": "B",
++          "texte": "Terreaux, Beaux-Arts et Opéra"
++        },
++        {
++          "lettre": "C",
++          "texte": "Mur des Canuts, Gros Caillou et Croix-Rousse"
++        },
++        {
++          "lettre": "D",
++          "texte": "Vieux Lyon, Fourvière et Lugdunum"
++        }
++      ],
++      "explication": "Le support cite aussi le parc de Gerland, les berges du Rhône et la piscine du Rhône dans le 7e."
++    },
++    {
++      "id": 826110074,
++      "sourceQuestion": 74,
++      "enonce": "Quelle liste de visites correspond au 8e arrondissement de Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Vaise, Île Barbe et Saint-Rambert"
++        },
++        {
++          "lettre": "B",
++          "texte": "Institut Lumière, Maison de la Danse et quartier des États-Unis",
++          "correct": true
++        },
++        {
++          "lettre": "C",
++          "texte": "Bellecour, Hôtel-Dieu et Confluence"
++        },
++        {
++          "lettre": "D",
++          "texte": "Part-Dieu, Auditorium et tour Incity"
++        }
++      ],
++      "explication": "Le 8e comprend aussi la place Ambroise-Courtois, le musée urbain Tony Garnier et l’hôpital Édouard-Herriot."
++    },
++    {
++      "id": 826110075,
++      "sourceQuestion": 75,
++      "enonce": "Quelle liste de visites correspond au 9e arrondissement de Lyon ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Terreaux, Hôtel de Ville et Opéra"
++        },
++        {
++          "lettre": "B",
++          "texte": "Parc de la Tête d’Or, Cité internationale et Brotteaux"
++        },
++        {
++          "lettre": "C",
++          "texte": "Île Barbe, Vaise et musée Jean Couty",
++          "correct": true
++        },
++        {
++          "lettre": "D",
++          "texte": "Saint-Jean, Lugdunum et Fourvière"
++        }
++      ],
++      "explication": "Le support cite aussi les berges de Saône, le quartier de l’Industrie et Saint-Rambert dans le 9e."
++    },
++    {
++      "id": 826110076,
++      "sourceQuestion": 76,
++      "enonce": "Quelle liste contient uniquement des sites hors des arrondissements de Lyon cités dans le support ?",
++      "choix": [
++        {
++          "lettre": "A",
++          "texte": "Bellecour, Hôtel-Dieu et Perrache"
++        },
++        {
++          "lettre": "B",
++          "texte": "Fourvière, Saint-Jean et Lugdunum"
++        },
++        {
++          "lettre": "C",
++          "texte": "Part-Dieu, Halles Paul Bocuse et Auditorium"
++        },
++        {
++          "lettre": "D",
++          "texte": "Groupama Stadium, mont Thou et Grand Parc de Miribel-Jonage",
++          "correct": true
++        }
++      ],
++      "explication": "Ces sites sont dans des communes voisines : Décines-Charpieu, les monts d’Or et le secteur de Miribel-Jonage."
++    }
++  ]
++}
+--- a/src/assets/pratique-vtc-lyon/examen-pratique-connaissance-lyon.pdf.asset.json
++++ b/src/assets/pratique-vtc-lyon/examen-pratique-connaissance-lyon.pdf.asset.json
+@@ -0,0 +1,11 @@
++{
++  "version": 1,
++  "asset_id": "3a8a4093-f976-47b0-a590-6d1d68e50a97",
++  "project_id": "73b74fa5-8a35-42ae-87cf-970f3567b973",
++  "url": "/__l5e/assets-v1/3a8a4093-f976-47b0-a590-6d1d68e50a97/examen-pratique-connaissance-lyon.pdf",
++  "r2_key": "a/v1/73b74fa5-8a35-42ae-87cf-970f3567b973/3a8a4093-f976-47b0-a590-6d1d68e50a97/examen-pratique-connaissance-lyon.pdf",
++  "original_filename": "examen-pratique-connaissance-lyon.pdf",
++  "size": 1587567,
++  "content_type": "application/pdf",
++  "created_at": "2026-11-26T09:24:38Z"
++}

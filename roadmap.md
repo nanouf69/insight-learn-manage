@@ -1,10 +1,12 @@
 # Roadmap — chantiers ouverts (13/11/2026)
 ## Pratique VTC — PDF Lyon et QCM 2 (26/11)
+- [x] Règle 10:52 préparée : seuil 138 nouvelle cohorte, historique 99 ; 61 Vitest et 10 SQL jetables PASS, garde client/serveur, acquis/source intacts. Rapport docs/quiz-lyon-cohorte-publication-2026-11-26.md.
+- [ ] Publication ciblée : bloquée par absence de promotion d’un candidat isolé et commit public non fourni ; base locale provisoire 7880b5850, delta huit fichiers + SQL préparé, HEAD conservé. PDF authentifié actuel non revalidé (403 direct) ; aucune activation/publication globale.
 - [x] Rectification 09:46 : accès/imports/exception QCM retirés du module 8 ; banque et revue conservées non intégrées, aucune route pour l’ouvrir ; PDF seul sur cours existant. 58 tests PASS, PC/mobile PDF et absence QCM vérifiés, build OK ; zéro production/publication.
 - [x] Rectification 09:41 : PDF sur cours existant ; QCM 2 séparé en mémoire, hors pages/jalons, sans tentative ni écriture ; 59 tests PASS, PC/mobile vérifiés, HTTP 200 PDF exact, build OK. Historique et autres lots conservés, aperçu uniquement.
 - [x] 76 questions comparées au quiz serveur de 99 questions : 39 QCM nouveaux, 37 objectifs déjà couverts exclus, ancien quiz intact.
 - [x] Rattachement source/projection préparé, PDF HTTP 200 identique ; PC/mobile lecture/download et 39/39 réponses fictives remises/rechargées ; 57 tests PASS, build OK.
-- [ ] Publication non demandée au tour 09:41 : aperçu seul ; outil publie tout HEAD dont correctifs du bilan non autorisés. Parcours authentifié officiel reste non prouvé faute de session disponible. Rapport docs/pratique-vtc-lyon-qcm2-2026-11-26.md.
+- [ ] Publication désormais demandée au tour 10:52 : blocage technique ci-dessus ; outil publie tout HEAD dont correctifs du bilan non autorisés. Parcours authentifié officiel reste non prouvé. Rapport actuel docs/quiz-lyon-cohorte-publication-2026-11-26.md.
 ## Corrections techniques du bilan — 26/11/2026
 - [x] Suite du lot après 09:05 : quatre protections stockage ajoutées (JSON/entrée illisible, conservation octets, quota avant ACK) ; 148/148 Vitest PASS.
 - [x] Restauration fidèle types/NULL/PK : 39 tables, 478 colonnes capturées, index UNIQUE module_id vérifié, chaque SHA-256 et lignes restaurées comparés ; transport fictif, pas de restauration réelle.

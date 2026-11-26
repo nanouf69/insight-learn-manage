@@ -35,10 +35,19 @@ export function deciderVersionLyon(traces: Trace[], completionMentionneQuiz: boo
 
 export async function lireVersionQuizLyon(apprenantId: string, client: any = supabase): Promise<VersionQuizLyon> {
   try {
+    // Candidat serveur : cohorte figée au premier vrai enregistrement, jamais par le navigateur.
+    // RPC encore absente en production = lecture historique existante, sans activation implicite.
+    if (typeof client.rpc === 'function') {
+      const cohorte = await client.rpc('quiz_lyon_seuil', { _apprenant_id: apprenantId });
+      if (!cohorte.error && (cohorte.data === 99 || cohorte.data === 138)) {
+        return cohorte.data === 138 ? 'enrichie' : 'initiale';
+      }
+      if (cohorte.error && !['PGRST202', '42883'].includes(cohorte.error.code)) return 'initiale';
+    }
     const [rep, hist, comp] = await Promise.all([
       client.from('reponses_apprenants').select('reponses, total_questions').eq('apprenant_id', apprenantId).in('exercice_id', EXERCICES_LYON),
       client.from('reponses_apprenants_historique').select('reponses, total_questions').eq('apprenant_id', apprenantId).in('exercice_id', EXERCICES_LYON),
-      client.from('apprenant_module_completion').select('details').eq('apprenant_id', apprenantId).eq('module_id', 8),
+      client.from('apprenant_module_completion').select('details, status, completed_at').eq('apprenant_id', apprenantId).eq('module_id', 8),
     ]);
     if (rep.error || hist.error || comp.error) return 'initiale';
     const traces: Trace[] = [...(rep.data ?? []), ...(hist.data ?? [])];
@@ -46,7 +55,9 @@ export async function lireVersionQuizLyon(apprenantId: string, client: any = sup
       const p = getPendingAnswers(apprenantId, id);
       if (p && Object.keys(p).length) traces.push({ reponses: p });
     }
-    const mention = (comp.data ?? []).some((c: any) => JSON.stringify(c?.details ?? null).includes(String(QUIZ_LYON_INITIAL_ID)));
+    const mention = (comp.data ?? []).some((c: any) => c.status === 'completed'
+      || (c.status == null && c.completed_at != null)
+      || JSON.stringify(c?.details ?? null).includes(String(QUIZ_LYON_INITIAL_ID)));
     return deciderVersionLyon(traces, mention);
   } catch {
     return 'initiale';
