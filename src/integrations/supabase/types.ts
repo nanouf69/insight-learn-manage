@@ -5052,6 +5052,33 @@ export type Database = {
         }
         Relationships: []
       }
+      facture_apprenants_rattachements: {
+        Row: {
+          apprenant_id: string
+          created_at: string
+          created_by: string
+          facture_id: string
+          id: string
+          nom_apprenant: string
+        }
+        Insert: {
+          apprenant_id: string
+          created_at?: string
+          created_by: string
+          facture_id: string
+          id?: string
+          nom_apprenant: string
+        }
+        Update: {
+          apprenant_id?: string
+          created_at?: string
+          created_by?: string
+          facture_id?: string
+          id?: string
+          nom_apprenant?: string
+        }
+        Relationships: []
+      }
       facture_electronique_evenements: {
         Row: {
           created_at: string
@@ -11267,6 +11294,23 @@ export type Database = {
       examens_blancs_valider_si_complet: {
         Args: { _apprenant_id: string; _exam_id: string }
         Returns: undefined
+      }
+      facture_rattacher_apprenants: {
+        Args: { _apprenant_ids: string[]; _facture_id: string }
+        Returns: {
+          apprenant_id: string
+          created_at: string
+          created_by: string
+          facture_id: string
+          id: string
+          nom_apprenant: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "facture_apprenants_rattachements"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       fc_papier_creneaux: {
         Args: { p_apprenant: string }

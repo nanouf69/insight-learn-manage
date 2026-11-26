@@ -34,6 +34,8 @@ import { cn } from "@/lib/utils";
 import { parseExportCpf, rapprocher, estVente2026, beneficiaireDepuisReference, cleNom, STATUT_VALIDE, estCpf, type LigneExportCpf } from "@/lib/rapprochementExportCpf";
 import { dateEmissionFactureFournisseur } from "@/lib/comptabilite/factureFournisseur";
 import { lignesFactureCommune } from "@/lib/comptabilite/factureCommune";
+import { apprenantsRattachesFacture, type RattachementFacture } from "@/lib/comptabilite/rattachementsFacture";
+import { RattachementsFacture } from "./RattachementsFacture";
 
 interface Releve {
   id: string;
@@ -60,6 +62,7 @@ interface Facture {
   client_opco: string | null;
   apprenant_id?: string | null;
   lignes_apprenants?: unknown;
+  rattachements?: RattachementFacture[];
   _draftRaw?: any;
 }
 
@@ -648,6 +651,21 @@ export function ComptabilitePage() {
     if (error) {
       toast.error("Erreur lors du chargement des factures");
     } else {
+      const liens: (RattachementFacture & { facture_id: string })[] = [];
+      for (let from = 0; ; from += 1000) {
+        const pageLiens = await supabase.from("facture_apprenants_rattachements")
+          .select("facture_id,apprenant_id,nom_apprenant").order("id").range(from, from + 999);
+        if (pageLiens.error) {
+          toast.error("Impossible de lire les apprenants supplémentaires des factures");
+          setLoading(false);
+          return;
+        }
+        liens.push(...(pageLiens.data ?? []));
+        if ((pageLiens.data?.length ?? 0) < 1000) break;
+      }
+      const parFacture = new Map<string, RattachementFacture[]>();
+      for (const lien of liens) parFacture.set(lien.facture_id, [...(parFacture.get(lien.facture_id) ?? []), lien]);
+      data = data.map(f => ({ ...f, rattachements: parFacture.get(f.id) ?? [] }));
       const drafts = loadDrafts();
       setFactures([...drafts, ...(data || [])]);
       const ids = Array.from(
@@ -1045,6 +1063,7 @@ export function ComptabilitePage() {
     return allFactures.filter((f) => {
       const matchSearch =
         lignesFactureCommune(f).some(l => l.stagiaire.toLowerCase().includes(search.toLowerCase())) ||
+        (f.rattachements ?? []).some(l => l.nom_apprenant.toLowerCase().includes(search.toLowerCase())) ||
         f.numero.toLowerCase().includes(search.toLowerCase()) ||
         f.client_nom.toLowerCase().includes(search.toLowerCase()) ||
         (f.apprenant_id ? (apprenantNames[f.apprenant_id] || "").toLowerCase().includes(search.toLowerCase()) : false);
@@ -1751,6 +1770,7 @@ export function ComptabilitePage() {
                         <TableCell>
                           <div>{f.client_nom}</div>
                           {lignesFactureCommune(f).map(l => <div key={l.apprenant_id} className="text-xs text-muted-foreground mt-0.5">{l.stagiaire} — {formatMontant(Number(l.montant_ht))}</div>)}
+                          {(f.rattachements ?? []).map(l => <div key={l.apprenant_id} className="text-xs text-muted-foreground mt-0.5">👤 {l.nom_apprenant}</div>)}
                           {rappr && (
                             <div className={cn("text-xs mt-0.5 font-medium", rappr.couleur === "vert" ? "text-success" : "text-destructive")}>
                               {rappr.motif}
@@ -2599,33 +2619,18 @@ export function ComptabilitePage() {
               />
             </div>
             <div className="col-span-2 space-y-1 rounded-md border p-3 bg-muted/30">
-              {editingFacture && lignesFactureCommune(editingFacture).length > 0 ? <>
-                <label className="text-xs font-medium">Apprenants de la facture commune</label>
-                {lignesFactureCommune(editingFacture).map(l => <p key={l.apprenant_id} className="text-sm">{l.stagiaire} — {formatMontant(Number(l.montant_ht))}</p>)}
-              </> : <>
-              <label className="text-xs font-medium">Apprenant rattaché</label>
-              <div className="text-sm">
-                {editFactureForm.apprenant_id ? (
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium">
-                      👤 {(() => {
-                        const a = apprenantOptions.find((x) => x.id === editFactureForm.apprenant_id);
-                        return a ? `${a.prenom || ""} ${a.nom || ""}`.trim() : (apprenantNames[editFactureForm.apprenant_id] || "Apprenant sélectionné");
-                      })()}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-destructive"
-                      onClick={() => setEditFactureForm(f => ({ ...f, apprenant_id: "" }))}
-                    >
-                      Retirer
-                    </Button>
-                  </div>
-                ) : (
-                  <span className="text-muted-foreground">Aucun apprenant rattaché</span>
-                )}
-              </div>
+              {editingFacture && <RattachementsFacture key={editingFacture.id}
+                factureId={editingFacture.id}
+                existants={apprenantsRattachesFacture(editingFacture, {
+                  ...apprenantNames,
+                  ...Object.fromEntries(apprenantOptions.map(a => [a.id, `${a.prenom ?? ""} ${a.nom ?? ""}`.trim()])),
+                })}
+                options={apprenantSearch.trim().length >= 2 ? filteredApprenantOptions : []}
+                onSaved={async liens => {
+                  setEditingFacture(f => f ? { ...f, rattachements: liens } : f);
+                  await fetchFactures();
+                }}
+              />}
               <Input
                 className="mt-2"
                 placeholder="Rechercher un apprenant (nom, ville, tél, code postal...)"
@@ -2636,30 +2641,8 @@ export function ComptabilitePage() {
               {apprenantsLoading && (
                 <p className="text-xs text-muted-foreground">Chargement des apprenants...</p>
               )}
-              {!apprenantsLoading && apprenantSearch.trim().length >= 2 && (
-                <div className="max-h-48 overflow-y-auto border rounded-md divide-y bg-background">
-                  {filteredApprenantOptions.length === 0 && (
-                    <div className="p-2 text-xs text-muted-foreground">Aucun apprenant trouvé</div>
-                  )}
-                  {filteredApprenantOptions.map((a) => (
-                    <button
-                      key={a.id}
-                      type="button"
-                      className="w-full text-left p-2 text-sm hover:bg-muted"
-                      onClick={() => {
-                        setEditFactureForm(f => ({ ...f, apprenant_id: a.id }));
-                        setApprenantSearch("");
-                      }}
-                    >
-                      <div className="font-medium">{`${a.prenom || ""} ${a.nom || ""}`.trim()}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {[a.email, a.telephone, a.ville, a.code_postal].filter(Boolean).join(" · ")}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-              </>}
+              {!apprenantsLoading && apprenantSearch.trim().length >= 2 && filteredApprenantOptions.length === 0 &&
+                <p className="text-xs text-muted-foreground">Aucun apprenant trouvé</p>}
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Type de financement</label>

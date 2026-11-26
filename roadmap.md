@@ -1,4 +1,7 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Rattacher d’autres apprenants à une facture — 26/11 14:48
+- [x] Ajouts multiples persistants dans Modifier la facture, sans remplacer l’apprenant initial ni modifier montants/paiements ; contrôles admin et confirmation par relecture.
+- [x] 9 Vitest PASS, contrat PostgreSQL jetable PASS, PC/mobile et réessai/rechargement simulés PASS, build OK ; aucune écriture réelle exécutée par les tests ni publication. Lecture finale : Farouk BENABBAD réellement rattaché par un autre compte admin à 15:01 UTC, facture 20260724001 toujours 200 € et apprenant initial conservé.
 ## Facture commune — 26/11 14:36
 - [x] Brouillon distinct pour au moins deux apprenants sélectionnés, destinataire confirmé, lignes figées et total exact ; factures existantes séparées, création/réessai atomiques et réservés à l’admin.
 - [x] Session, Comptabilité et PDF complet : 8 Vitest + 14 scénarios PostgreSQL jetables PASS ; formulaire PC/mobile vérifié, sauvegarde/relecture et PDF simulés. Aucune facture réelle créée ni envoi/publication ; parcours réel non testé. Structure additive appliquée au service partagé.

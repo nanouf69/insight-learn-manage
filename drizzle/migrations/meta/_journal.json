@@ -2059,6 +2059,13 @@
       "when": 1795704011512,
       "tag": "0293_facture_commune_contexte_fc",
       "breakpoints": true
+    },
+    {
+      "idx": 294,
+      "version": "7",
+      "when": 1795704602589,
+      "tag": "0294_facture_rattachements_apprenants",
+      "breakpoints": true
     }
   ]
 }
