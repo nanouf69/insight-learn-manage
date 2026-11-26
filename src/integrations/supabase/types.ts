@@ -8915,6 +8915,24 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_lyon_cohortes: {
+        Row: {
+          apprenant_id: string
+          cree_le: string
+          seuil: number
+        }
+        Insert: {
+          apprenant_id: string
+          cree_le?: string
+          seuil?: number
+        }
+        Update: {
+          apprenant_id?: string
+          cree_le?: string
+          seuil?: number
+        }
+        Relationships: []
+      }
       quiz_question_bindings: {
         Row: {
           created_at: string
@@ -11705,6 +11723,11 @@ export type Database = {
         Returns: boolean
       }
       quiz_equipements_taxi_protection_prete: { Args: never; Returns: boolean }
+      quiz_lyon_reponses_completes: {
+        Args: { _apprenant_id: string; _reponses?: Json }
+        Returns: boolean
+      }
+      quiz_lyon_seuil: { Args: { _apprenant_id: string }; Returns: number }
       rattacher_attente_cma: {
         Args: { p_apprenant: string; p_attente: string }
         Returns: string
