@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { JustificatifsTab } from "./JustificatifsTab";
 import { NotesFraisTab } from "./NotesFraisTab";
 import { RapprochementBancaire } from "./RapprochementBancaire";
@@ -126,6 +127,9 @@ const moyensPaiement = ["Virement", "Chèque", "Espèces", "Carte bancaire", "Pr
 const GC_REQUISITION_KEY = "ftransport_gc_requisition";
 
 export function ComptabilitePage() {
+  const [searchParams] = useSearchParams();
+  const factureCibleId = searchParams.get("facture");
+  const factureCibleRef = useRef<HTMLTableRowElement>(null);
   const [factures, setFactures] = useState<Facture[]>([]);
   const [apprenantNames, setApprenantNames] = useState<Record<string, string>>({});
   const [fournisseurFactures, setFournisseurFactures] = useState<any[]>([]);
@@ -140,7 +144,18 @@ export function ComptabilitePage() {
   const [exportCpf, setExportCpf] = useState<{ nom: string; lignes: LigneExportCpf[] } | null>(null);
   const [filterRapprochement, setFilterRapprochement] = useState<"all" | "vert" | "rouge" | "csv_seul" | "cpf_absent" | "hors_cpf" | "autres_org" | "particulier">("all");
   const exportCpfInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(factureCibleId ? "factures" : "overview");
+  useEffect(() => {
+    if (!factureCibleId) return;
+    setActiveTab("factures");
+    setSearch("");
+    setFilterStatut("all");
+    setFilterFinancement("all");
+    setFilterAnnee("all");
+    setFilterTypeFlux("all");
+    setFilterDoublons(false);
+    setFilterRapprochement("all");
+  }, [factureCibleId]);
   const [draftPreview, setDraftPreview] = useState<Facture | null>(null);
   const [validatingDraft, setValidatingDraft] = useState(false);
   const [editingFacture, setEditingFacture] = useState<Facture | null>(null);
@@ -1033,6 +1048,14 @@ export function ComptabilitePage() {
     });
   }, [allFactures, search, filterStatut, filterFinancement, filterTypeFlux, filterAnnee, apprenantNames, filterDoublons, doublonsParId, rapprochement, filterRapprochement]);
 
+  useEffect(() => {
+    if (loading || activeTab !== "factures" || !factureCibleId) return;
+    const frame = requestAnimationFrame(() => {
+      factureCibleRef.current?.scrollIntoView({ block: "center", behavior: "instant" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [loading, activeTab, factureCibleId, filteredFactures]);
+
   const totalCA = useMemo(() => factures.reduce((s, f) => (f.statut !== "annulee" && f.statut !== "brouillon") ? s + Number(f.montant_ttc) : s, 0), [factures]);
   const totalPaye = useMemo(() => factures.filter(f => f.statut === "payee").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
   const totalEnAttente = useMemo(() => factures.filter(f => f.statut === "en_attente").reduce((s, f) => s + Number(f.montant_ttc), 0), [factures]);
@@ -1652,11 +1675,14 @@ export function ComptabilitePage() {
                     return (
                       <TableRow
                         key={f.id}
+                        ref={f.id === factureCibleId ? factureCibleRef : undefined}
+                        data-facture-id={f.id}
                         className={cn(
                           rowClickable ? (isDraft ? "cursor-pointer hover:bg-amber-50" : "cursor-pointer hover:bg-muted/50") : "",
                           rappr && "outline outline-2 -outline-offset-2",
                           rappr?.couleur === "vert" && "outline-success",
                           rappr?.couleur === "rouge" && "outline-destructive",
+                          f.id === factureCibleId && "bg-primary/10 outline outline-2 -outline-offset-2 outline-primary",
                         )}
                         onClick={
                           isDraft

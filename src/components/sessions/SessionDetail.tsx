@@ -1,6 +1,7 @@
 import { estApprenantHandicap } from "@/lib/apprenantsHandicap";
 import { dedoublonnerVirements, exclureVirementsLiesAilleurs, resumePaiement, virementsCorrespondants } from "@/lib/resumePaiement";
 import { useState, useMemo, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { useMdpChangeMail } from "@/components/examens/MdpChangeMailDialog";
 import { ALL_DATES_EXAMEN_THEORIQUE } from "@/lib/examDatesConfig";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -6226,7 +6227,11 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                   title="Ouvrir la fiche CRM de l'apprenant"
                                 >{a.prenom} {a.nom?.toUpperCase()}</button>
                                <Badge variant={statutVariant} className="text-xs">{statutLabel}</Badge>
-                               {facture?.numero && <span className="text-xs text-muted-foreground">N° {facture.numero}</span>}
+                               {facture?.numero && facture?.id && (
+                                 <Button asChild variant="link" className="h-auto p-0 text-xs" title="Ouvrir cette facture dans Comptabilité">
+                                   <Link to={`/?section=comptabilite&facture=${encodeURIComponent(facture.id)}`}>N° {facture.numero}</Link>
+                                 </Button>
+                               )}
                              </div>
 
                              {/* Ligne 2 : PAIEMENTS bien visibles juste sous le nom */}
@@ -6415,7 +6420,9 @@ export function SessionDetail({ session, open, onOpenChange, onNavigateToApprena
                                     <div className="flex-1 min-w-0">
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <span className="font-medium truncate">{libelle}</span>
-                                        <Badge variant="outline" className="text-xs">N° {ef.numero}</Badge>
+                                        <Button asChild variant="link" className="h-auto p-0 text-xs" title="Ouvrir cette facture dans Comptabilité">
+                                          <Link to={`/?section=comptabilite&facture=${encodeURIComponent(ef.id)}`}>N° {ef.numero}</Link>
+                                        </Button>
                                         <Badge variant={efStatut === 'Acquittée' ? 'default' : 'secondary'} className="text-xs">{efStatut}</Badge>
                                         <span className="font-semibold">{efMontant.toFixed(2)} €</span>
                                         {efTotalPaye > 0 && (
