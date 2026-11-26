@@ -10141,7 +10141,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               </Button>
                             )}
                             <Button size="sm" variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/5" onClick={async () => {
-                              await persistModuleCompletion();
+                              if (complementsVtc || apercuAdmin) { onBack(); return; }
+                              // Sortie seulement après confirmation serveur ; échec = rester sur le quiz.
+                              const ok = await persistModuleCompletion();
+                              if (!ok) return;
                               onBack();
                             }}>
                               🏠 Retour à l'accueil
