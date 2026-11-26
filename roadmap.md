@@ -1,4 +1,13 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Corrections techniques du bilan — 26/11/2026
+- [ ] Sauvegarde : reprise bornée, couverture des nouvelles tables, export/restauration jetables ; activation distincte.
+- [ ] Réponses : worker/auth/acquittement et tests réseau, rechargement, concurrence sans purge.
+- [ ] Examens : crash null.nonPassee et version absente, tests sans note inventée.
+- [ ] Sécurité : six RPC, candidat moindre privilège et tests SQL jetables ; aucune migration réelle.
+- [ ] Quatre copies 505 : lecture avant/après, reprise déterministe seulement, aucune remise fabriquée.
+- [ ] Corrections partagées : identités prouvées, tests fictifs, aucun lien en masse.
+- [ ] I21 : état signé/readback/PDF, tests fictifs PC/mobile, preuves existantes intactes.
+- [ ] Rapport exact du delta, résultats exécutés et procédure d'activation pour revue.
 ## Preuves Qualiopi I22/I32 — 25/11/2026 18:14 UTC
 - [x] Enregistrer sans doublon « 32.docx » (I32) et « CCF_000546(1).pdf » (I22) comme pièces reçues/inspectées dans ChatGPT, originaux binaires non transférés, avec réserves et métadonnées complètes.
 - [x] Rattacher uniquement des exemples CRM réels à I32, conserver les deux exemples existants et expliciter l'absence de preuve d'analyse ou d'efficacité lorsqu'elle n'est pas démontrée.

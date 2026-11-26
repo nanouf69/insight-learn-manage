@@ -114,7 +114,7 @@ function EcranResultats({
   const coreOwnerRef = useRef(apprenantId);
   const sameCoreOwner = coreOwnerRef.current === apprenantId;
   const coreTick = useCoreChangeTick(apprenantId);
-  const currentCorrection = useExamCurrentCorrection(examen.id, apprenantId, resultats.some(r => !r.nonPassee));
+  const currentCorrection = useExamCurrentCorrection(examen.id, apprenantId, resultats.some(r => r != null && !r.nonPassee));
   const [freshCopies, setFreshCopies] = useState<{ owner: string; rows: any[] } | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -160,7 +160,7 @@ function EcranResultats({
     [resultats],
   );
   const cleAttempts = attemptIdsCore.join(",");
-  const sourcesOfficielles = useCorrigesSources(apprenantId, attemptIdsCore, resultats.flatMap(r => r.resultId ? [r.resultId] : []));
+  const sourcesOfficielles = useCorrigesSources(apprenantId, attemptIdsCore, resultats.flatMap(r => r?.resultId ? [r.resultId] : []));
   useEffect(() => {
     let cancelled = false;
     if (attemptIdsCore.length === 0) { setCorrigesActuels(new Map()); return; }
@@ -184,7 +184,7 @@ function EcranResultats({
   const journalCommentaires = commentairesHisto?.cle === idsCopies ? commentairesHisto.map : null;
   // Check if corrections are already cached in the resultats (from DB)
   const hasPreloadedCorrections = resultats.some(
-    (r) => r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
+    (r) => r != null && r.correctionsIA && Object.values(r.correctionsIA).some((value) => value && value !== "loading")
   );
 
   const [retakeConfirmOpen, setRetakeConfirmOpen] = useState(false);
@@ -193,6 +193,7 @@ function EcranResultats({
     // Initialize from preloaded data
     const initial: { [matiereIdx: number]: CorrectionCache } = {};
     resultats.forEach((r, mi) => {
+      if (r == null) return;
       if (r.correctionsIA && Object.keys(r.correctionsIA).length > 0) {
         initial[mi] = r.correctionsIA;
       }
@@ -211,21 +212,21 @@ function EcranResultats({
   const revisionSelection = useMemo(() => {
     try {
       if (!sameCoreOwner || coreStates === null) return {results: resultats, error: 'Lecture des dernières copies en cours…'};
-      return {results: resultats.map(r => ebRevisionSource(r, examen.id, apprenantId ?? '', coreStates)), error: null};
+      return {results: resultats.map(r => r == null ? r : ebRevisionSource(r, examen.id, apprenantId ?? '', coreStates)), error: null};
     } catch (e) { return {results: [] as ResultatMatiere[], error: e instanceof Error ? e.message : 'Dernières réponses non confirmées.'}; }
   }, [resultats, coreStates, sameCoreOwner, examen.id, apprenantId]);
 
   // Examen branché sur le nouveau moteur QRC → le blocage vient des mêmes
   // identifiants que la file de correction. Sinon : règle historique inchangée.
   const qrcEngine = useQrcEnginePending(apprenantId, [examen?.id].filter(Boolean) as string[]);
-  const allCore = resultats.filter((r) => !r.nonPassee).length > 0
-    && resultats.filter((r) => !r.nonPassee).every((r) => !!r.__core);
+  const allCore = resultats.filter((r) => r != null && !r.nonPassee).length > 0
+    && resultats.filter((r) => r != null && !r.nonPassee).every((r) => !!r.__core);
   const engineExamPending = allCore ? null : legacyEnginePendingForRows(resultats, (mid, row) => qrcEngine.isMatierePending(examen?.id || "", mid, row));
   // JAMAIS de mélange : le nouveau moteur ne peut QUE bloquer en plus.
   // Il ne débloque jamais un passage historique encore en attente.
   const hasQrcPendingValidation = engineExamPending === true
     || isExamAttemptPublicationPending(
-        resultats.map((resultat, index) => ({
+        resultats.map((resultat, index) => resultat == null ? resultat : ({
           ...resultat,
           correctionsIA: correctionsIA[index] ?? resultat.correctionsIA,
         })),
@@ -248,11 +249,11 @@ function EcranResultats({
 
   // === BILAN AUTOMATIQUE ===
   const generateBilanAuto = useCallback(() => {
-    if (hasQrcPendingValidation || !resultats || resultats.length === 0) return null;
+    if (hasQrcPendingValidation || !resultats || !resultats.some(r => r != null && !r.nonPassee)) return null;
 
     // Utilise le helper PARTAGÉ pour aligner la moyenne du bilan sur les autres écrans.
     const bilan = computeMoyenneExamen(examen, (m) => {
-      const r = resultats.find(rr => rr.matiereId === m.id);
+      const r = resultats.find(rr => rr?.matiereId === m.id);
       if (!r || (r as any).nonPassee) return null;
       const mi = examen.matieres.findIndex(mm => mm?.id === m.id);
       return computeResultatMatiereScore(m, r, correctionsIA[mi] ?? r.correctionsIA ?? null);
@@ -260,7 +261,7 @@ function EcranResultats({
 
     const matieresDetails = examen.matieres
       .map((m) => {
-        const r = resultats.find(rr => rr.matiereId === m.id);
+        const r = resultats.find(rr => rr?.matiereId === m.id);
         if (!r || (r as any).nonPassee) return null;
         const mi = examen.matieres.findIndex(mm => mm?.id === m.id);
         const score = computeResultatMatiereScore(m, r, correctionsIA[mi] ?? r.correctionsIA ?? null);
@@ -581,6 +582,7 @@ function EcranResultats({
   // Résultats sécurisés + score matière recalculé depuis le détail affiché
   // pour garder la note principale strictement alignée avec les sous-notes.
   const resultatsAvecIA = resultats.map((r, mi) => {
+    if (r == null) return null;
     const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
     // Find matière by ID instead of relying on index alignment (resultats may have been filtered)
     const matiere = examen.matieres.find(m => m?.id === r.matiereId) ?? examen.matieres[mi];
@@ -605,7 +607,7 @@ function EcranResultats({
   const examenPourCalcul = {
     ...examen,
     matieres: examen.matieres.map((m) => {
-      const core = resultatsAvecIA.find((r) => r.matiereId === m.id)?.__core;
+      const core = resultatsAvecIA.find((r) => r?.matiereId === m.id)?.__core;
       return core ? {
         ...m,
         coefficient: core.coefficient ?? m.coefficient,
@@ -617,7 +619,7 @@ function EcranResultats({
   // Moyenne globale calculée via le helper PARTAGÉ avec la vue liste et le bilan
   // texte → les 3 écrans affichent EXACTEMENT la même note.
   const bilanExamen = computeMoyenneExamen(examenPourCalcul, (m) => {
-    const r = resultatsAvecIA.find(rr => rr.matiereId === m.id);
+    const r = resultatsAvecIA.find(rr => rr?.matiereId === m.id);
     if (!r || r.nonPassee) return null;
     const mi = examenPourCalcul.matieres.findIndex(mm => mm?.id === m.id);
     return computeResultatMatiereScore(m, r, correctionsIA[mi] ?? r.correctionsIA ?? null);
@@ -639,7 +641,7 @@ function EcranResultats({
     const out: { matiere: Matiere; question: Question; matiereNom: string; sourceResultId?: string | null; corrigeSource?: CorrigeSource | null }[] = [];
     examenPourCalcul.matieres.forEach((matiere, mi) => {
       if (!matiere || (!CORRIGES_TROIS_SURFACES_ACTIFS && (matiere.id === "francais" || matiere.id === "bilan_francais"))) return;
-      const r = revisionSelection.results.find((item) => item.matiereId === matiere.id);
+      const r = revisionSelection.results.find((item) => item?.matiereId === matiere.id);
       if (!r) return;
       const currentSubject = currentCorrection.source?.exam.matieres.find(m => m.id === matiere.id) ?? matiere;
       const bilan = questionsFaussesDuPassage(matierePedagogique(currentSubject, r, sourcesOfficielles.map), r as any);
@@ -724,7 +726,7 @@ function EcranResultats({
             }
           </h3>
           <p className="text-4xl font-black mt-2" style={{ color: '#00B4D8' }}>
-            {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
+            {bilanExamen.matieresPassees > 0 && isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "—"} / 20
             {correctionEnCours && <Loader2 className="w-5 h-5 animate-spin inline ml-2 text-blue-300" />}
           </p>
           <p className="text-sm text-gray-300 mt-1">
@@ -772,7 +774,7 @@ function EcranResultats({
           </p>
           {resultatsAvecIA.map((r, mi) => {
             const matiere = examen.matieres[mi];
-            if (!matiere || r.nonPassee) return null;
+            if (!r || !matiere || r.nonPassee) return null;
             const questionsSafe = (matiere.questions || []).filter(q => q && q?.type !== undefined);
             return (
               <Card key={`attente-${r.matiereId}`} className="border-l-4 overflow-hidden" style={{ borderLeftColor: '#F4A227' }}>
@@ -835,6 +837,7 @@ function EcranResultats({
           <h4 className="font-semibold text-lg" style={{ color: '#0D2540' }}>Résultats par matière</h4>
         </div>
         {resultatsAvecIA.map((r, mi) => {
+          if (r == null) return null;
           const safeMaxPoints = Math.max(toFiniteNumber(r.maxPoints, 0), 0);
           const noteObtenueSafe = safeMaxPoints > 0
             ? clamp(toFiniteNumber(r.noteObtenue, 0), 0, safeMaxPoints)
@@ -1202,7 +1205,7 @@ function EcranResultats({
               </div>
               <div className="text-right">
                 <p className="text-2xl font-black" style={{ color: admisGlobal ? '#00B4D8' : '#ef4444' }}>
-                  {isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "0.0"} / 20
+                  {bilanExamen.matieresPassees > 0 && isFinite(noteGlobale) ? noteGlobale.toFixed(1) : "—"} / 20
                 </p>
                 <p className="text-xs font-semibold" style={{ color: admisGlobal ? '#00B4D8' : '#ef4444' }}>
                   {admisGlobal ? "ADMIS" : verdictNeutre ? "À VÉRIFIER" : "NON ADMIS"}
@@ -1273,7 +1276,7 @@ function EcranResultats({
         )}
       </div>
       {/* Corrections IA : en fin de page, après le bilan et les résultats par matière. */}
-      <CorrectionsIaEleve attemptIds={resultats.map((r: any) => r.__core?.attemptId).filter(Boolean) as string[]} nomsMatieres={Object.fromEntries((examen?.matieres ?? []).map((m: any) => [String(m.id), String(m.nom ?? m.id)]))} />
+      <CorrectionsIaEleve attemptIds={resultats.map((r: any) => r?.__core?.attemptId).filter(Boolean) as string[]} nomsMatieres={Object.fromEntries((examen?.matieres ?? []).map((m: any) => [String(m.id), String(m.nom ?? m.id)]))} />
       <RefaireExamenDialog
         open={retakeConfirmOpen}
         onOpenChange={setRetakeConfirmOpen}

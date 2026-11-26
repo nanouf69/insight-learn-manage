@@ -23,6 +23,9 @@
  */
 
 const QUEUE_KEY = "answer_save_queue_v1";
+const ITEM_PREFIX = 'answer_save_item_v2:';
+const ACK_PREFIX = 'answer_save_ack_v2:';
+let lastReadIds = new Set<string>();
 /**
  * Dernier numéro d'écriture SERVEUR connu, par (apprenant, exercice).
  * C'est le serveur — jamais l'horloge de l'appareil — qui décide de l'ordre des
@@ -395,9 +398,19 @@ function readQueue(): QueueItem[] {
   if (memoryQueue) return memoryQueue;
   try {
     const raw = localStorage.getItem(QUEUE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as QueueItem[]) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    const merged = new Map<string, QueueItem>((Array.isArray(parsed) ? parsed : []).map(item => [item.id, item]));
+    // Per-operation records prevent two tabs replacing the whole legacy array.
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(ITEM_PREFIX)) {
+        const item = JSON.parse(localStorage.getItem(key) ?? 'null');
+        if (item?.id) merged.set(item.id, item);
+      }
+    }
+    const items = [...merged.values()].filter(item => !localStorage.getItem(ACK_PREFIX + item.id));
+    lastReadIds = new Set(items.map(item => item.id));
+    return items.sort((a, b) => a.queued_at.localeCompare(b.queued_at));
   } catch {
     return [];
   }
@@ -405,6 +418,10 @@ function readQueue(): QueueItem[] {
 
 const writeQueue = (items: QueueItem[]) => {
   try {
+    const kept = new Set(items.map(item => item.id));
+    // Receipts/compaction markers never delete the original per-operation bytes.
+    for (const id of lastReadIds) if (!kept.has(id)) localStorage.setItem(ACK_PREFIX + id, '1');
+    for (const item of items) localStorage.setItem(ITEM_PREFIX + item.id, JSON.stringify(item));
     localStorage.setItem(QUEUE_KEY, JSON.stringify(items));
     // Écriture réussie : le miroir mémoire n'est plus nécessaire.
     memoryQueue = null;
@@ -1004,7 +1021,14 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     if (authUserId !== compteAvant || item.payload.apprenant_id !== sessionApprenantId) return "paused";
     if (res.ok) {
       const confirmation = await res.json().catch(() => null);
+      if (authUserId !== compteAvant || item.payload.apprenant_id !== sessionApprenantId) return 'paused';
       if (confirmation?.success === true && confirmation?.confirmed === true) {
+        if (confirmation.frozen === true) {
+          const message = "Cette tentative est déjà terminée. Vos réponses locales n'ont pas été appliquées et restent conservées sur cet appareil.";
+          item.rejection = { exerciceId: item.payload.exercice_id, reason: 'frozen', message, at: new Date().toISOString() };
+          notifyAnswerSaveRejected(item.payload.exercice_id, 'frozen', message);
+          return 'blocked';
+        }
         const acceptedEventIds = Array.isArray(confirmation.accepted_event_ids)
           ? confirmation.accepted_event_ids.filter((id: unknown): id is string => typeof id === "string")
           : [];
@@ -1057,14 +1081,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
           item.payload.exercice_id,
           Number(confirmation.write_seq ?? 0),
         );
-        if (confirmation.frozen === true) {
-          console.warn(
-            "[answerPersistence] Tentative déjà terminée : réponse en attente non appliquée (journalisée)",
-            item.payload.exercice_id,
-          );
-          // Refus silencieux impossible : l'apprenant est alerté immédiatement.
-          notifyAnswerSaveRejected(item.payload.exercice_id, "frozen");
-        } else if (lastRejection?.reason !== "identity") {
+        if (lastRejection?.reason !== "identity") {
           // Un refus d'identité reste affiché jusqu'au rechargement de la page.
           clearAnswerSaveRejection();
         }
@@ -1080,6 +1097,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
       return "retry";
     }
     const text = await res.text();
+    if (authUserId !== compteAvant || item.payload.apprenant_id !== sessionApprenantId) return 'paused';
     // Corrélation sûre (code SQL/PostgREST + identifiant de requête Edge, jamais
     // de réponse ni de jeton) : un refus 400 doit pouvoir être expliqué après coup.
     let codeServeur: string | undefined;
@@ -1094,7 +1112,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     // par le worker existant. Une réponse n'est jamais un refus définitif ici.
     if (res.status === 401 || /pgrst303|jwt\s*expired/i.test(text)) {
       const frais = await assurerSessionFraiche(Number.MAX_SAFE_INTEGER);
-      if (authUserId !== compteAvant) return "paused";
+      if (authUserId !== compteAvant || item.payload.apprenant_id !== sessionApprenantId) return "paused";
       if (frais && frais !== sentToken && jetonAppartientA(frais, authUserId)) { authToken = frais; return "retry"; }
       rejectedAuthToken = sentToken;
       notifyAnswerSaveRejected(item.payload.exercice_id, "forbidden", "Session expirée : reconnectez-vous pour reprendre. Vos réponses restent conservées sur cet appareil.");
@@ -1132,6 +1150,16 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
 }
 
 async function processQueue(): Promise<void> {
+  if (typeof navigator !== 'undefined' && navigator.locks) {
+    await navigator.locks.request('ftransport-answer-worker-v2', { ifAvailable: true }, async lock => {
+      if (lock) await processQueueLocked();
+    });
+    return;
+  }
+  await processQueueLocked();
+}
+
+async function processQueueLocked(): Promise<void> {
   if (processing) return;
   if (!canSynchronizeAnswers()) return;
   // Sans session valide, on n'envoie rien : la file attend la reconnexion.
@@ -1291,6 +1319,8 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
     owner_user_id: authUserId,
   };
   let queue = readQueue();
+  const retryAfter = Math.max(0, ...queue.filter(q => q.payload.apprenant_id === payload.apprenant_id && q.payload.exercice_id === payload.exercice_id && isOwnedByCurrentUser(q)).map(q => q.retry_after ?? 0));
+  if (retryAfter > Date.now()) item.retry_after = retryAfter;
   // Un nouvel essai de clôture peut remplacer les anciennes versions locales,
   // y compris bloquées, seulement si son état final contient chacune de leurs
   // réponses sans contradiction. Sinon elles restent et la clôture est refusée.
@@ -1321,6 +1351,9 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
       q.payload.exercice_id === payload.exercice_id &&
       q.payload.apprenant_id === payload.apprenant_id &&
       isOwnedByCurrentUser(q) &&
+      !q.blocked &&
+      q.id !== envoiEnCoursId &&
+      (q.retry_after ?? 0) <= Date.now() &&
       !q.payload.completed &&
       !payload.completed
   );
@@ -1402,6 +1435,9 @@ export function installAnswerPersistence(): void {
   if (installed || typeof window === "undefined") return;
   installed = true;
   window.addEventListener("online", () => void processQueue());
+  window.addEventListener('storage', event => {
+    if (event.key === QUEUE_KEY || event.key?.startsWith(ITEM_PREFIX) || event.key?.startsWith(ACK_PREFIX)) { emit(); void processQueue(); }
+  });
   window.addEventListener("pagehide", flushAnswerSavesOnUnload);
   window.addEventListener("beforeunload", flushAnswerSavesOnUnload);
   document.addEventListener("visibilitychange", () => {

@@ -11,8 +11,16 @@ export const EXPORT_TABLES: [string, string][] = [
   ['core_exam_results', 'result_id'], ['bilan_passage_snapshots', 'id'], ['bilan_passages_figes', 'id'],
   ['donnees_eleves_suppressions', 'id'],
   ['cma_planning_lignes', 'id'], ['cma_planning_attente', 'id'], ['cma_planning_attente_rattachements', 'id'],
+  // Compound keys remain ordered tuples, never a non-unique receipt/owner cursor.
+  ['bilan_future_versions', 'id'], ['bilan_future_active', 'subject'],
+  ['bilan_future_common_releases', 'id'], ['bilan_future_french_releases', 'version_id'],
+  ['bilan_future_opening', 'id'], ['bilan_future_eligibility', 'owner_id,module_id,exercise_id'],
+  ['bilan_future_receipts', 'id'], ['bilan_future_drafts', 'receipt_id,question_id,revision'],
+  ['bilan_future_submissions', 'receipt_id'],
+  ['exam_content_versions', 'id'], ['exam_content_shares', 'id'],
+  ['module_editor_state', 'module_id'], ['core_operations', 'operation_id'],
 ];
-export const EXPORT_VERSION = 2;
+export const EXPORT_VERSION = 3;
 export function exportManifest(comptes: Record<string, number>, erreurs: string[], tables = EXPORT_TABLES.map(([name]) => name)) {
   const missing = tables.filter(name => !Object.prototype.hasOwnProperty.call(comptes, name));
   return { version: EXPORT_VERSION, tables: tables.length, table_names: tables, comptes, erreurs: [...erreurs, ...missing.map(name => `${name}: compte absent`)] };

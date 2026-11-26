@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { CheckCircle2, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { COMPETENCES_CHAMPS } from "@/lib/competencesIntervenant";
@@ -30,7 +30,10 @@ export function EvaluationCompetencesI21({ documentId, doc, fichiers, reviews, o
   const [message, setMessage] = useState("");
   const [succes, setSucces] = useState(false);
   const [nouvelle, setNouvelle] = useState(false);
-  const evaluations = reviews.filter(review => review.reponses?.evaluation_i21_version);
+  const [readback, setReadback] = useState<{ documentId: string; reviews: any[] } | null>(null);
+  const signing = useRef(false);
+  const evaluations = [...new Map([...(reviews ?? []), ...(readback?.documentId === documentId ? readback.reviews : [])]
+    .filter(review => review?.signed_at && review.reponses?.evaluation_i21_version).map(review => [review.id, review])).values()];
 
   const urlEvaluation = async (reviewId: string) => {
     const result = await supabase.functions.invoke("competences-intervenant", { body: { action: "admin_evaluation_pdf", document_id: documentId, review_id: reviewId } });
@@ -39,6 +42,8 @@ export function EvaluationCompetencesI21({ documentId, doc, fichiers, reviews, o
   };
 
   const signer = async () => {
+    if (signing.current || !confirme || !signature) return;
+    signing.current = true;
     setBusy(true); setMessage(""); setSucces(false);
     try {
       const result = await supabase.functions.invoke("competences-intervenant", { body: {
@@ -49,16 +54,17 @@ export function EvaluationCompetencesI21({ documentId, doc, fichiers, reviews, o
       if (!erreurServeur && result.error && "context" in result.error) {
         try { erreurServeur = (await (result.error as any).context.json())?.error; } catch { /* corps illisible */ }
       }
-      if (result.error || !result.data?.success || !result.data?.review?.id) throw new Error(erreurServeur ?? "Validation non confirmée par le serveur ; votre saisie est conservée.");
+      if (result.error || !result.data?.success || !result.data?.review?.id || !result.data?.preuve_i21_id) throw new Error(erreurServeur ?? "Validation non confirmée par le serveur ; votre saisie est conservée.");
       const relu: any = await onSaved();
-      const confirmeServeur = (relu?.data?.reviews ?? []).some((r: any) => r.id === result.data.review.id && r.signed_at);
+      const confirmeServeur = (relu?.data?.reviews ?? []).some((r: any) => r.id === result.data.review.id && r.signed_at && r.preuve?.pdf_empreinte && r.preuve?.signed_at);
       if (!confirmeServeur) throw new Error("Signature transmise mais non relue côté serveur ; rechargez la fiche avant toute nouvelle tentative.");
+      setReadback({ documentId, reviews: relu.data.reviews });
       setSucces(true); setNouvelle(false);
       setMessage("Évaluation signée confirmée par le serveur : PDF enregistré et preuve rattachée à I21. Le statut de l’indicateur n’a pas été modifié.");
       setConfirme(false); setSignature(""); setOperationId(crypto.randomUUID());
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Enregistrement impossible ; votre saisie est conservée.");
-    } finally { setBusy(false); }
+    } finally { signing.current = false; setBusy(false); }
   };
 
   return <Card className="min-w-0 border-primary/40" data-testid="evaluation-i21">
@@ -98,6 +104,7 @@ export function EvaluationCompetencesI21({ documentId, doc, fichiers, reviews, o
       </section>}
 
       {message && succes && <p role="status" className="rounded-md border border-success/40 p-2 text-sm text-success">{message}</p>}
+      {message && !succes && <p role="alert" className="text-sm text-destructive">{message}</p>}
       {evaluations.length > 0 && !nouvelle && <div className="space-y-2 rounded-md bg-muted/40 p-3 text-sm">
         <p>Évaluation déjà signée : aucun nouveau formulaire n’est proposé pour éviter une double signature.</p>
         {evaluations.length > 1 && <p className="text-warning">{evaluations.length} évaluations signées sont conservées (aucune n’est supprimée ni écrasée).</p>}
@@ -141,7 +148,6 @@ export function EvaluationCompetencesI21({ documentId, doc, fichiers, reviews, o
         <SignaturePad value={signature} onChange={setSignature} disabled={busy} />
         <Button className="h-auto w-full whitespace-normal text-center" disabled={busy || !confirme || !signature || doc.statut !== "signe"} onClick={signer}>Signer manuscritement et enregistrer l’évaluation I21</Button>
         {!signature && <p className="text-xs text-muted-foreground">Le bouton s’active après la case de déclaration et un tracé dans le cadre.</p>}
-        {message && !succes && <p role="alert" className="text-sm text-destructive">{message}</p>}
       </section>
       </>}
     </CardContent>

@@ -38,6 +38,8 @@ const MAX_SAUTS = 40;
 const BAIL_MS = 90_000;
 const RETENTION_JOURS = 30;
 const MAX_ECHECS = 3;
+const TRANCHE_MS = 20_000;
+const MAX_PAQUETS_PAR_APPEL = 8;
 const REPARATION_DOSSIER = "_reparation-1";
 // Réparation bornée du seul journal volumineux : moins d'appels, pages par clé inchangées.
 const PART_REPARATION: Record<string, number> = { reponses_apprenants_journal: 10_000 };
@@ -65,6 +67,8 @@ const pkDe = (t: string) => TABLES.find(([n]) => n === t)?.[1] ?? "id";
 async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: string, up: (p: string, c: unknown) => Promise<unknown>, partReparation?: number): Promise<"avance" | "echec" | "abandon"> {
   const t = tables[job.i];
   const pk = pkDe(t);
+  const colonnes = pk.split(',');
+  const cleLigne = (row: any): string | number | null => colonnes.length === 1 ? row?.[pk] : JSON.stringify(colonnes.map(c => row?.[c]));
   const [page, partDefaut] = TAILLES[t] ?? [PAGE, PART];
   const part = partReparation ?? partDefaut;
   job.preuves ??= {};
@@ -94,19 +98,33 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
     let curseur = job.curseur ?? null;
     let f = job.from;
     while (buf.length < part) {
-      let q = sb.from(t).select("*").order(pk, { ascending: true });
+      let q = sb.from(t).select("*");
+      for (const colonne of colonnes) q = q.order(colonne, { ascending: true });
       let res: any;
       if (decalage) {
         res = await q.range(f, f + page - 1);
       } else {
-        if (curseur !== null) q = q.gt(pk, curseur);
+        if (curseur !== null) {
+          if (colonnes.length === 1) q = q.gt(pk, curseur);
+          else {
+            const valeurs = JSON.parse(String(curseur));
+            if (!Array.isArray(valeurs) || valeurs.length !== colonnes.length) throw new Error('Curseur composé invalide');
+            const literal = (v: unknown) => typeof v === 'number' ? String(v) : `"${String(v).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+            q = q.or(colonnes.map((c, i) => {
+              const termes = colonnes.slice(0, i).map((avant, j) => `${avant}.eq.${literal(valeurs[j])}`);
+              termes.push(`${c}.gt.${literal(valeurs[i])}`);
+              return termes.length === 1 ? termes[0] : `and(${termes.join(',')})`;
+            }).join(','));
+          }
+        }
         res = await q.limit(page);
       }
       if (res.error) throw res.error;
       const data = res.data ?? [];
       if (!data.length) { fini = true; break; }
       for (const row of data) {
-        const k = row?.[pk];
+        if (colonnes.some(c => row?.[c] === null || row?.[c] === undefined)) throw new Error(`clé ${pk} absente`);
+        const k = cleLigne(row);
         if (k === null || k === undefined) throw new Error(`clé ${pk} absente`);
         if (!decalage && curseur !== null && !(cmpCle(k, curseur) > 0)) throw new Error("ordre des clés non croissant");
         if (!decalage) curseur = k;
@@ -121,7 +139,7 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
       const sha256 = Array.from(new Uint8Array(digest), n => n.toString(16).padStart(2, "0")).join("");
       await up(chemin, buf);
       job.lots ??= {};
-      job.lots[chemin] = { lignes: buf.length, premiere: buf[0][pk], derniere: buf[buf.length - 1][pk], sha256 };
+      job.lots[chemin] = { lignes: buf.length, premiere: cleLigne(buf[0]), derniere: cleLigne(buf[buf.length - 1]), sha256 };
     }
     const total = (job.comptes[t] ?? 0) + buf.length;
     let finale: number | null = null;
@@ -162,6 +180,11 @@ async function exporterPaquet(sb: any, job: Job, tables: string[], prefixe: stri
 }
 
 function cmpCle(a: unknown, b: unknown): number {
+  if (String(a).startsWith('[') && String(b).startsWith('[')) {
+    const x = JSON.parse(String(a)), y = JSON.parse(String(b));
+    for (let i = 0; i < x.length; i++) { const d = cmpCle(x[i], y[i]); if (d) return d; }
+    return 0;
+  }
   if (typeof a === "number" && typeof b === "number") return a - b;
   if (/^\d+$/.test(String(a)) && /^\d+$/.test(String(b))) { const x = BigInt(String(a)), y = BigInt(String(b)); return x === y ? 0 : x > y ? 1 : -1; }
   const x = String(a).toLowerCase(), y = String(b).toLowerCase();
@@ -241,9 +264,12 @@ Deno.serve(async (req) => {
     return result;
   };
   const lireEtat = async (): Promise<Etat | null> => {
-    const { data } = await sb.storage.from(BUCKET).download(`${jour}/_etat.json`);
+    const { data, error } = await sb.storage.from(BUCKET).download(`${jour}/_etat.json`);
+    if (error && !["404", "400"].includes(String(error.statusCode))) throw new Error('Point de reprise illisible : aucun redémarrage autorisé');
     if (!data) return null;
-    try { return JSON.parse(await data.text()); } catch { return null; }
+    const etat = JSON.parse(await data.text());
+    if (!etat || !Number.isInteger(etat.i) || !Number.isInteger(etat.from) || !etat.comptes) throw new Error('Point de reprise invalide : aucun redémarrage autorisé');
+    return etat;
   };
   const enchainer = (attenteMs = 0) => {
     if (saut + 1 >= MAX_SAUTS) return false;
@@ -251,11 +277,20 @@ Deno.serve(async (req) => {
     EdgeRuntime.waitUntil(new Promise((r) => setTimeout(r, attenteMs)).then(() => fetch(`${url}/functions/v1/sauvegarde-quotidienne-eleves`, {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}`, apikey: key },
       body: JSON.stringify({ jour, saut: saut + 1, chaine: true }),
-    })).catch((e) => console.error("[chaine]", e)));
+    }).then(async response => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    })).catch(async e => {
+      console.error("[chaine]", e);
+      await up(`${jour}/_chaine_echec.json`, { jour, saut, at: new Date().toISOString(), erreur: String(e), reprise_requise: true });
+      const alerte = await sb.from('alertes_systeme').insert({ type: 'sauvegarde_incomplete', titre: 'Chaîne de sauvegarde interrompue', message: `Sauvegarde ${jour} : reprise requise après échec de chaîne` });
+      if (alerte.error) console.error('[sauvegarde-alerte]', alerte.error);
+    }));
     return true;
   };
 
-  let etat = await lireEtat();
+  let etat: Etat | null;
+  try { etat = await lireEtat(); }
+  catch (e) { return new Response(JSON.stringify({ ok: false, erreur: String(e) }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }); }
 
   // Journée terminée : rien à refaire, sauf réparation EXPLICITE d'une journée incomplète.
   if (etat?.termine) {
@@ -326,7 +361,14 @@ Deno.serve(async (req) => {
     await up(`${jour}/_etat.json`, etat);
     // Un abandon (3 échecs) est consigné dans etat.erreurs ; la chaîne continue
     // avec la table suivante au lieu d'attendre la reprise programmée.
-    resultat = await exporterPaquet(sb, etat, TABLES.map(([n]) => n), jour, up);
+    const debut = Date.now();
+    for (let paquet = 0; paquet < MAX_PAQUETS_PAR_APPEL && etat.i < TABLES.length; paquet++) {
+      resultat = await exporterPaquet(sb, etat, TABLES.map(([n]) => n), jour, up);
+      // Checkpoint each committed part, not merely the final tranche.
+      etat.maj = new Date().toISOString();
+      await up(`${jour}/_etat.json`, etat);
+      if (resultat === 'echec' || Date.now() - debut >= TRANCHE_MS) break;
+    }
   }
 
   if (etat.i >= TABLES.length) {
@@ -338,7 +380,8 @@ Deno.serve(async (req) => {
     await up(`${jour}/_etat.json`, etat);
     await rotation(sb); // Scheduled retention unchanged; never invoked manually.
     if (manifeste.erreurs.length) {
-      await sb.from("alertes_systeme").insert({ type: "sauvegarde_incomplete", titre: "Sauvegarde nocturne incomplète", message: `Sauvegarde ${jour} incomplète : ${manifeste.erreurs.length} erreur(s)` } as any).then(() => {}, () => {});
+      const alerte = await sb.from("alertes_systeme").insert({ type: "sauvegarde_incomplete", titre: "Sauvegarde nocturne incomplète", message: `Sauvegarde ${jour} incomplète : ${manifeste.erreurs.length} erreur(s)` } as any);
+      if (alerte.error) console.error('[sauvegarde-alerte]', alerte.error);
     }
     return json({ ok: !manifeste.erreurs.length, termine: true, ...manifeste });
   }

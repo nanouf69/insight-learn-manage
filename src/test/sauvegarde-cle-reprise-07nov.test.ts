@@ -13,7 +13,7 @@ const uuid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0
 
 type Echec = (ctx: { table: string; kind: 'count' | 'read'; gt: unknown; offset?: number }) => any | null;
 
-function harness(opts: { rows?: Record<string, any[]>; echec?: Echec; etat?: any; objects?: Map<string, any> } = {}) {
+export function harness(opts: { rows?: Record<string, any[]>; echec?: Echec; etat?: any; objects?: Map<string, any>; storageError?: boolean } = {}) {
   const objects = opts.objects ?? new Map<string, any>();
   if (opts.etat) objects.set(`${JOUR}/_etat.json`, opts.etat);
   const rows: Record<string, any[]> = opts.rows ?? {};
@@ -22,7 +22,7 @@ function harness(opts: { rows?: Record<string, any[]>; echec?: Echec; etat?: any
   const sb = {
     storage: { from: () => ({
       upload: async (path: string, blob: Blob) => { const txt = await blob.text(); let v: any = txt; try { v = JSON.parse(txt); } catch { /* texte */ } objects.set(path, v); return { error: null }; },
-      download: async (path: string) => ({ data: objects.has(path) ? new Blob([JSON.stringify(objects.get(path))]) : null }),
+      download: async (path: string) => opts.storageError && path.endsWith('/_etat.json') ? {data:null,error:{statusCode:'503'}} : ({ data: objects.has(path) ? new Blob([JSON.stringify(objects.get(path))]) : null }),
       list: async () => ({ data: [] }),
       remove: async (p: string[]) => { deleted.push(...p); return { error: null }; },
     }) },
@@ -31,15 +31,26 @@ function harness(opts: { rows?: Record<string, any[]>; echec?: Echec; etat?: any
       const entry = EXPORT_TABLES.find(([n]) => n === table);
       if (!entry) throw new Error('table inconnue');
       const pk = entry[1];
-      const data = () => [...(rows[table] ?? [])].sort((a, b) => (String(a[pk]) < String(b[pk]) ? -1 : 1));
+      const keys = pk.split(',');
+      const compare = (a: any, b: any) => { for (const key of keys) { if(a[key] < b[key]) return -1; if(a[key] > b[key]) return 1; } return 0; };
+      const data = () => [...(rows[table] ?? [])].sort(compare);
       const st: any = { gt: null as unknown, head: false };
       const q: any = {
         select: (_c: string, o?: any) => { st.head = !!o?.head; return q; },
         order: () => q,
         gt: (_k: string, v: unknown) => { st.gt = v; return q; },
+        or: (filter: string) => {
+          // Parse the generated lexicographic PostgREST filter, including numeric revisions.
+          const clauses = filter.match(/and\([^)]*\)|[^,]+/g) ?? [];
+          st.predicate = (row: any) => clauses.some(clause => clause.replace(/^and\(|\)$/g,'').split(',').every(term => {
+            const match = term.match(/^([a-z_]+)\.(eq|gt)\.(.*)$/); if (!match) throw Error('bad filter');
+            const value = JSON.parse(match[3]);
+            return match[2] === 'eq' ? row[match[1]] === value : row[match[1]] > value;
+          })); return q;
+        },
         limit: async (n: number) => {
           const e = opts.echec?.({ table, kind: 'read', gt: st.gt }); if (e) return { data: null, error: e };
-          return { data: data().filter((r) => st.gt === null || String(r[pk]) > String(st.gt)).slice(0, n), error: null };
+          return { data: data().filter((r) => (!st.predicate || st.predicate(r)) && (st.gt === null || String(r[pk]) > String(st.gt))).slice(0, n), error: null };
         },
         range: async (a: number, b: number) => {
           const e = opts.echec?.({ table, kind: 'read', gt: null, offset: a }); if (e) return { data: null, error: e };
@@ -73,14 +84,26 @@ function harness(opts: { rows?: Record<string, any[]>; echec?: Echec; etat?: any
   return { call, run, objects, deleted, alerts, parts };
 }
 
-function jeuFictif(nJournal: number) {
+export function jeuFictif(nJournal: number) {
   const rows: Record<string, any[]> = {};
-  for (const [t, pk] of EXPORT_TABLES) rows[t] = [{ [pk]: t === 'answer_events' || t === 'qrc_correction_events' ? 1 : uuid(1) }];
+  for (const [t, pk] of EXPORT_TABLES) rows[t] = [Object.fromEntries(pk.split(',').map(c => [c, ['module_id','exercise_id','revision'].includes(c) ? 1 : uuid(1)]))];
   rows[JOURNAL] = Array.from({ length: nJournal }, (_, i) => ({ id: uuid(i + 1), valeur: `r${i}` }));
   return rows;
 }
 
 describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/11)', () => {
+  it('checkpoint unreadable never restarts or overwrites parts', async () => {
+    const h = harness({storageError:true}); const r = await h.call();
+    expect(r.ok).toBe(false); expect(h.objects.size).toBe(0);
+  });
+  it('compound draft cursor exports every revision beyond a part boundary', async () => {
+    const rows = jeuFictif(1);
+    rows.bilan_future_drafts = Array.from({length:2501},(_,i)=>({receipt_id:uuid(1),question_id:'Q1',revision:i+1,valeur:`r${i}`}));
+    const h = harness({rows}); const fin = await h.run();
+    expect(fin.ok).toBe(true);
+    expect(h.parts(`${JOUR}/bilan_future_drafts/`)).toEqual(rows.bilan_future_drafts);
+    expect(fin.table_names).toContain('bilan_future_submissions');
+  });
   it('erreur de page temporaire (57014) : même paquet réessayé, ni trou ni doublon, parcours achevé sans preuve d’intégrité', async () => {
     const rows = jeuFictif(4500);
     let pannes = 2;
@@ -195,7 +218,7 @@ describe('Sauvegarde nocturne : lecture par clé, reprise et preuve de fin (07/1
   });
 
   it('export déjà complet : aucune nouvelle lecture', async () => {
-    const h = harness({ rows: jeuFictif(10), etat: { termine: true, erreurs: [], comptes: {}, table_names: ['a'] } });
+    const h = harness({ rows: jeuFictif(10), etat: { i:1, from:0, termine: true, erreurs: [], comptes: {}, table_names: ['a'] } });
     const r = await h.call({ reprise: true });
     expect(r.deja_termine).toBe(true);
   });

@@ -26,6 +26,7 @@ export const LIBELLE_STATUT_EB: Record<StatutCopieEB, string> = {
 
 /** Never call a publication/identity problem an uncorrected QRC. */
 export function libelleAttenteEB(rows: any[]): string {
+  rows = (rows ?? []).filter(row => row != null);
   if (rows.some(r => r.__core?.lectureImpossible)) return LIBELLE_STATUT_EB.lecture_impossible;
   if (rows.some(r => r.__revueProvenance || r.__statutCopieEB === 'revue')) return LIBELLE_STATUT_EB.revue;
   const core = rows.filter(r => r.__core?.attemptId);

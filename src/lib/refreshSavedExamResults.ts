@@ -2,6 +2,7 @@
 export function rafraichirCopiesAffichees<T extends Record<string, any>>(displayed: T[], fresh: any[], score: (row: any, previous: T) => any): T[] {
   const byId = new Map(fresh.map(r => [String(r.id), r]));
   return displayed.map(previous => {
+    if (previous == null) return previous;
     const row = byId.get(String(previous.resultId ?? ''));
     if (!row || row.quiz_id !== previous.quizId || row.matiere_id !== previous.matiereId) return previous;
     const value = score(row, previous);

@@ -105,21 +105,11 @@ describe("File des réponses : jamais figée (incident du 10/10)", () => {
     const fetchMock = vi.fn(() => new Promise((resolve) => reponses.push(resolve)));
     vi.stubGlobal("fetch", fetchMock);
 
-    enqueueAnswerSave(payload({ "q-1": ["A"] }));
-    // Remplacer les événements par des identifiants stables pour suivre les ACK.
-    const brut = JSON.parse(localStorage.getItem("answer_save_queue_v1")!);
-    brut[0].payload.events = [{ event_id: e1, question_id: "q-1", valeur: ["A"] }];
-    localStorage.setItem("answer_save_queue_v1", JSON.stringify(brut));
+    enqueueAnswerSave({ ...payload({ "q-1": ["A"] }), events: [{ event_id: e1, question_id: "q-1", valeur: ["A"] }] });
     await vi.advanceTimersByTimeAsync(0);
     expect(fetchMock).toHaveBeenCalledTimes(1);
 
-    enqueueAnswerSave(payload({ "q-1": ["A"], "q-2": ["B"] }));
-    const enAttente = JSON.parse(localStorage.getItem("answer_save_queue_v1")!);
-    enAttente[0].payload.events = [
-      { event_id: e1, question_id: "q-1", valeur: ["A"] },
-      { event_id: e2, question_id: "q-2", valeur: ["B"] },
-    ];
-    localStorage.setItem("answer_save_queue_v1", JSON.stringify(enAttente));
+    enqueueAnswerSave({ ...payload({ "q-1": ["A"], "q-2": ["B"] }), events: [{ event_id: e2, question_id: "q-2", valeur: ["B"] }] });
     reponses[0]({ ok: true, json: async () => ({ success: true, confirmed: true, write_seq: 1, accepted_event_ids: [e1] }), text: async () => "" });
     await vi.advanceTimersByTimeAsync(0);
     expect(fetchMock).toHaveBeenCalledTimes(2);
