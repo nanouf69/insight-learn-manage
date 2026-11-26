@@ -1,4 +1,5 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
+import { ajouterLyonVtc, QCM2_LYON, COURS_LYON_VTC_ID, PDF_LYON_VTC, estQcm2Lyon, estPdfLyonVtc } from '@/lib/pratiqueVtcLyonQcm2';
 import { FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
 import { Bilan505Desactive, couperBilan505, remettreBilan505, useBilan505Active, type RevueItem } from '@/lib/bilan505Remise';
 import { Bilan505RevuePanel } from './Bilan505RevuePanel';
@@ -466,6 +467,11 @@ function CourseFileViewerInner({
             <Maximize className="w-4 h-4" />
             Ouvrir le livre
           </a>
+          {estPdfLyonVtc(fichier.url) && <Button asChild variant="outline">
+            <a href={displayUrl} download="Examen pratique – Connaissance de Lyon.pdf">
+              <Download className="w-4 h-4 mr-2" /> Télécharger le PDF
+            </a>
+          </Button>}
         </div>
       )}
 
@@ -1147,6 +1153,14 @@ const buildSiblingBilanSecurityModule = (
 };
 
 const forceSourceExerciseTitles = (moduleId: number | string, loadedData: ModuleData, sourceData: ModuleData): ModuleData => {
+  if (Number(moduleId) === 8 && loadedData.cours.some(c => c.id === COURS_LYON_VTC_ID)) {
+    const added = ajouterLyonVtc(loadedData);
+    // Source merging must not move the historical quiz or its page before QCM 2.
+    return { ...added, exercices: [
+      ...added.exercices.filter(e => e.id !== QCM2_LYON.id),
+      ...added.exercices.filter(e => e.id === QCM2_LYON.id),
+    ] };
+  }
   if (Number(moduleId) !== 9) return loadedData;
 
   const sourceById = new Map(sourceData.exercices.map((exercise) => [Number(exercise.id), exercise]));
@@ -2121,6 +2135,7 @@ const PRATIQUE_VTC_DATA: ModuleData = {
     { id: 8, titre: "8. Spécialités culinaires et restaurants", sousTitre: "Quenelle, Cervelle de canut, Tablier de sapeur, Bugnes, Bouchons lyonnais", image: imgBrasserieGeorges, description: "• Quenelle — semoule de blé dur, beurre, œufs, lait.\n• Cervelle de canut — fromage blanc, herbes, échalote.\n• Tablier de sapeur — gras-double.\n• Bugnes, Coussins lyonnais, Tarte praline.\n• Brasserie Georges (2e, cours Verdun) — fruits de mer, choucroute.\n• Bouchons lyonnais — restaurants typiques.", actif: true },
     { id: 9, titre: "9. Devis et facturation VTC", sousTitre: "Transfert vs Mise à disposition, calcul TVA 10%, signature du devis", description: "• Transfert (A→B) : prix forfaitaire HT + TVA 10%.\n• Mise à disposition : tarif horaire.\n• Minimum 10€ HT (11€ TTC).\n• Faire signer le devis par le client avant de démarrer.\n• Facture à établir à l'arrivée.", actif: true },
     { id: 10, titre: "10. Conseils pratiques pour le jour de l'examen", sousTitre: "Tenue vestimentaire, GPS, gestion du feu orange, comportement neutre", description: "• Tenue élégante (pas de baskets/casquettes).\n• GPS sur téléphone (Waze/Maps), tester avant l'examen.\n• Feu orange : s'arrêter sauf danger pour véhicules suivants.\n• Rester poli, courtois, neutre.\n• Bien écrire le point de départ de la facturation sur le devis.\n• À destination : retourner au siège ou stationner hors chaussée.", actif: true },
+    { id: COURS_LYON_VTC_ID, titre: 'Examen pratique – Connaissance de Lyon', actif: true, fichiers: [PDF_LYON_VTC] },
   ],
   exercices: [
     {
@@ -2159,6 +2174,7 @@ const PRATIQUE_VTC_DATA: ModuleData = {
         { id: 7, enonce: "Quel moyen de transport permet d'aller à l'aéroport de Lyon ?", choix: [{ lettre: "A", texte: "Le Rhône Express", correct: true }, { lettre: "B", texte: "Le TGV" }, { lettre: "C", texte: "Le tramway T4" }] },
       ]
     },
+    QCM2_LYON,
   ],
 };
 
@@ -9326,7 +9342,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                   );
                 }
 
-                const multi = isMultiAnswer(q);
+                const multi = estQcm2Lyon(Number(module.id), exo.id) ? false : isMultiAnswer(q);
                 const selectedArr = Array.isArray(selected) ? selected : selected ? [selected] : [];
                 const exoShowResults = showResultsFor.has(exo.id);
                 const answerIsCorrect = isAnswerCorrect(selected, q);
@@ -9362,7 +9378,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       if (display?.questionId !== undefined) return <>{renderOriginalQuestions()}</>;
 
       return (
-      <div className={display?.controlsOnly ? "w-full" : "grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4"}>
+      <div className={display?.controlsOnly ? "w-full" : estQcm2Lyon(Number(module.id), exo.id) ? "grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4 min-w-0" : "grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4"}>
         <div className="space-y-4 min-w-0">
           <Card key={exo.id} id={`exo-revision-top-${exo.id}`} className="scroll-mt-4 transition-all">
             <CardContent className="p-6 space-y-4">
@@ -9935,7 +9951,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               </Button>
                             )}
                             {currentPage === totalPages - 1 && (
-                              <Button size="sm" variant="secondary" className="gap-2" onClick={async () => {
+                              <Button size="sm" variant="secondary" className={estQcm2Lyon(Number(module.id), exo.id) ? "gap-2 whitespace-normal h-auto py-2 max-w-full" : "gap-2"} onClick={async () => {
                                 const ok = await persistModuleCompletion();
                                 onBack();
                                 if (ok) toast.success(libelleFinQuiz(activitesEtatRef.current, activitesDuModule(Number(module.id)).length > 0).toast);
@@ -10010,7 +10026,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </CardContent>
           </Card>
         </div>
-        {!display?.controlsOnly && <QuizQuestionSidebar
+        {!display?.controlsOnly && <div className={estQcm2Lyon(Number(module.id), exo.id) ? 'hidden sm:block' : undefined}><QuizQuestionSidebar
           onJump={scrollToExerciseQuestion}
           items={questionsSafe.map((q: any, qi: number) => {
             const isAnswered = isQuestionAnsweredForSidebar(q);
@@ -10031,7 +10047,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             }
             return { key: q.id ?? qi, answered: isAnswered, wrong: isWrong };
           })}
-        />}
+        /></div>}
       </div>
     );
     };
@@ -10400,7 +10416,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </Button>
             );
           })() : (
-            <Button variant="secondary" className="gap-2" disabled={savingCompletion || !!historicalQuizProof?.remainingQuizzes.some(q => !submittedExoIdsRef.current.has(Number(q.id)))} onClick={async () => {
+            <Button variant="secondary" className={currentPageData?.type === "exercice-single" && estQcm2Lyon(Number(module.id), currentPageData.exercice.id) ? "gap-2 whitespace-normal h-auto py-2 max-w-[55%]" : "gap-2"} disabled={savingCompletion || !!historicalQuizProof?.remainingQuizzes.some(q => !submittedExoIdsRef.current.has(Number(q.id)))} onClick={async () => {
               const ok = await persistModuleCompletion();
               if (!ok) return; // on reste sur la page tant que le serveur n'a pas confirmé
               onBack();

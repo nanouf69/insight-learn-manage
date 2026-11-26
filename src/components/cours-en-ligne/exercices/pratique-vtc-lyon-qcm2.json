@@ -1,0 +1,983 @@
+{
+  "id": 826110201,
+  "titre": "QCM 2 – Examen pratique Connaissance de Lyon",
+  "sousTitre": "39 questions complémentaires · 4 choix · une seule réponse correcte",
+  "actif": true,
+  "questions": [
+    {
+      "id": 826110001,
+      "sourceQuestion": 1,
+      "enonce": "Quel quartier est cité pour aller boire un verre à Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Saint-Paul, dans le 5e arrondissement",
+          "correct": true
+        },
+        {
+          "lettre": "B",
+          "texte": "La Défense"
+        },
+        {
+          "lettre": "C",
+          "texte": "Le Vieux-Port de Marseille"
+        },
+        {
+          "lettre": "D",
+          "texte": "Montmartre"
+        }
+      ],
+      "explication": "Le support cite Saint-Paul (5e) et Hôtel de Ville (1er) pour boire un verre."
+    },
+    {
+      "id": 826110002,
+      "sourceQuestion": 2,
+      "enonce": "Quel avantage du métier de VTC par rapport au taxi est cité dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Le droit de pratiquer la maraude"
+        },
+        {
+          "lettre": "B",
+          "texte": "Pas de licence taxi à acheter ou à louer",
+          "correct": true
+        },
+        {
+          "lettre": "C",
+          "texte": "Des tarifs de course réglementés comme ceux des taxis"
+        },
+        {
+          "lettre": "D",
+          "texte": "Des stations réservées aux VTC"
+        }
+      ],
+      "explication": "Le support cite l’absence de licence taxi à acheter ou louer et le choix du tarif de la course."
+    },
+    {
+      "id": 826110003,
+      "sourceQuestion": 3,
+      "enonce": "Quelles motivations pour devenir chauffeur VTC sont citées dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Ne jamais rencontrer les clients"
+        },
+        {
+          "lettre": "B",
+          "texte": "Ne pas aimer conduire"
+        },
+        {
+          "lettre": "C",
+          "texte": "Aimer la conduite et le contact avec la clientèle",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "Éviter toute relation avec la clientèle"
+        }
+      ],
+      "explication": "Les motivations citées sont le goût de la conduite et du contact avec la clientèle."
+    },
+    {
+      "id": 826110004,
+      "sourceQuestion": 4,
+      "enonce": "Quelle différence entre taxi et VTC est citée dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Le VTC dispose de stations taxi réservées"
+        },
+        {
+          "lettre": "B",
+          "texte": "Le VTC pratique la maraude partout"
+        },
+        {
+          "lettre": "C",
+          "texte": "Les tarifs VTC sont réglementés comme les tarifs taxi"
+        },
+        {
+          "lettre": "D",
+          "texte": "Le taxi peut pratiquer la maraude dans sa zone de rattachement",
+          "correct": true
+        }
+      ],
+      "explication": "Le support cite notamment la maraude autorisée au taxi dans sa zone et ses tarifs réglementés."
+    },
+    {
+      "id": 826110005,
+      "sourceQuestion": 5,
+      "enonce": "Selon le support, que faites-vous après avoir déposé le client à destination ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Retourner au siège ou stationner hors de la chaussée",
+          "correct": true
+        },
+        {
+          "lettre": "B",
+          "texte": "Attendre de nouveaux clients sur la chaussée"
+        },
+        {
+          "lettre": "C",
+          "texte": "Pratiquer la maraude"
+        },
+        {
+          "lettre": "D",
+          "texte": "Occuper une station réservée aux taxis"
+        }
+      ],
+      "explication": "Le support indique le retour au siège ou un stationnement hors chaussée, par exemple dans un parking ou un garage."
+    },
+    {
+      "id": 826110006,
+      "sourceQuestion": 6,
+      "enonce": "Selon le support, quelle précaution prendre pour transporter un chien ou un chat ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Le laisser gêner le conducteur"
+        },
+        {
+          "lettre": "B",
+          "texte": "L’attacher avec un dispositif adapté ou utiliser une caisse de transport en veillant à son confort",
+          "correct": true
+        },
+        {
+          "lettre": "C",
+          "texte": "Le placer sur les genoux du conducteur"
+        },
+        {
+          "lettre": "D",
+          "texte": "Le laisser circuler librement entre les pédales"
+        }
+      ],
+      "explication": "Le support cite une ceinture de sécurité ou une caisse de transport, avec contrôle du confort de l’animal."
+    },
+    {
+      "id": 826110007,
+      "sourceQuestion": 7,
+      "enonce": "Selon le support, quelle précaution est indiquée pour un enfant de 4 à 10 ans ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Voyager debout à l’arrière"
+        },
+        {
+          "lettre": "B",
+          "texte": "Voyager sans dispositif de retenue"
+        },
+        {
+          "lettre": "C",
+          "texte": "Un rehausseur à l’arrière avec ceinture ou harnais",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "S’asseoir sur les genoux du conducteur"
+        }
+      ],
+      "explication": "Pour 4 à 10 ans, le support mentionne un rehausseur à l’arrière et une ceinture ou un harnais."
+    },
+    {
+      "id": 826110008,
+      "sourceQuestion": 8,
+      "enonce": "Selon le support, comment accompagner un client malvoyant ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Le laisser chercher seul l’entrée"
+        },
+        {
+          "lettre": "B",
+          "texte": "Ne pas lui parler"
+        },
+        {
+          "lettre": "C",
+          "texte": "Lui demander de guider le conducteur sans assistance"
+        },
+        {
+          "lettre": "D",
+          "texte": "Lui ouvrir la porte et l’aider jusqu’au lieu de rendez-vous",
+          "correct": true
+        }
+      ],
+      "explication": "Le support demande d’ouvrir la porte et d’aider le client dans ses mouvements jusqu’au rendez-vous."
+    },
+    {
+      "id": 826110009,
+      "sourceQuestion": 9,
+      "enonce": "Quelle démarche est citée dans le support si le client ne paie pas ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Une demande en injonction de payer devant le tribunal dont dépend le client",
+          "correct": true
+        },
+        {
+          "lettre": "B",
+          "texte": "Retenir le client de force"
+        },
+        {
+          "lettre": "C",
+          "texte": "Saisir ses objets sans décision"
+        },
+        {
+          "lettre": "D",
+          "texte": "Abandonner systématiquement toute démarche"
+        }
+      ],
+      "explication": "Le support cite le tribunal judiciaire ou de proximité dont dépend le client."
+    },
+    {
+      "id": 826110011,
+      "sourceQuestion": 11,
+      "enonce": "Quel lieu le support recommande-t-il pour une sortie avec des enfants, à La Mulatière ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "La tour Incity"
+        },
+        {
+          "lettre": "B",
+          "texte": "Le palais de justice"
+        },
+        {
+          "lettre": "C",
+          "texte": "L’Aquarium de Lyon",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "La gare de Vaise"
+        }
+      ],
+      "explication": "L’Aquarium de Lyon se trouve 7 rue Stéphane Déchant, à La Mulatière, au sud de Confluence."
+    },
+    {
+      "id": 826110014,
+      "sourceQuestion": 14,
+      "enonce": "Quel établissement figure parmi les hôtels 5 étoiles de Lyon cités dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "La Maison des Canuts"
+        },
+        {
+          "lettre": "B",
+          "texte": "La Villa Florentine",
+          "correct": true
+        },
+        {
+          "lettre": "C",
+          "texte": "La gare Jean Macé"
+        },
+        {
+          "lettre": "D",
+          "texte": "La Halle Tony Garnier"
+        }
+      ],
+      "explication": "Le support cite la Villa Florentine, 25 montée Saint-Barthélemy, Lyon 5e, parmi les hôtels 5 étoiles."
+    },
+    {
+      "id": 826110016,
+      "sourceQuestion": 16,
+      "enonce": "Quelle composition correspond à la salade lyonnaise décrite dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Riz, poisson cru et algues"
+        },
+        {
+          "lettre": "B",
+          "texte": "Semoule, pois chiches et merguez"
+        },
+        {
+          "lettre": "C",
+          "texte": "Pâtes, pesto et parmesan uniquement"
+        },
+        {
+          "lettre": "D",
+          "texte": "Salade frisée, lardons, croûtons et œuf poché ou mollet",
+          "correct": true
+        }
+      ],
+      "explication": "La salade lyonnaise associe frisée, lardons grillés, croûtons, œuf et vinaigrette à la moutarde."
+    },
+    {
+      "id": 826110019,
+      "sourceQuestion": 19,
+      "enonce": "Selon le support, quel personnage figure sur le logo permettant de reconnaître un bouchon lyonnais ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Astérix"
+        },
+        {
+          "lettre": "B",
+          "texte": "Tintin"
+        },
+        {
+          "lettre": "C",
+          "texte": "Gnafron",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "Babar"
+        }
+      ],
+      "explication": "Le support décrit un logo avec Gnafron, l’ami de Guignol, visible sur la vitrine ou la devanture."
+    },
+    {
+      "id": 826110027,
+      "sourceQuestion": 27,
+      "enonce": "Quel restaurant de poisson est cité dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Carnegie Hall, cité pour la viande"
+        },
+        {
+          "lettre": "B",
+          "texte": "La Maison des Canuts, musée du tissage"
+        },
+        {
+          "lettre": "C",
+          "texte": "Skipjack, rue d’Auvergne à Lyon",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "Lugdunum, musée et théâtres romains"
+        }
+      ],
+      "explication": "Le support cite Skipjack, 12 rue d’Auvergne, Lyon 2e, ainsi que L’Huîtrier et Jols."
+    },
+    {
+      "id": 826110031,
+      "sourceQuestion": 31,
+      "enonce": "Quel pont porte le nom d’un ancien maire de Lyon et Premier ministre ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Le pont du Gard"
+        },
+        {
+          "lettre": "B",
+          "texte": "Le pont Alexandre-III"
+        },
+        {
+          "lettre": "C",
+          "texte": "Le pont Raymond-Barre",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "Le pont de Brooklyn"
+        }
+      ],
+      "explication": "Le pont montré dans le support est le pont Raymond-Barre, maire de Lyon de 1995 à 2001."
+    },
+    {
+      "id": 826110033,
+      "sourceQuestion": 33,
+      "enonce": "Quelle liste contient uniquement des gares lyonnaises citées dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Perrache, Part-Dieu et Jean Macé",
+          "correct": true
+        },
+        {
+          "lettre": "B",
+          "texte": "Montparnasse, Saint-Lazare et Austerlitz"
+        },
+        {
+          "lettre": "C",
+          "texte": "Marseille-Saint-Charles, Nice-Ville et Toulon"
+        },
+        {
+          "lettre": "D",
+          "texte": "Bordeaux-Saint-Jean, Bayonne et Biarritz"
+        }
+      ],
+      "explication": "Le support cite Perrache, Part-Dieu, Jean Macé, Vaise et Saint-Paul."
+    },
+    {
+      "id": 826110035,
+      "sourceQuestion": 35,
+      "enonce": "Quelle liste contient uniquement des musées lyonnais cités dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Tour Incity, tour Oxygène et tour To-Lyon"
+        },
+        {
+          "lettre": "B",
+          "texte": "Gare Perrache, gare Vaise et gare Saint-Paul"
+        },
+        {
+          "lettre": "C",
+          "texte": "Musée des Confluences, musée des Beaux-Arts et musée Lugdunum",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "Halle Tony Garnier, Maison de la Danse et Transbordeur"
+        }
+      ],
+      "explication": "Le support cite le musée des Confluences (2e), les Beaux-Arts (1er) et Lugdunum (5e)."
+    },
+    {
+      "id": 826110036,
+      "sourceQuestion": 36,
+      "enonce": "Quelle association de salle de spectacle et de commune correspond au support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "LDLC Arena à Bordeaux"
+        },
+        {
+          "lettre": "B",
+          "texte": "Le Transbordeur à Nice"
+        },
+        {
+          "lettre": "C",
+          "texte": "La Maison de la Danse à Lille"
+        },
+        {
+          "lettre": "D",
+          "texte": "LDLC Arena à Décines-Charpieu",
+          "correct": true
+        }
+      ],
+      "explication": "La LDLC Arena est à Décines-Charpieu, près du Groupama Stadium ; le Transbordeur est à Villeurbanne."
+    },
+    {
+      "id": 826110040,
+      "sourceQuestion": 40,
+      "enonce": "Quel festival lyonnais consacré au cinéma a lieu en octobre selon le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Les Nuits sonores"
+        },
+        {
+          "lettre": "B",
+          "texte": "Les Nuits de Fourvière"
+        },
+        {
+          "lettre": "C",
+          "texte": "La Fête des Lumières"
+        },
+        {
+          "lettre": "D",
+          "texte": "Le Festival Lumière",
+          "correct": true
+        }
+      ],
+      "explication": "Le Festival Lumière est consacré au cinéma en octobre ; la Fête des Lumières a lieu en décembre."
+    },
+    {
+      "id": 826110043,
+      "sourceQuestion": 43,
+      "enonce": "Quelle église du Vieux Lyon se trouve près de la place Benoît-Crépu et date de 1848 ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "La basilique Saint-Martin d’Ainay"
+        },
+        {
+          "lettre": "B",
+          "texte": "La basilique Notre-Dame de Fourvière"
+        },
+        {
+          "lettre": "C",
+          "texte": "L’église Saint-Georges",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "L’église Saint-Nizier"
+        }
+      ],
+      "explication": "Le support situe l’église Saint-Georges entre la Quarantaine et Saint-Jean, près de la place Benoît-Crépu."
+    },
+    {
+      "id": 826110047,
+      "sourceQuestion": 47,
+      "enonce": "Quel bâtiment de la place de la Comédie a été restructuré par Jean Nouvel de 1989 à 1993 ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "La tour Oxygène"
+        },
+        {
+          "lettre": "B",
+          "texte": "La gare de Perrache"
+        },
+        {
+          "lettre": "C",
+          "texte": "L’Opéra de Lyon",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "Le musée des Confluences"
+        }
+      ],
+      "explication": "L’Opéra Nouvel, face à l’Hôtel de Ville, a été restructuré et agrandi par Jean Nouvel."
+    },
+    {
+      "id": 826110053,
+      "sourceQuestion": 53,
+      "enonce": "Quelle tour de la Part-Dieu a été inaugurée en 2010 et mesure 117 mètres selon le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "La tour Oxygène",
+          "correct": true
+        },
+        {
+          "lettre": "B",
+          "texte": "La tour Incity"
+        },
+        {
+          "lettre": "C",
+          "texte": "La tour To-Lyon"
+        },
+        {
+          "lettre": "D",
+          "texte": "La tour Part-Dieu"
+        }
+      ],
+      "explication": "La tour Oxygène a été inaugurée le 2 juin 2010 et compte 28 étages de bureaux."
+    },
+    {
+      "id": 826110055,
+      "sourceQuestion": 55,
+      "enonce": "Quelle tour de 171 mètres près de la gare Part-Dieu a été livrée fin 2023 ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "La tour Oxygène"
+        },
+        {
+          "lettre": "B",
+          "texte": "La tour Part-Dieu"
+        },
+        {
+          "lettre": "C",
+          "texte": "La tour To-Lyon",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "La tour métallique de Fourvière"
+        }
+      ],
+      "explication": "Le support décrit To-Lyon, une tour de bureaux et un hôtel 4 étoiles près de la gare Part-Dieu."
+    },
+    {
+      "id": 826110057,
+      "sourceQuestion": 57,
+      "enonce": "Quelles personnalités liées au football lyonnais sont citées dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Karim Benzema et Jean-Michel Aulas",
+          "correct": true
+        },
+        {
+          "lettre": "B",
+          "texte": "Paul Bocuse et Louise Labé"
+        },
+        {
+          "lettre": "C",
+          "texte": "Auguste et Louis Lumière"
+        },
+        {
+          "lettre": "D",
+          "texte": "Tony Garnier et Jean Nouvel"
+        }
+      ],
+      "explication": "Karim Benzema est né à Lyon et a joué à l’OL ; Jean-Michel Aulas en est un ancien président."
+    },
+    {
+      "id": 826110058,
+      "sourceQuestion": 58,
+      "enonce": "Quelle personnalité de la gastronomie lyonnaise est citée dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Tony Garnier"
+        },
+        {
+          "lettre": "B",
+          "texte": "Paul Bocuse",
+          "correct": true
+        },
+        {
+          "lettre": "C",
+          "texte": "Jean-Michel Aulas"
+        },
+        {
+          "lettre": "D",
+          "texte": "Antoine de Saint-Exupéry"
+        }
+      ],
+      "explication": "Paul Bocuse est présenté comme un chef cuisinier emblématique de la région lyonnaise."
+    },
+    {
+      "id": 826110061,
+      "sourceQuestion": 61,
+      "enonce": "Quels écrivain et poétesse liés à Lyon sont cités dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Antoine de Saint-Exupéry et Louise Labé",
+          "correct": true
+        },
+        {
+          "lettre": "B",
+          "texte": "Karim Benzema et Jean-Michel Aulas"
+        },
+        {
+          "lettre": "C",
+          "texte": "Denis et Eugène Bühler"
+        },
+        {
+          "lettre": "D",
+          "texte": "Auguste et Louis Lumière"
+        }
+      ],
+      "explication": "Saint-Exupéry est né à Lyon et a écrit Le Petit Prince ; Louise Labé est une poétesse lyonnaise du XVIe siècle."
+    },
+    {
+      "id": 826110062,
+      "sourceQuestion": 62,
+      "enonce": "Quelle humoriste originaire de Lyon est citée dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Louise Labé"
+        },
+        {
+          "lettre": "B",
+          "texte": "Florence Foresti",
+          "correct": true
+        },
+        {
+          "lettre": "C",
+          "texte": "Marie Curie"
+        },
+        {
+          "lettre": "D",
+          "texte": "George Sand"
+        }
+      ],
+      "explication": "La personnalité citée à la question 62 est Florence Foresti."
+    },
+    {
+      "id": 826110063,
+      "sourceQuestion": 63,
+      "enonce": "Quel lieu est cité pour profiter d’une belle vue sur Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Le hall intérieur de la gare de Perrache"
+        },
+        {
+          "lettre": "B",
+          "texte": "Un parking souterrain de la Part-Dieu"
+        },
+        {
+          "lettre": "C",
+          "texte": "L’esplanade de Fourvière",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "L’intérieur du palais de justice"
+        }
+      ],
+      "explication": "Le support cite Fourvière, les belvédères de la Croix-Rousse, Sainte-Foy-lès-Lyon et le mont Thou."
+    },
+    {
+      "id": 826110064,
+      "sourceQuestion": 64,
+      "enonce": "Comment s’appelle l’équipe de rugby de Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "L’Olympique de Marseille"
+        },
+        {
+          "lettre": "B",
+          "texte": "Le Paris Saint-Germain"
+        },
+        {
+          "lettre": "C",
+          "texte": "Le FC Nantes"
+        },
+        {
+          "lettre": "D",
+          "texte": "Le Lyon Olympique Universitaire (LOU Rugby)",
+          "correct": true
+        }
+      ],
+      "explication": "Le support donne le Lyon Olympique Universitaire, couramment appelé LOU Rugby."
+    },
+    {
+      "id": 826110067,
+      "sourceQuestion": 67,
+      "enonce": "Quelle liste de visites correspond au 1er arrondissement de Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Institut Lumière, Maison de la Danse et quartier des États-Unis"
+        },
+        {
+          "lettre": "B",
+          "texte": "Halle Tony Garnier, stade de Gerland et CHRD"
+        },
+        {
+          "lettre": "C",
+          "texte": "Place des Terreaux, musée des Beaux-Arts et amphithéâtre des Trois Gaules",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "Île Barbe, Vaise et musée Jean Couty"
+        }
+      ],
+      "explication": "Le support cite dans le 1er les Terreaux, l’Hôtel de Ville, les Beaux-Arts, l’Opéra et les Trois Gaules."
+    },
+    {
+      "id": 826110068,
+      "sourceQuestion": 68,
+      "enonce": "Quelle liste de visites correspond au 2e arrondissement de Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Croix-Rousse, mur des Canuts et Gros Caillou"
+        },
+        {
+          "lettre": "B",
+          "texte": "Part-Dieu, Auditorium et mémorial de Montluc"
+        },
+        {
+          "lettre": "C",
+          "texte": "Institut Lumière, place Ambroise-Courtois et Maison de la Danse"
+        },
+        {
+          "lettre": "D",
+          "texte": "Bellecour, Hôtel-Dieu et quartier Confluence",
+          "correct": true
+        }
+      ],
+      "explication": "Le support cite Bellecour, les Jacobins, Ainay, l’Hôtel-Dieu, Perrache et Confluence dans le 2e."
+    },
+    {
+      "id": 826110069,
+      "sourceQuestion": 69,
+      "enonce": "Quelle liste de visites correspond au 3e arrondissement de Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Part-Dieu, Halles Paul Bocuse et mémorial de Montluc",
+          "correct": true
+        },
+        {
+          "lettre": "B",
+          "texte": "Île Barbe, Vaise et Saint-Rambert"
+        },
+        {
+          "lettre": "C",
+          "texte": "Vieux Lyon, Fourvière et jardins du Rosaire"
+        },
+        {
+          "lettre": "D",
+          "texte": "Gerland, CHRD et piscine du Rhône"
+        }
+      ],
+      "explication": "Le 3e comprend notamment la Part-Dieu, sa bibliothèque, l’Auditorium, les Halles et Montluc."
+    },
+    {
+      "id": 826110070,
+      "sourceQuestion": 70,
+      "enonce": "Quelle liste de visites correspond au 4e arrondissement de Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Bellecour, Ainay et Confluence"
+        },
+        {
+          "lettre": "B",
+          "texte": "Mur des Canuts, Maison des Canuts et Gros Caillou",
+          "correct": true
+        },
+        {
+          "lettre": "C",
+          "texte": "Musée des Beaux-Arts, Opéra et Trois Gaules"
+        },
+        {
+          "lettre": "D",
+          "texte": "Part-Dieu, Auditorium et Halles Paul Bocuse"
+        }
+      ],
+      "explication": "Le support cite le plateau de la Croix-Rousse, les lieux des canuts et le Gros Caillou dans le 4e."
+    },
+    {
+      "id": 826110071,
+      "sourceQuestion": 71,
+      "enonce": "Quelle liste de visites correspond au 5e arrondissement de Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Part-Dieu, tour Incity et Montluc"
+        },
+        {
+          "lettre": "B",
+          "texte": "Parc de la Tête d’Or, Brotteaux et Cité internationale"
+        },
+        {
+          "lettre": "C",
+          "texte": "Vieux Lyon, Fourvière et musée Lugdunum",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "Île Barbe, Vaise et musée Jean Couty"
+        }
+      ],
+      "explication": "Le support cite aussi Saint-Jean, les traboules, Gadagne, les théâtres romains et les jardins du Rosaire."
+    },
+    {
+      "id": 826110072,
+      "sourceQuestion": 72,
+      "enonce": "Quelle liste de visites correspond au 6e arrondissement de Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Confluence, La Sucrière et Perrache"
+        },
+        {
+          "lettre": "B",
+          "texte": "Institut Lumière, États-Unis et Édouard-Herriot"
+        },
+        {
+          "lettre": "C",
+          "texte": "Halle Tony Garnier, Gerland et CHRD"
+        },
+        {
+          "lettre": "D",
+          "texte": "Parc de la Tête d’Or, musée d’Art contemporain et Brotteaux",
+          "correct": true
+        }
+      ],
+      "explication": "Le 6e comprend le parc de la Tête d’Or, la Cité internationale, le musée d’Art contemporain et les Brotteaux."
+    },
+    {
+      "id": 826110073,
+      "sourceQuestion": 73,
+      "enonce": "Quelle liste de visites correspond au 7e arrondissement de Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Halle Tony Garnier, stade de Gerland et CHRD",
+          "correct": true
+        },
+        {
+          "lettre": "B",
+          "texte": "Terreaux, Beaux-Arts et Opéra"
+        },
+        {
+          "lettre": "C",
+          "texte": "Mur des Canuts, Gros Caillou et Croix-Rousse"
+        },
+        {
+          "lettre": "D",
+          "texte": "Vieux Lyon, Fourvière et Lugdunum"
+        }
+      ],
+      "explication": "Le support cite aussi le parc de Gerland, les berges du Rhône et la piscine du Rhône dans le 7e."
+    },
+    {
+      "id": 826110074,
+      "sourceQuestion": 74,
+      "enonce": "Quelle liste de visites correspond au 8e arrondissement de Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Vaise, Île Barbe et Saint-Rambert"
+        },
+        {
+          "lettre": "B",
+          "texte": "Institut Lumière, Maison de la Danse et quartier des États-Unis",
+          "correct": true
+        },
+        {
+          "lettre": "C",
+          "texte": "Bellecour, Hôtel-Dieu et Confluence"
+        },
+        {
+          "lettre": "D",
+          "texte": "Part-Dieu, Auditorium et tour Incity"
+        }
+      ],
+      "explication": "Le 8e comprend aussi la place Ambroise-Courtois, le musée urbain Tony Garnier et l’hôpital Édouard-Herriot."
+    },
+    {
+      "id": 826110075,
+      "sourceQuestion": 75,
+      "enonce": "Quelle liste de visites correspond au 9e arrondissement de Lyon ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Terreaux, Hôtel de Ville et Opéra"
+        },
+        {
+          "lettre": "B",
+          "texte": "Parc de la Tête d’Or, Cité internationale et Brotteaux"
+        },
+        {
+          "lettre": "C",
+          "texte": "Île Barbe, Vaise et musée Jean Couty",
+          "correct": true
+        },
+        {
+          "lettre": "D",
+          "texte": "Saint-Jean, Lugdunum et Fourvière"
+        }
+      ],
+      "explication": "Le support cite aussi les berges de Saône, le quartier de l’Industrie et Saint-Rambert dans le 9e."
+    },
+    {
+      "id": 826110076,
+      "sourceQuestion": 76,
+      "enonce": "Quelle liste contient uniquement des sites hors des arrondissements de Lyon cités dans le support ?",
+      "choix": [
+        {
+          "lettre": "A",
+          "texte": "Bellecour, Hôtel-Dieu et Perrache"
+        },
+        {
+          "lettre": "B",
+          "texte": "Fourvière, Saint-Jean et Lugdunum"
+        },
+        {
+          "lettre": "C",
+          "texte": "Part-Dieu, Halles Paul Bocuse et Auditorium"
+        },
+        {
+          "lettre": "D",
+          "texte": "Groupama Stadium, mont Thou et Grand Parc de Miribel-Jonage",
+          "correct": true
+        }
+      ],
+      "explication": "Ces sites sont dans des communes voisines : Décines-Charpieu, les monts d’Or et le secteur de Miribel-Jonage."
+    }
+  ]
+}

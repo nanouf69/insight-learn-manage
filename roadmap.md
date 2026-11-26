@@ -1,4 +1,8 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Pratique VTC — PDF Lyon et QCM 2 (26/11)
+- [x] 76 questions comparées au quiz serveur de 99 questions : 39 QCM nouveaux, 37 objectifs déjà couverts exclus, ancien quiz intact.
+- [x] Rattachement source/projection préparé, PDF HTTP 200 identique ; PC/mobile lecture/download et 39/39 réponses fictives remises/rechargées ; 57 tests PASS, build OK.
+- [ ] Publication ciblée bloquée : outil publie tout HEAD dont correctifs du bilan non autorisés ; version fondée sur dernière publication requise, compte apprenant officiel non disponible. Rapport docs/pratique-vtc-lyon-qcm2-2026-11-26.md.
 ## Corrections techniques du bilan — 26/11/2026
 - [x] Suite du lot après 09:05 : quatre protections stockage ajoutées (JSON/entrée illisible, conservation octets, quota avant ACK) ; 148/148 Vitest PASS.
 - [x] Restauration fidèle types/NULL/PK : 39 tables, 478 colonnes capturées, index UNIQUE module_id vérifié, chaque SHA-256 et lignes restaurées comparés ; transport fictif, pas de restauration réelle.

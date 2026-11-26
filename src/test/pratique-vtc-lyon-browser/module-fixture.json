@@ -1,0 +1,2545 @@
+{
+  "id": 8,
+  "nom": "7.PRATIQUE VTC",
+  "cours": [
+    {
+      "id": 1,
+      "actif": true,
+      "titre": "1. Grille de notation de l'épreuve pratique VTC",
+      "fichiers": [],
+      "sousTitre": "Barème : Parcours (2pts), Sécurité/Conduite (10pts), Relation client (5pts), Facturation (3pts) — Note min. 12/20",
+      "description": "L'épreuve pratique comprend une phase de conduite en circulation d'une durée minimum de 20 minutes, notée sur 20 points. Est déclaré reçu le candidat ayant obtenu au moins 12/20.",
+      "images": []
+    },
+    {
+      "id": 10,
+      "actif": true,
+      "titre": "2. Conseils pratiques pour le jour de l'examen",
+      "images": [],
+      "fichiers": [],
+      "sousTitre": "Tenue vestimentaire, GPS, gestion du feu orange, comportement neutre",
+      "description": "\tVous venez avec une tenue convenable, propre, permis de conduire original et convocation\n\tVous allez vous garez au centre commercial\n\tVous me rejoignez à la rue smith au niveau du 66\n\tDeux inspecteurs vont vous appeler vous présenter les doc et signer\n\tUn qui vous noter sur la conduite, l’autre il va se faire passer pour un client et vous posez des questions\n\tIls vont vous dire que vous avez 6 minutes pour tout faire : mettre l’adresse dans le GPS faire le devis et montrer le point d’arrivée\n\tCoupez le son du GPS, le GPS n’est pas obligatoire\n\tLe feu orange à 90% des cas on s’arrête sauf si un véhicule vous suit de très près\n\tLes deux mains sur le violant\n\tToute interventions aux doubles commandes est éliminatoire\n\tSi votre GPS ne fonctionne plus, votre tel tombe ou trop d’appels vous vous arrêter et régler le pb\n\tToujours rester, polis courtois, on ne boude pas et on n‘est pas en colère\n\tLorsque que l’on ne sait pas qqch, on dit je ne sais pas mais si vous souhaitez je peux me renseigner\n\tNe pas donner la priorité quand ils ne l’ont pas\n\tAttention aux angles morts quand il y a des bandes cyclables\n\tPas de manipulation du téléphone pendant la conduite\n\tQuand on arrive, on s’arrête en double file  ou sur une place très proche de l’entrée avec les warnings, on montre le lieu d’arrivée avec la main et on remet tout de suite l’adresse de départ\n\tAttention, si vous n’arrivez pas à destination ou que vous dépassiez la destination, c’est éliminé.\n"
+    },
+    {
+      "id": 2,
+      "actif": true,
+      "titre": "3. Déroulement de l'épreuve pratique VTC",
+      "images": [],
+      "fichiers": [],
+      "sousTitre": "Accueil des jurys, tirage au sort, devis, parcours, facture, prise de congé",
+      "description": "1) Arrangements techniques. 2) Accueil des jurys. 3) Présentation carte grise et assurance. 4) Tirage au sort destination. 5) Réalisation du devis (transfert ou mise à disposition) + GPS (6 min max). 6)Parcours aller-retour. 8) Facturation et prise de congé."
+    },
+    {
+      "id": 9,
+      "actif": true,
+      "titre": "4. Devis et facturation VTC",
+      "images": [],
+      "fichiers": [],
+      "sousTitre": "Transfert vs Mise à disposition, calcul TVA 10%, signature du devis",
+      "description": "• Devis à réaliser à l'aller<div>Transfert (A→B) : prix forfaitaire HT + TVA 10%.\n• Mise à disposition : tarif horaire.30€ TVA à 20%\n• Minimum 10€ HT (11€ TTC) pour le transfert et 30 euros HT de l'heure minimum pour la mise à disposition\n• A l'examen, toutes les courses inférieures à 5Km ,facturez à 10€(forfait) ce qui fait 11€ TTC <div>• Facture à établir à l'arrivée.</div></div>"
+    },
+    {
+      "id": 1783682185977,
+      "actif": true,
+      "titre": "5.Adresses susceptibles de tomber",
+      "images": [],
+      "fichiers": [],
+      "description": "<span style=\"color: rgb(220, 38, 38);\">Point de départ : 66 rue smith Lyon</span>\n\n  <span style=\"color: rgb(220, 38, 38);\">  Mairie du 2 ème : 2 rue d'Enghien 69002 Lyon\n    Commissariat du 2 ème : 47 rue de la charité 69002 Lyon</span>\n    Musée des tissus et des arts décoratifs : 34 rue de la charité 69002 Lyon\n    Hotel intercontinental : 20 quai Jules Courmont 69002 Lyon\n    Théatre des celestins : place des celestins 69002 Lyon\n    Hotel sofitel : 20 quai docteur Gailleton 69002 Lyon\n    Hotel royal : 20 place Bellecour 69002 Lyon\n    Hotel Boscolo : 11 quai Jules Courmont 69002 Lyon\n    Palais de justice 24 colonnes - Cours d'appel / Cours d'assises : 1 rue du Palais de justice 69005 Lyon\n    Gare SNCF de Saint Paul : 11 Bis place Saint Paul 69005 Lyon\n    Cathedrale Saint Jean : Place Saint Jean 69005 Lyon\n    Musée Gallo Romain Lugdunum : 17 rue Cléberg 69005 Lyon\n    Théatre Guignol Mourguet : 2 rue Louis Carrand 69005 Lyon\n    Hopital Saint Joseph et Saint Luc : 20 quai Claude Bernard 69007 Lyon\n    Halle Tony Garnier : 20 place Charles et Christophe Mérieux 69007 Lyon\n    Palais des sports Gerland : 350 avenue Jean Jaurès 69007 Lyon\n    Matmut Stadium Gerland : 353 avenue Jean Jaurès 69007 Lyon\n    Restaurant Carnegie Hall : 253 rue Marcel Mérieux 69007 Lyon\n    Chambre régionale de l'agriculture : 23 rue Jean Baldassini 69007 Lyon\n    Mairie de la Mulatière : 1 place jean Moulin 69350 La Mulatière\n <span style=\"color: rgb(220, 38, 38);\">   Mairie d'Oullins : place Valmy69600 Oullins</span>\n    <span style=\"color: rgb(220, 38, 38);\">Gare SNCF d'Oullins : place Valmy 69600 Oullins</span>\n    Hotel Kyriad Lyon sud  : 35 chemin de la croix Pivort 69110 Sainte-Foy-Lès-Lyon\n <span style=\"color: rgb(220, 38, 38);\">   Hotel Campanil :17 place carnot 69002 Lyon\n    Restaurant le vivarais :  1 place mailleton 69002 Lyon</span>\n    Piscine du Rhône : 8 quai Claude bernard 69007 Lyon\n  <span style=\"color: rgb(220, 38, 38);\">  Piscine d’Oullins : 46 rue rue d'Oullins69600 Oullins\n    Gare Perrache : 14 cours de Verdun Rambaud 69002 Lyon\n    Brasserie Georges : 30 cours de verdun 69002 Lyon\n    VNF : 2 rue de la quarantaine 69005 Lyon</span>"
+    },
+    {
+      "id": 1785334184827,
+      "actif": true,
+      "titre": "Connaissances Ville de Lyon",
+      "images": [],
+      "fichiers": []
+    },
+    {
+      "id": 1788360115410,
+      "actif": true,
+      "titre": "Carte vile de lyon ",
+      "images": [],
+      "fichiers": []
+    }
+  ],
+  "exercices": [
+    {
+      "id": 1785332774763,
+      "actif": true,
+      "titre": "Quizz Ville De Lyon",
+      "questions": [
+        {
+          "id": 1,
+          "choix": [
+            {
+              "texte": "Dans le quartier du Vieux Lyon",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Dans le quartier de la Guillotière",
+              "lettre": "B"
+            },
+            {
+              "texte": "Dans le quartier de la Confluence",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Où se situe la Cathédrale Saint Jean ?",
+          "_editedAt": "2026-04-30T15:06:27.918Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 2,
+          "choix": [
+            {
+              "texte": "D'Europe",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "De France",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "De la région",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "La place Bellecour est la 5-ème plus grande place :",
+          "_editedAt": "2026-05-04T06:16:36.115Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 3,
+          "choix": [
+            {
+              "texte": "32 colonnes",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "18 colonnes",
+              "lettre": "B"
+            },
+            {
+              "texte": "24 colonnes",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "20 colonnes",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Le palais de justice de Lyon est aussi appelé les : ",
+          "_editedAt": "2026-05-04T06:21:52.252Z",
+          "imageSize": "2xl",
+          "manually_edited": true
+        },
+        {
+          "id": 4,
+          "choix": [
+            {
+              "texte": "L'Eglise Saint Georges",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "La basilique de notre dame de Fourvière ",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "La cathédrale Saint Jean",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Quel est ce monument ?",
+          "_editedAt": "2026-05-04T06:23:03.284Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 5,
+          "choix": [
+            {
+              "texte": "Henri GERLAND",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Tony GARNIER",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Paul BOCUSE",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Qui a construit le stade de Gerland ?",
+          "_editedAt": "2026-05-04T06:24:54.672Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 6,
+          "choix": [
+            {
+              "texte": "La halle (anciennement l'abattoir de la mouche) ",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "La tour crayon",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "La statue de Louis XIV sur la place Bellecour",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "Le monument aux morts du parc de la tête d'or",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Quel édifice n’a pas été construit par Tony Garnier ?",
+          "_editedAt": "2026-05-04T06:26:29.115Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 7,
+          "choix": [
+            {
+              "texte": "Un restaurant de spécialités lyonnaises ",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Un bar à vins",
+              "lettre": "B"
+            },
+            {
+              "texte": "Un magasin de souvenirs de Lyon",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Qu’est-ce qu’un bouchon lyonnais ?",
+          "_editedAt": "2026-05-04T06:28:50.913Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 8,
+          "choix": [
+            {
+              "texte": "La tarte à la praline ",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "La choucroute",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Les quenelles",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Quel plat n’est pas une spécialité Lyonnaise ?",
+          "_editedAt": "2026-05-04T06:30:09.169Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 9,
+          "choix": [
+            {
+              "texte": "3-ème arrondissement de Lyon",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "2-ème arrondissement de Lyon",
+              "lettre": "B"
+            },
+            {
+              "texte": "6-ème arrondissement de Lyon",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Où se situe les Halles Paul Bocuse ?",
+          "_editedAt": "2026-05-04T06:33:05.029Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 10,
+          "choix": [
+            {
+              "texte": "La brasserie Georges",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "La brasserie de l'Est ",
+              "lettre": "B"
+            },
+            {
+              "texte": "Le mercière",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "Les terrasses de Lyon ",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Quel restaurant est un bouchon Lyonnais ?",
+          "_editedAt": "2026-05-04T06:34:51.716Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 11,
+          "choix": [
+            {
+              "texte": "A proximité de Confluence",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "A proximité de la Part-Dieu",
+              "lettre": "B"
+            },
+            {
+              "texte": "A proximité de la place des Terreaux",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "La patinoire Charlemagne se situe : ",
+          "_editedAt": "2026-05-04T06:36:20.510Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 12,
+          "choix": [
+            {
+              "texte": "Place de la comédie",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Place des jacobins",
+              "lettre": "B"
+            },
+            {
+              "texte": "Place des invalides",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Quelle place n’est pas à Lyon ? ",
+          "_editedAt": "2026-05-04T06:38:04.188Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 13,
+          "choix": [
+            {
+              "texte": "Face à l'Opéra de Lyon",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Face à la tour Incity",
+              "lettre": "B"
+            },
+            {
+              "texte": "Face au musée des confluences",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "L’hôtel de ville de Lyon se situe : ",
+          "_editedAt": "2026-05-04T06:39:26.985Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 14,
+          "choix": [
+            {
+              "texte": "Ils allument toutes les lumières de la maison",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Ils mettent des lumignons au bord des fenêtres",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Ils ne font rien, cette fête n'existe pas ",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Que font les lyonnais lors de la fête des lumières ?",
+          "_editedAt": "2026-05-04T06:40:58.565Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 15,
+          "choix": [
+            {
+              "texte": "le 5 décembre",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "le 10 décembre",
+              "lettre": "B"
+            },
+            {
+              "texte": "le 12 décembre",
+              "lettre": "C"
+            },
+            {
+              "texte": "le 8 décembre",
+              "lettre": "D",
+              "correct": true
+            }
+          ],
+          "enonce": "Quand célébrons nous la fête des lumières ?",
+          "_editedAt": "2026-05-04T06:42:26.081Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 16,
+          "choix": [
+            {
+              "texte": "Des animaux sauvages",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Des manèges à sensations fortes",
+              "lettre": "B"
+            },
+            {
+              "texte": "Un jardin botanique",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Que pouvons-nous voir au Parc de la Tête d’Or ?",
+          "_editedAt": "2026-05-04T06:44:05.590Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 17,
+          "choix": [
+            {
+              "texte": "1er arrondissement",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "2-ème arrondissement",
+              "lettre": "B"
+            },
+            {
+              "texte": "6-ème arrondissement",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "8-ème arrondissement",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Ou se trouve le Parc de la Tête d’Or ?",
+          "_editedAt": "2026-05-04T06:46:23.519Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 18,
+          "choix": [
+            {
+              "texte": "Coté Rhône ",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Coté Saône",
+              "lettre": "B"
+            },
+            {
+              "texte": "Sur la presqu'île ",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "La place des Terreaux se situe :",
+          "_editedAt": "2026-05-04T06:47:12.235Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 19,
+          "choix": [
+            {
+              "texte": "Un robot",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Une marionnette",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Une peluche ",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Qui est Guignol ?",
+          "_editedAt": "2026-05-04T06:48:27.103Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 20,
+          "choix": [
+            {
+              "texte": "Le musée Gadagne",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Le musée de l'armée",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Le musée des confluences",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Quel musée n’est pas à Lyon ?",
+          "_editedAt": "2026-05-04T06:49:31.797Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 21,
+          "choix": [
+            {
+              "texte": "Le port de Lyon",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "L'aéroport de Lyon",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "L'entrée du périphérique ",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Le Rhône express est un moyen de transport qui dessert : ",
+          "_editedAt": "2026-05-04T06:51:32.533Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 22,
+          "choix": [
+            {
+              "texte": "La tour Incity",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "La tour Part-Dieu LCL",
+              "lettre": "B"
+            },
+            {
+              "texte": "La tour Oxygène ",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Quelle tour est surnommée « La gomme » ",
+          "_editedAt": "2026-05-04T06:53:02.348Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 23,
+          "choix": [
+            {
+              "texte": "La tour Incity",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "La tour Part-Dieu LCL",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "La tour Oxygène ",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Quelle tour est dotée d’hôtels et de restaurants ?",
+          "_editedAt": "2026-05-04T06:54:30.851Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 24,
+          "choix": [
+            {
+              "texte": "Le premier hôtel lyonnais",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Le premier hôpital lyonnais",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Le premier bâtiment lyonnais",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "L’hôtel Dieu était : ",
+          "_editedAt": "2026-05-04T06:59:38.541Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 25,
+          "choix": [
+            {
+              "texte": "Un maraicher lyonnais",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Un cuisinier lyonnais ",
+              "lettre": "B"
+            },
+            {
+              "texte": "Un ouvrier qui fabrique de la soie",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Qu’est-ce qu’un canut ?",
+          "_editedAt": "2026-05-04T06:56:57.393Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 26,
+          "choix": [
+            {
+              "texte": "A Perrache",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "A gratte ciel",
+              "lettre": "B"
+            },
+            {
+              "texte": "A la Croix Rousse",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Où reste-t-il des traces de ces canuts ?",
+          "_editedAt": "2026-05-04T06:58:37.529Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 27,
+          "choix": [
+            {
+              "texte": "Rue de la Thibaudière",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Rue de la République ",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Route de Genas",
+              "lettre": "C"
+            },
+            {
+              "texte": "Route de Vienne",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Quelle rue à Lyon est connue pour aller faire du shopping ?",
+          "_editedAt": "2026-05-04T07:01:02.921Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 28,
+          "choix": [
+            {
+              "texte": "La tannerie ",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "La maison de la danse",
+              "lettre": "B"
+            },
+            {
+              "texte": "La halle Tony Garnier",
+              "lettre": "C"
+            },
+            {
+              "texte": "La bourse du travail ",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Quelle salle de spectacle n’est pas situé à Lyon ?",
+          "_editedAt": "2026-05-04T07:02:34.082Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 29,
+          "choix": [
+            {
+              "texte": "Carnegie hall ",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "René Nardonne",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Skipjack",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Où pouvons-nous aller pour manger une glace à Lyon ?",
+          "_editedAt": "2026-05-04T07:03:37.331Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 30,
+          "choix": [
+            {
+              "texte": "Un glacier",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Un office de tourisme",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Un fast-food",
+              "lettre": "C"
+            }
+          ],
+          "enonce": " Que pouvons nous trouver sur la place Bellecour ?",
+          "_editedAt": "2026-05-04T07:06:47.557Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 31,
+          "choix": [
+            {
+              "texte": "Un marché gare",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Des usines de quenelle",
+              "lettre": "B"
+            },
+            {
+              "texte": "Des entrepôts de sucre",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "Des champs cultivés",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Confluence avant les travaux on y trouvait :",
+          "_editedAt": "2026-05-04T07:06:18.211Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 32,
+          "choix": [
+            {
+              "texte": "Corbas",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Mions",
+              "lettre": "B"
+            },
+            {
+              "texte": "Saint Priest",
+              "lettre": "C"
+            },
+            {
+              "texte": "Vénissieux",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Où se trouve actuellement le marché Gare ?",
+          "_editedAt": "2026-05-04T07:09:57.557Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 33,
+          "choix": [
+            {
+              "texte": "Des cervelles animales",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Des œufs montés en neiges",
+              "lettre": "B"
+            },
+            {
+              "texte": "Du fromage blanc",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Les cervelles de canuts sont préparées avec : ",
+          "_editedAt": "2026-05-04T07:10:11.808Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 34,
+          "choix": [
+            {
+              "texte": "Confluence ",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "La Part-Dieu",
+              "lettre": "B"
+            }
+          ],
+          "enonce": "Lequel de ces deux centres commerciaux est ouvert en partie sur l’extérieur ?",
+          "_editedAt": "2026-05-05T09:50:01.621Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 35,
+          "choix": [
+            {
+              "texte": "A coter de la place Antonin Poncet Lyon 2-ème",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "A coter de la place des terreaux Lyon 1 er",
+              "lettre": "B"
+            },
+            {
+              "texte": "A coter de la place Carnot Lyon 2-ème",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Où est situé le « flower tree », le bouquet de fleurs ?",
+          "_editedAt": "2026-05-04T07:18:02.178Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 36,
+          "choix": [
+            {
+              "texte": "1",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "2",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "3",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Combien de cours d'eau traverse la ville de Lyon avant de se rejoindre ?",
+          "_editedAt": "2026-05-04T07:18:47.858Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 37,
+          "choix": [
+            {
+              "texte": "Ses spécialités culinaires",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Ses gratte-ciels",
+              "lettre": "B"
+            },
+            {
+              "texte": "Son climat",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Lyon est reconnu dans toute l'Europe pour : ",
+          "_editedAt": "2026-05-04T07:20:06.148Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 38,
+          "choix": [
+            {
+              "texte": "Le gratin",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Le saucisson",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Les pizzas",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Quelle spécialité culinaire a fait la réputation de Lyon ?",
+          "_editedAt": "2026-05-04T07:20:58.215Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 39,
+          "choix": [
+            {
+              "texte": "Un Pône",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Un Gône",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Un Môme",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Comment appelle-t-on populairement un Lyonnais ?",
+          "_editedAt": "2026-05-04T07:22:17.153Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 40,
+          "choix": [
+            {
+              "texte": "Le Centre",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "La Fosse aux ours",
+              "lettre": "B"
+            },
+            {
+              "texte": "La presqu'île",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Comment appelle-t-on le centre-ville ?",
+          "_editedAt": "2026-05-04T07:23:12.928Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 41,
+          "choix": [
+            {
+              "texte": "La place Bellecombe",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "La place Bellecour",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "La place Belle France",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "La place principale de Lyon centre s'appelle : ",
+          "_editedAt": "2026-05-04T07:24:47.304Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 42,
+          "choix": [
+            {
+              "texte": "Louis XIV sur son cheval",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Napoléon sur son cheval",
+              "lettre": "B"
+            },
+            {
+              "texte": "Jeanne d'Arc sur son cheval",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Sur cette place trône la statue de : ",
+          "_editedAt": "2026-05-04T07:26:38.670Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 43,
+          "choix": [
+            {
+              "texte": "La queue du cheval",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Les étriers",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "La selle du cheval",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "L'artiste, auteur de cette statue, a oublié un détail important, lequel ?",
+          "_editedAt": "2026-05-04T07:28:16.572Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 44,
+          "choix": [
+            {
+              "texte": "Le théâtre antique",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Le théâtre baroque",
+              "lettre": "B"
+            },
+            {
+              "texte": "Le théâtre de Guignol",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "De quel théâtre Lyon est t-il le berceau ?",
+          "_editedAt": "2026-05-04T07:30:26.332Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 45,
+          "choix": [
+            {
+              "texte": "Des voies romaines pour eaux pluviales",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Une pâtisserie locale",
+              "lettre": "B"
+            },
+            {
+              "texte": "Des passages entre deux rues parallèles",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Les Traboules sont ?",
+          "_editedAt": "2026-05-04T07:31:16.860Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 46,
+          "choix": [
+            {
+              "texte": "Un croisement",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Un hôpital",
+              "lettre": "B"
+            },
+            {
+              "texte": "Un quartier historique",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "La Croix rousse est :",
+          "_editedAt": "2026-05-04T07:32:26.885Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 47,
+          "choix": [
+            {
+              "texte": "Festival electro/techno",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Festival reggae",
+              "lettre": "B"
+            },
+            {
+              "texte": "Festival de Jazz",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Quel genre de festival est organisé tous les printemps ?",
+          "_editedAt": "2026-05-04T07:33:17.298Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 48,
+          "choix": [
+            {
+              "texte": "Une Cathédrale",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Une église",
+              "lettre": "B"
+            },
+            {
+              "texte": "Une Basilique",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "L'édifice religieux du quartier historique de Fourvière est :",
+          "_editedAt": "2026-05-04T07:34:30.962Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 49,
+          "choix": [
+            {
+              "texte": "Le parc de la tête d'oie",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Le parc de la tête blanche",
+              "lettre": "B"
+            },
+            {
+              "texte": "Le parc de la tête d'or",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Le parc urbain de Lyon s'appelle : ",
+          "_editedAt": "2026-05-04T07:35:22.257Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 50,
+          "choix": [
+            {
+              "texte": "Saint Thomas",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Saint Jean",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Saint Pierre",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Comment s'appelle le quartier historique de Lyon, classé au patrimoine de l'UNESCO ?",
+          "_editedAt": "2026-05-04T07:36:23.774Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 51,
+          "choix": [
+            {
+              "texte": "La fête des lumières",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "La fête de la saint Jean",
+              "lettre": "B"
+            },
+            {
+              "texte": "La fête des fenêtres",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Pour quelle occasion les Lyonnais mettent des bougies à leur fenêtre le 8 décembre de chaque année ?",
+          "_editedAt": "2026-05-04T07:37:08.842Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 52,
+          "choix": [
+            {
+              "texte": "De l'Empire romain",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "De la Préhistoire",
+              "lettre": "B"
+            },
+            {
+              "texte": "Du Moyen Âge",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "De quand date la fondation de la ville de Lyon, en tant que puissante cité ?",
+          "_editedAt": "2026-05-04T07:38:04.384Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 53,
+          "choix": [
+            {
+              "texte": "Loire et Allier",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Rhône et Saône",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Rhône et Ain",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Au confluent de quels fleuve et rivière a été construite la ville de Lyon ?",
+          "_editedAt": "2026-05-04T07:39:00.488Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 54,
+          "choix": [
+            {
+              "texte": "Vesontio",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Lugdunum",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Augustoritum",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Quel était le nom de la ville de Lyon à l'époque de la Rome antique ?",
+          "_editedAt": "2026-05-04T07:47:01.651Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 55,
+          "choix": [
+            {
+              "texte": "Blandine",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Emilie",
+              "lettre": "B"
+            },
+            {
+              "texte": "Aristée",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Quel est le nom de la sainte qui fut martyrisée et livrée en pâture aux bêtes dans l'amphithéâtre des Trois Gaules de Lyon en 177, sous Marc Aurèle ?",
+          "_editedAt": "2026-05-04T07:48:27.369Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 56,
+          "choix": [
+            {
+              "texte": "La Croix-Rousse",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "La Duchère",
+              "lettre": "B"
+            },
+            {
+              "texte": "Fourvière",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Quel est le nom de la colline lyonnaise où est construite la cathédrale dédiée à la Vierge Marie ?",
+          "_editedAt": "2026-05-04T07:49:21.936Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 57,
+          "choix": [
+            {
+              "texte": "Carnot",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": " Des Quinconces",
+              "lettre": "B"
+            },
+            {
+              "texte": "Bellecour",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Quel est le nom de la plus grande place piétonne de Lyon, classée parmi l'une des plus importantes d'Europe ?",
+          "_editedAt": "2026-05-04T07:53:43.127Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 58,
+          "choix": [
+            {
+              "texte": "Gerland",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Groupama Stadium",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Geoffroy Guichard",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Comment se nomme le nouveau stade où se déroulent les matchs de football accueillant l'Olympique lyonnais ?",
+          "_editedAt": "2026-06-09T08:14:10.534Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 59,
+          "choix": [
+            {
+              "texte": "Le quartier de la mouche",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Le quartier de Monchat",
+              "lettre": "B"
+            },
+            {
+              "texte": "Le quartier des poissons",
+              "lettre": "C"
+            },
+            {
+              "texte": "La perallière",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Comment s'appelait le quartier de Gerland  ?",
+          "_editedAt": "2026-05-04T07:55:45.982Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 60,
+          "choix": [
+            {
+              "texte": "Parc de la Tête d'Or",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Parc de Lacroix-Laval",
+              "lettre": "B"
+            },
+            {
+              "texte": "Parc Blandan",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Comment se nomme le parc urbain, véritable \"poumon vert\" de la ville de Lyon, intégrant un jardin zoologique ?",
+          "_editedAt": "2026-05-04T07:57:29.305Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 61,
+          "choix": [
+            {
+              "texte": "Les gargotes",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Les bouchons",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Les brasseries",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Comment appelle-t-on les restaurants typiquement lyonnais où l'on peut déguster les spécialités dont le tablier de sapeur, la cervelle de canut, les quenelles, et boire un \"pot\" de beaujolais ?",
+          "_editedAt": "2026-05-04T07:59:01.521Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 62,
+          "choix": [
+            {
+              "texte": "Les marmitones",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Les cheftaines",
+              "lettre": "B"
+            },
+            {
+              "texte": "Les mères",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Quel surnom a-t-on donné aux cuisinières de la région lyonnaise, tenant des restaurants où est servie une cuisine régionale et populaire ?",
+          "_editedAt": "2026-05-04T08:16:42.476Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 63,
+          "choix": [
+            {
+              "texte": "Bourgogne",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Pays de la Loire",
+              "lettre": "B"
+            },
+            {
+              "texte": "Auvegne Rhône-Alpes",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "PACA",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "De quelle région française Lyon est-elle la préfecture ?",
+          "_editedAt": "2026-05-04T08:20:37.582Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 64,
+          "choix": [
+            {
+              "texte": "La Saône",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Le Rhin",
+              "lettre": "B"
+            },
+            {
+              "texte": "Le Rhône",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "La Seine",
+              "lettre": "D"
+            },
+            {
+              "texte": "La Loire",
+              "lettre": "E"
+            },
+            {
+              "texte": "Le Gardon",
+              "lettre": "F"
+            }
+          ],
+          "enonce": "Quels cours d'eau traversent la ville de Lyon ?",
+          "_editedAt": "2026-05-04T08:19:08.931Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 65,
+          "choix": [
+            {
+              "texte": "L'Ain",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Le Tarn",
+              "lettre": "B"
+            },
+            {
+              "texte": "Le Var",
+              "lettre": "C"
+            },
+            {
+              "texte": "La Savoie",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Parmi ces quatre départements, lequel est-il frontalier du Rhône ?",
+          "_editedAt": "2026-05-04T08:20:03.972Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 66,
+          "choix": [
+            {
+              "texte": "177 av. J.-C.",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "43 av. J.-C.",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "43",
+              "lettre": "C"
+            },
+            {
+              "texte": "177",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "En quelle année fut fondée Lugdunum ?",
+          "_editedAt": "2026-05-04T08:22:18.815Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 67,
+          "choix": [
+            {
+              "texte": "De la Loire",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Du Rhône",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "De la Seine",
+              "lettre": "C"
+            },
+            {
+              "texte": "De la Garonne",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Lyon est située au confluent de la Saône et",
+          "_editedAt": "2026-05-04T08:42:10.549Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 68,
+          "choix": [
+            {
+              "texte": "Lyon",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Lyont",
+              "lettre": "B"
+            },
+            {
+              "texte": "Lyons",
+              "lettre": "C"
+            },
+            {
+              "texte": "Ça ne s'écrit pas en anglais",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "En anglais, Lyon s'écrit",
+          "_editedAt": "2026-05-04T08:43:24.858Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 69,
+          "choix": [
+            {
+              "texte": "5 fois de suite",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "7 fois de suite",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "9 fois de suite",
+              "lettre": "C"
+            },
+            {
+              "texte": "11 fois de suite",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "L'Olympique lyonnais a été champion de France de football",
+          "_editedAt": "2026-05-04T08:44:18.025Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 70,
+          "choix": [
+            {
+              "texte": "L'ampoule",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "La montgolfière",
+              "lettre": "B"
+            },
+            {
+              "texte": "Le bateau à vapeur",
+              "lettre": "C"
+            },
+            {
+              "texte": "Le cinéma",
+              "lettre": "D",
+              "correct": true
+            }
+          ],
+          "enonce": "Les frères Lumière ont créé",
+          "_editedAt": "2026-05-04T08:45:49.935Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 71,
+          "choix": [
+            {
+              "texte": "Ville-affranchie",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Villefranche",
+              "lettre": "B"
+            },
+            {
+              "texte": "Ville-franche",
+              "lettre": "C"
+            },
+            {
+              "texte": "Francheville",
+              "lettre": "D"
+            }
+          ],
+          "enonce": " Pendant la Révolution, Lyon a été renommée",
+          "_editedAt": "2026-05-04T08:46:53.297Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 72,
+          "choix": [
+            {
+              "texte": "la Mère Brazier ",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "le Splendid",
+              "lettre": "B"
+            },
+            {
+              "texte": "le victoria hall",
+              "lettre": "C"
+            },
+            {
+              "texte": "la pince",
+              "lettre": "D",
+              "correct": true
+            }
+          ],
+          "enonce": "Quel restaurant gastronomique n'existe pas sur la ville de Lyon ?",
+          "_editedAt": "2026-05-04T08:48:00.987Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 73,
+          "choix": [
+            {
+              "texte": "La brasserie Georges",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "La Brasserie de l'Etoile",
+              "lettre": "B"
+            },
+            {
+              "texte": "La Brasserie L'Est",
+              "lettre": "C"
+            },
+            {
+              "texte": "Brasserie de la Villette",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Quelle est la plus grande brasserie de Lyon ?",
+          "_editedAt": "2026-05-04T08:49:07.982Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 74,
+          "choix": [
+            {
+              "texte": "Se promener au parc de la tête d’or",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Visiter les musées",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Se restaurer auprès de bouchons lyonnais",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "Nager sur le Rhone",
+              "lettre": "D"
+            },
+            {
+              "texte": "Visiter le quartier de Fourvière et la basilique de notre dame de Fourvière",
+              "lettre": "E",
+              "correct": true
+            },
+            {
+              "texte": "Aller faire du shopping au centre commercial la part Dieu ou à confluences",
+              "lettre": "F",
+              "correct": true
+            },
+            {
+              "texte": "Se baigner à la piscine (piscine du Rhône) ou dans dans des lacs (Méribel ou parc Feyssine)",
+              "lettre": "7",
+              "correct": true
+            },
+            {
+              "texte": "La patinoire",
+              "lettre": "8",
+              "correct": true
+            },
+            {
+              "texte": "Faire de l'escalade",
+              "lettre": "9",
+              "correct": true
+            }
+          ],
+          "enonce": "Quelles activités pourrai-je effectuer sur la ville de Lyon ou aux alentours ?",
+          "_editedAt": "2026-05-04T08:52:16.568Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 75,
+          "choix": [
+            {
+              "texte": "La saucisse",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "La choucroute et les fruits de mer",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "la merguez",
+              "lettre": "C"
+            },
+            {
+              "texte": "la quenelle",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Quel est la spécialité de la brasserie Georges ?",
+          "_editedAt": "2026-05-04T08:53:59.282Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 76,
+          "choix": [
+            {
+              "texte": "G la dalle",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Macdonald's",
+              "lettre": "B"
+            },
+            {
+              "texte": "Le carnegie Hall",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "Burger 's",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Quel restaurant est connu pour manger de la viande ?",
+          "_editedAt": "2026-05-04T08:55:06.153Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 77,
+          "choix": [
+            {
+              "texte": "Le train express",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Le Rhône express",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "L'aéroport express",
+              "lettre": "C"
+            },
+            {
+              "texte": "Le bus express",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Quel est l'autre moyen de transport pour aller à l’aéroport ?",
+          "_editedAt": "2026-05-04T08:56:37.861Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 78,
+          "choix": [
+            {
+              "texte": "la choucroute",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "les quenelles",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "la cervelle de canuts",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "les frites",
+              "lettre": "D"
+            },
+            {
+              "texte": "Tablier de sapeur",
+              "lettre": "E",
+              "correct": true
+            },
+            {
+              "texte": "les Bugnes",
+              "lettre": "F",
+              "correct": true
+            },
+            {
+              "texte": "Le calisson ",
+              "lettre": "7"
+            },
+            {
+              "texte": "La tarte aux pralines",
+              "lettre": "8",
+              "correct": true
+            },
+            {
+              "texte": "La merguez",
+              "lettre": "9"
+            },
+            {
+              "texte": "Les coussins lyonnais",
+              "lettre": "10",
+              "correct": true
+            }
+          ],
+          "enonce": "Quelles sont les spécialités culinaires lyonnaise ?",
+          "_editedAt": "2026-05-04T08:59:07.507Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 79,
+          "choix": [
+            {
+              "texte": "Des entrepôts (sucrière), un port industriel (port Rambaud) et un marché-gare.",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Des bananes, des fraises et des cerises",
+              "lettre": "B"
+            },
+            {
+              "texte": "Un quartier d'affaires",
+              "lettre": "C"
+            },
+            {
+              "texte": "rien du tout",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Que y’ avaient-ils avant le quartier des confluences ?",
+          "_editedAt": "2026-05-04T09:00:10.928Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 80,
+          "choix": [
+            {
+              "texte": "Jean Nouvel",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Frédéric-Auguste Barthold",
+              "lettre": "B"
+            },
+            {
+              "texte": "Denis Valode",
+              "lettre": "C"
+            },
+            {
+              "texte": "Tony garnier",
+              "lettre": "D",
+              "correct": true
+            }
+          ],
+          "enonce": "Qui a construit la halle Tony Garnier ?",
+          "_editedAt": "2026-05-04T09:01:19.609Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 81,
+          "choix": [
+            {
+              "texte": "La tour Incity, la tour Part Dieu, la tour oxygène",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "L'hôpital Grange-Blanche, le stade de Gerland, le Monument aux morts du Parc de la Tête d'Or",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Le centre commercial la Part Dieu, le centre commercial Confluence, le centre commercial de Vaulx-En-Velin La Soie ",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Quels sont les autres édifices que Tony Garnier a construits ?",
+          "_editedAt": "2026-05-04T09:10:20.052Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 82,
+          "choix": [
+            {
+              "texte": "Important lieu de l’industrie de la soie et des canuts, les canuts étaient des ouvriers qui travaillaient de la soie.",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Important lieu ou l'on fait la fête",
+              "lettre": "B"
+            },
+            {
+              "texte": "Pour son agriculture",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Pourquoi le quartier de la croix rousse est-il connu ?",
+          "_editedAt": "2026-05-04T09:12:14.908Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 83,
+          "choix": [
+            {
+              "texte": "Une barbe à papa",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Un hot dog",
+              "lettre": "B"
+            },
+            {
+              "texte": "une glace",
+              "lettre": "C"
+            },
+            {
+              "texte": "une marionnette guignol ",
+              "lettre": "D",
+              "correct": true
+            }
+          ],
+          "enonce": "Quel cadeau pourrai-je offrir à un touriste qui souhaite avoir un cadeau lyonnais ?",
+          "_editedAt": "2026-06-10T08:06:21.842Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 84,
+          "choix": [
+            {
+              "texte": "Au centre commercial de la part Dieu",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Au centre commercial des confluences",
+              "lettre": "B"
+            },
+            {
+              "texte": "Au centre commercial de Vaulx en velin",
+              "lettre": "C"
+            },
+            {
+              "texte": "Aux halles Paul Bocuse cours Lafayette à Lyon",
+              "lettre": "D",
+              "correct": true
+            }
+          ],
+          "enonce": "Où pourrai-je acheter des aliments typiquement lyonnais ?",
+          "_editedAt": "2026-05-04T09:14:53.708Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 85,
+          "choix": [
+            {
+              "texte": "Parce que les lyonnais aiment beaucoup les lumières",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "C'est pour remercier la vierge marie d'avoir stopper l'épidémie de la peste",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "C'est pour remercier louis 14",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Pourquoi célèbre-t-on la fête des lumières ?",
+          "_editedAt": "2026-05-04T09:16:18.031Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 86,
+          "choix": [
+            {
+              "texte": "Le flower Tree",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Le flower",
+              "lettre": "B"
+            },
+            {
+              "texte": "Le pink",
+              "lettre": "C"
+            },
+            {
+              "texte": "Le rose",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Comment se nomme le bouquet de fleurs à proximité du pont de la place Antonin-Poncet ?",
+          "_editedAt": "2026-05-04T09:18:35.463Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 87,
+          "choix": [
+            {
+              "texte": "Place de l'hôtel de ville",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Place carnot",
+              "lettre": "B"
+            },
+            {
+              "texte": "Place Bellecour",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "Place des invalides",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Où se situe l'office du tourisme ?",
+          "_editedAt": "2026-05-04T09:19:41.470Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 88,
+          "choix": [
+            {
+              "texte": "René Nardone ",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Terre Adélice",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Casino",
+              "lettre": "C"
+            },
+            {
+              "texte": "La brasserie Georges",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Connaissez-vous un lieu connu pour déguster des glaces ?",
+          "_editedAt": "2026-05-04T09:22:58.043Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 89,
+          "choix": [
+            {
+              "texte": "Gérard collomb",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Raymond barre",
+              "lettre": "B"
+            },
+            {
+              "texte": "Emmanuel Macron",
+              "lettre": "C"
+            },
+            {
+              "texte": "Grégory Doucet",
+              "lettre": "D",
+              "correct": true
+            }
+          ],
+          "enonce": "Qui est le maire de Lyon ?",
+          "_editedAt": "2026-05-04T09:25:37.098Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 90,
+          "choix": [
+            {
+              "texte": "Hôtel de ville",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Part-Dieu",
+              "lettre": "B"
+            },
+            {
+              "texte": "Confluence",
+              "lettre": "C"
+            },
+            {
+              "texte": "Préfecture du Rhône",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Où se trouve le bureau du maire ?",
+          "_editedAt": "2026-05-04T09:26:43.750Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 91,
+          "choix": [
+            {
+              "texte": "Parce que la légende dit qu'il y aurait une tête de Christ en or qui serait cachée dans le parc",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Parce qu'il y a des lions en tête d'or",
+              "lettre": "B"
+            },
+            {
+              "texte": "Parce que c'est un parc mystérieux",
+              "lettre": "C"
+            },
+            {
+              "texte": "Parce qu'il y a des animaux",
+              "lettre": "D"
+            }
+          ],
+          "enonce": " Pourquoi le parc de la tête d’Or se nomme-t-il ainsi ?",
+          "_editedAt": "2026-05-04T09:30:37.017Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 92,
+          "choix": [
+            {
+              "texte": "histoires naturelles",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "civilisations",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "anthropologie (science de l'homme)",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "beaux arts",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Le musée des confluences est un musée de : ",
+          "_editedAt": "2026-05-04T09:32:15.116Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 93,
+          "choix": [
+            {
+              "texte": "7",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "8",
+              "lettre": "B"
+            },
+            {
+              "texte": "9",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "10",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Combien y a t-il d'arrondissements sur la ville de Lyon ?",
+          "_editedAt": "2026-05-04T09:33:28.500Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 94,
+          "choix": [
+            {
+              "texte": "La choucroute et les fruits de mer",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "La quenelle",
+              "lettre": "B"
+            },
+            {
+              "texte": "La cervelle des canuts",
+              "lettre": "C"
+            },
+            {
+              "texte": "Le Bœuf bourguignon",
+              "lettre": "D"
+            }
+          ],
+          "enonce": "Quelle est la spécialité de la brasserie Georges ?",
+          "_editedAt": "2026-05-04T09:34:43.680Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 95,
+          "choix": [
+            {
+              "texte": "Un restaurant haut de gamme",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Un restaurant qui propose des spécialités lyonnaises",
+              "lettre": "B",
+              "correct": true
+            },
+            {
+              "texte": "Un restaurant qui propose des spécialités du Sud de la France",
+              "lettre": "C"
+            }
+          ],
+          "enonce": "Qu’est-ce qu’un bouchon lyonnais ?",
+          "_editedAt": "2026-05-04T09:35:45.388Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 96,
+          "choix": [
+            {
+              "texte": "Le mercière",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "Aux trois maries",
+              "lettre": "B"
+            },
+            {
+              "texte": "La mère Brazier",
+              "lettre": "C",
+              "correct": true
+            }
+          ],
+          "enonce": "Lequel n'est pas un bouchon lyonnais ?",
+          "_editedAt": "2026-05-04T09:36:41.393Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 97,
+          "choix": [
+            {
+              "texte": "Tony Garnier",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "La Tour Incity",
+              "lettre": "B"
+            },
+            {
+              "texte": "Zinedine ZIdane",
+              "lettre": "C",
+              "correct": false
+            },
+            {
+              "texte": " Edouart Herriot",
+              "lettre": "D",
+              "correct": false
+            }
+          ],
+          "enonce": "Qu'a construit la halle Tony Garnier ? ",
+          "_editedAt": "2026-06-10T08:13:26.238Z",
+          "imageSize": "md",
+          "manually_edited": true
+        },
+        {
+          "id": 98,
+          "choix": [
+            {
+              "texte": "Le Musée des confluences",
+              "lettre": "A",
+              "correct": false
+            },
+            {
+              "texte": "La place Bellecour",
+              "lettre": "B"
+            },
+            {
+              "texte": "Le Monument aux morts du Parc de la Tête d'Or",
+              "lettre": "C",
+              "correct": true
+            },
+            {
+              "texte": "l'École de Tissage de la Croix-Rousse, ou enfin le quartier des États-Unis",
+              "lettre": "D",
+              "correct": true
+            }
+          ],
+          "enonce": "Quels sont les autres édifices que Tony Garnier a-t-il construit ?",
+          "_editedAt": "2026-05-04T09:40:17.235Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        },
+        {
+          "id": 99,
+          "choix": [
+            {
+              "texte": "Un fleuve",
+              "lettre": "A",
+              "correct": true
+            },
+            {
+              "texte": "Une rivière",
+              "lettre": "B"
+            }
+          ],
+          "enonce": "Le Rhône est un fleuve ou une rivière ?",
+          "_editedAt": "2026-05-04T09:41:06.405Z",
+          "imageSize": "sm",
+          "manually_edited": true
+        }
+      ]
+    }
+  ],
+  "description": "Cours et exercices pour la préparation à l'épreuve pratique VTC — Déroulement de l'examen, devis et facturation, lieux touristiques de Lyon, relation client."
+}
