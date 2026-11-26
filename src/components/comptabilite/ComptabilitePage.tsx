@@ -55,6 +55,7 @@ interface Facture {
   id: string;
   numero: string;
   client_nom: string;
+  client_adresse?: string | null;
   type_financement: string;
   montant_ht: number;
   montant_tva: number;
@@ -2795,6 +2796,15 @@ export function ComptabilitePage() {
               <Input
                 value={editFactureForm.client_nom}
                 onChange={(e) => setEditFactureForm(f => ({ ...f, client_nom: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="facture-adresse-destinataire" className="text-xs text-muted-foreground">Adresse postale du destinataire de la facture</label>
+              <Input
+                id="facture-adresse-destinataire"
+                value={editingFacture?.client_adresse ?? ""}
+                placeholder="Adresse non renseignée sur cette facture"
+                readOnly
               />
             </div>
             <div className="col-span-2 space-y-1 rounded-md border p-3 bg-muted/30">
