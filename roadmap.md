@@ -1,4 +1,7 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Cohérence progression BENTAYEB — 26/11 15:08
+- [x] Cause reproduite : journal historique admin masqué par RLS côté apprenant (657/842 contre 839/839 centre). Migration 0295 lecture seule appliquée, journal privé ; projection commune et reprise visible après erreur, aucun dossier/contenu/ticket écrit.
+- [x] 79 Vitest PASS, parité PostgreSQL jetable PASS ; contrat validation 25 scénarios, 17 exécutés PASS/8 anciens candidats ignorés. Build OK ; dossier avant/après inchangé. Parcours réel non prouvé : session disponible rôle user, pas admin ; rôle SQL authenticated non assumable. Rapport docs/bentayeb-progression-2026-11-26.md.
 ## Rattacher d’autres apprenants à une facture — 26/11 14:48
 - [x] Ajouts multiples persistants dans Modifier la facture, sans remplacer l’apprenant initial ni modifier montants/paiements ; contrôles admin et confirmation par relecture.
 - [x] 9 Vitest PASS, contrat PostgreSQL jetable PASS, PC/mobile et réessai/rechargement simulés PASS, build OK ; aucune écriture réelle exécutée par les tests ni publication. Lecture finale : Farouk BENABBAD réellement rattaché par un autre compte admin à 15:01 UTC, facture 20260724001 toujours 200 € et apprenant initial conservé.

@@ -11429,6 +11429,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      historique_obligations_modules: {
+        Args: { _apprenant_id: string }
+        Returns: {
+          ajout: string
+          exercice_id: string
+          module_id: number
+          question_id: string
+          supp: string
+        }[]
+      }
       is_current_user_apprenant: {
         Args: { _apprenant_id: string }
         Returns: boolean

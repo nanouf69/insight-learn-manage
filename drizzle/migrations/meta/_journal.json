@@ -2066,6 +2066,13 @@
       "when": 1795704602589,
       "tag": "0294_facture_rattachements_apprenants",
       "breakpoints": true
+    },
+    {
+      "idx": 295,
+      "version": "7",
+      "when": 1795706538725,
+      "tag": "0295_module_history_role_parity",
+      "breakpoints": true
     }
   ]
 }

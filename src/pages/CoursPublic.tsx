@@ -1315,6 +1315,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows as any);
         setCompletionsOwner(apprenant.id ?? null);
+        setCompletionsError(false);
         setCompletionsLoaded(true);
       } else if (!cancelled && requestId === completionsRequestRef.current) {
         console.error("[CoursPublic] Impossible de charger la progression — verrouillage conservé");
@@ -2376,7 +2377,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         {/* Accueil tab */}
         {activeTab === "accueil" && (
           <>
-            {!completionsLoaded && (
+            {(!completionsLoaded || completionsError) && (
               <div className="mx-auto max-w-6xl px-4 pt-4">
                 {completionsError ? (
                   <div role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive flex flex-wrap items-center justify-between gap-3">

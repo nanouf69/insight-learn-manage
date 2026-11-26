@@ -82,7 +82,13 @@ DATA = TEMP + '/data'; PORT = '55447'
 AS_USER = ['setpriv', '--reuid=1000', '--regid=1000', '--clear-groups']
 
 def sql(q, db='t'):
-    return subprocess.check_output(['psql', '-X', '-q', '-h', TEMP, '-p', PORT, '-U', 'lovable', '-d', db, '-At', '-v', 'ON_ERROR_STOP=1', '-c', q], text=True, stderr=subprocess.STDOUT).strip()
+    if q.startswith('SET ROLE service_role;'):
+        q = q.replace('SET ROLE service_role;', "SET ROLE service_role; SET request.jwt.claim.role='service_role';", 1)
+    try:
+        return subprocess.check_output(['psql', '-X', '-q', '-h', TEMP, '-p', PORT, '-U', 'lovable', '-d', db, '-At', '-v', 'ON_ERROR_STOP=1', '-c', q], text=True, stderr=subprocess.STDOUT).strip()
+    except subprocess.CalledProcessError as error:
+        print('\n'.join(line for line in error.output.splitlines() if line.startswith(('ERROR:', 'DETAIL:', 'CONTEXT:'))))
+        raise
 
 def err(q):
     try:
@@ -108,16 +114,18 @@ CREATE TABLE public.apprenant_connexions(apprenant_id uuid, user_id uuid, starte
 CREATE TABLE public.comptes_test_techniques(apprenant_id uuid);
 CREATE TABLE public.module_editor_state(module_id int, module_data jsonb);
 CREATE TABLE public.module_admin_audit_log(module_id int, exercice_id text, question_id text, field text, created_at timestamptz);
+CREATE TABLE public.quiz_lyon_cohortes(apprenant_id uuid);
 CREATE TABLE public.module_regles_validation(module_id int, protection_serveur boolean, contient_questions boolean);
 -- Présentes uniquement pour rejouer le candidat RLS configuration avec ce contrat réel.
 CREATE TABLE public.bilan_future_opening(id int, open_to_new boolean);
 CREATE TABLE public.bilan_identite_flags(module_id int, actif boolean);
 CREATE TABLE public.bilan_snapshot_flags(module_id int, actif boolean);
 CREATE TABLE public.reponses_apprenants(apprenant_id uuid, exercice_id text, reponses jsonb, status text, submitted_at timestamptz);
+CREATE TABLE public.reponses_apprenants_historique(apprenant_id uuid, exercice_id text);
 CREATE TABLE public.quiz_valide_reecritures_refusees(table_cible text, apprenant_id uuid, cle text, champs text[], auteur uuid);
 CREATE TABLE public.donnees_eleves_suppressions(table_nom text, apprenant_id uuid, ligne jsonb, auteur_uid uuid, auteur_role text, compte_test boolean, motif text);
 CREATE FUNCTION public.examens_blancs_preuve_soumission(uuid, int) RETURNS boolean LANGUAGE sql AS $$ SELECT false $$;
-GRANT SELECT ON public.reponses_apprenants, public.module_regles_validation, public.module_admin_audit_log TO authenticated, service_role;
+GRANT SELECT ON public.reponses_apprenants, public.module_regles_validation, public.module_admin_audit_log, public.quiz_lyon_cohortes TO authenticated, service_role;
 '''
 # Fonctions lues par les politiques/déclencheurs, copiées telles quelles du catalogue réel.
 DEPS = ['has_role', 'is_current_user_apprenant', 'est_compte_test', 'est_proprietaire_apprenant']
@@ -146,6 +154,8 @@ def build(db, schema_sql, migration=None):
     sql(STUBS, db)
     for fn in DEPS:
         sql(DEPS_SQL[fn], db)
+    # Même visibilité que le journal réel : un élève ne voit pas les métadonnées admin.
+    sql("ALTER TABLE public.module_admin_audit_log ENABLE ROW LEVEL SECURITY; CREATE POLICY audit_admin_only ON public.module_admin_audit_log FOR SELECT TO authenticated USING(public.has_role(auth.uid(),'admin'));", db)
     sql(schema_sql, db)
     # Schéma réel déjà corrigé (après déploiement) : on teste ce qui tourne, sans rejouer 0197.
     deja = sql(f"SELECT NOT attnotnull FROM pg_attribute WHERE attrelid='public.{TABLE}'::regclass AND attname='completed_at'", db) == 't'
@@ -158,9 +168,10 @@ def build(db, schema_sql, migration=None):
         # au catalogue le 05/11), sinon la base jetable testerait une règle plus ancienne que la prod.
         sql(MIGRATION_0232.read_text(), db); print(f'[{db}] 0232 appliquée')
     # Candidat non déployé (revue avant migration) : MODULE_COMPLETION_CANDIDATE=/chemin.sql
-    if migration and os.environ.get('MODULE_COMPLETION_CANDIDATE'):
+    candidate_path = os.environ.get('MODULE_COMPLETION_CANDIDATE') or os.environ.get('MODULE_COMPLETION_READ_CANDIDATE')
+    if migration and candidate_path:
         try:
-            sql(pathlib.Path(os.environ['MODULE_COMPLETION_CANDIDATE']).read_text(), db)
+            sql(pathlib.Path(candidate_path).read_text(), db)
         except subprocess.CalledProcessError as e:
             # Ne pas noyer la cause SQL sous la commande complète (plusieurs dizaines de Ko).
             print('ÉCHEC CANDIDAT — fin de la sortie PostgreSQL :\n' + e.output[-6000:])
@@ -419,7 +430,7 @@ def main():
                 else (ROOT / f'src/test/fixtures/fn_{fn}.sql').read_text() for fn in DEPS}
     # Après déploiement de 0230, les RPC capturées appellent ces aides : on les recopie d'abord.
     if have_live:
-        for fn in ['reponse_enregistree', 'fusion_details_progression']:
+        for fn in ['reponse_enregistree', 'fusion_details_progression', 'quiz_lyon_seuil', 'quiz_lyon_reponses_completes']:
             d = live(f"select pg_get_functiondef(oid) from pg_proc where proname='{fn}' and pronamespace='public'::regnamespace")
             if d: DEPS.append(fn); DEPS_SQL[fn] = d + ';'
     mig = os.environ.get('MIGRATION_0197') or (sorted(glob.glob(str(ROOT / 'drizzle/migrations/0197_*.sql'))) or [None])[0]
