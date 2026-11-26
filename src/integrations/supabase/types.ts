@@ -11634,6 +11634,14 @@ export type Database = {
         Returns: string
       }
       mon_changement_mdp_requis: { Args: never; Returns: Json }
+      obligations_non_datees_anterieures: {
+        Args: { _apprenant_id: string }
+        Returns: {
+          exercice_id: string
+          module_id: number
+          question_id: string
+        }[]
+      }
       persist_answer_batch: {
         Args: {
           p_apprenant_id: string
