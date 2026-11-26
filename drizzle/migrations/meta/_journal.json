@@ -2087,6 +2087,13 @@
       "when": 1795724670570,
       "tag": "0297_renumerotation_apres_soumission",
       "breakpoints": true
+    },
+    {
+      "idx": 298,
+      "version": "7",
+      "when": 1795724975588,
+      "tag": "0298_detail_validation_fige",
+      "breakpoints": true
     }
   ]
 }
