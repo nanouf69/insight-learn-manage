@@ -50,3 +50,4 @@ Le correctif serveur est actif sur le service partagé ; le changement d’inter
 - 0299 (soumissions datées) puis 0300 (journal par question, horodatage client antérieur = refus) : 144 (exo 101) + 7 (exo 100) exemptions.
 - Contrôle réel lecture seule du texte de la fonction en ligne : Seydou 144+7 ; M. Arga 0 ; M. Bentayeb 0. Premier journal 101-60001 : 18/09 22:12 UTC > remise 16/09 19:17 UTC.
 - Aucune donnée apprenant écrite. Compte réel non ouvert.
+- Lecture réelle 26/11 20:45 UTC (copies temporaires de session des fonctions en ligne, aucune écriture) : avec la règle 0297 → module 4 Seydou 374/525, incomplet ; avec la règle en ligne 0300 → 374/374, complet (exo 100 : 7, exo 101 : 144). Empreinte du dossier inchangée.
