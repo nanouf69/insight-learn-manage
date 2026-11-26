@@ -2073,6 +2073,13 @@
       "when": 1795706538725,
       "tag": "0295_module_history_role_parity",
       "breakpoints": true
+    },
+    {
+      "idx": 296,
+      "version": "7",
+      "when": 1795707092790,
+      "tag": "0296_facture_revisions_notifications",
+      "breakpoints": true
     }
   ]
 }

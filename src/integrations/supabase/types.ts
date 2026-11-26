@@ -5158,10 +5158,64 @@ export type Database = {
           },
         ]
       }
+      facture_revisions: {
+        Row: {
+          apres: Json
+          avant: Json
+          created_at: string
+          created_by: string
+          destinataire: string
+          envoi_le: string | null
+          erreur: string | null
+          facture_id: string
+          id: string
+          message_id: string | null
+          pdf_path: string | null
+          statut_envoi: string
+        }
+        Insert: {
+          apres: Json
+          avant: Json
+          created_at?: string
+          created_by: string
+          destinataire: string
+          envoi_le?: string | null
+          erreur?: string | null
+          facture_id: string
+          id: string
+          message_id?: string | null
+          pdf_path?: string | null
+          statut_envoi?: string
+        }
+        Update: {
+          apres?: Json
+          avant?: Json
+          created_at?: string
+          created_by?: string
+          destinataire?: string
+          envoi_le?: string | null
+          erreur?: string | null
+          facture_id?: string
+          id?: string
+          message_id?: string | null
+          pdf_path?: string | null
+          statut_envoi?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facture_revisions_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       factures: {
         Row: {
           apprenant_id: string | null
           client_adresse: string | null
+          client_email: string | null
           client_nom: string
           client_opco: string | null
           client_siret: string | null
@@ -5181,11 +5235,13 @@ export type Database = {
           statut: string | null
           tva_taux: number
           type_financement: string
+          type_prestation: string | null
           updated_at: string
         }
         Insert: {
           apprenant_id?: string | null
           client_adresse?: string | null
+          client_email?: string | null
           client_nom: string
           client_opco?: string | null
           client_siret?: string | null
@@ -5205,11 +5261,13 @@ export type Database = {
           statut?: string | null
           tva_taux?: number
           type_financement?: string
+          type_prestation?: string | null
           updated_at?: string
         }
         Update: {
           apprenant_id?: string | null
           client_adresse?: string | null
+          client_email?: string | null
           client_nom?: string
           client_opco?: string | null
           client_siret?: string | null
@@ -5229,6 +5287,7 @@ export type Database = {
           statut?: string | null
           tva_taux?: number
           type_financement?: string
+          type_prestation?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -11057,6 +11116,7 @@ export type Database = {
         Returns: {
           apprenant_id: string | null
           client_adresse: string | null
+          client_email: string | null
           client_nom: string
           client_opco: string | null
           client_siret: string | null
@@ -11076,6 +11136,7 @@ export type Database = {
           statut: string | null
           tva_taux: number
           type_financement: string
+          type_prestation: string | null
           updated_at: string
         }
         SetofOptions: {
@@ -11294,6 +11355,35 @@ export type Database = {
       examens_blancs_valider_si_complet: {
         Args: { _apprenant_id: string; _exam_id: string }
         Returns: undefined
+      }
+      facture_modifier_version: {
+        Args: {
+          _email: string
+          _expected: string
+          _id: string
+          _operation: string
+          _patch: Json
+        }
+        Returns: {
+          apres: Json
+          avant: Json
+          created_at: string
+          created_by: string
+          destinataire: string
+          envoi_le: string | null
+          erreur: string | null
+          facture_id: string
+          id: string
+          message_id: string | null
+          pdf_path: string | null
+          statut_envoi: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "facture_revisions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       facture_rattacher_apprenants: {
         Args: { _apprenant_ids: string[]; _facture_id: string }

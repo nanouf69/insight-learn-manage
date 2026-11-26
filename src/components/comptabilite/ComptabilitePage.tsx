@@ -36,6 +36,7 @@ import { dateEmissionFactureFournisseur } from "@/lib/comptabilite/factureFourni
 import { lignesFactureCommune } from "@/lib/comptabilite/factureCommune";
 import { apprenantsRattachesFacture, type RattachementFacture } from "@/lib/comptabilite/rattachementsFacture";
 import { RattachementsFacture } from "./RattachementsFacture";
+import { PRESTATIONS_FACTURE, notificationFacture } from '@/lib/comptabilite/prestationsFacture';
 
 interface Releve {
   id: string;
@@ -63,6 +64,9 @@ interface Facture {
   apprenant_id?: string | null;
   lignes_apprenants?: unknown;
   rattachements?: RattachementFacture[];
+  type_prestation?: string | null;
+  client_email?: string | null;
+  updated_at?: string;
   _draftRaw?: any;
 }
 
@@ -183,6 +187,8 @@ export function ComptabilitePage() {
     numero_engagement: string;
     numero_convention: string;
     apprenant_id: string;
+    type_prestation: string;
+    client_email: string;
   }>({
     numero: "", client_nom: "", type_financement: "particulier",
     montant_ht: "0", tva_taux: "20", statut: "en_attente",
@@ -190,7 +196,50 @@ export function ComptabilitePage() {
     numero_engagement: "",
     numero_convention: "",
     apprenant_id: "",
+    type_prestation: "",
+    client_email: "",
   });
+  const factureEditOperation = useRef<string>(crypto.randomUUID());
+  const [revisionsFacture, setRevisionsFacture] = useState<any[]>([]);
+  const [revisionBusy, setRevisionBusy] = useState<string | null>(null);
+  const [revisionsError, setRevisionsError] = useState(false);
+  const lireRevisions = useCallback(async (id: string) => {
+    const {data,error} = await supabase.from('facture_revisions').select('*').eq('facture_id',id).order('created_at',{ascending:false});
+    setRevisionsError(!!error);
+    if(!error) setRevisionsFacture(data ?? []);
+  },[]);
+  useEffect(() => {
+    setRevisionsFacture([]); setRevisionsError(false);
+    if(editingFacture?.id) void lireRevisions(editingFacture.id);
+  },[editingFacture?.id,lireRevisions]);
+
+  const envoyerRevision = async (revision: any) => {
+    setRevisionBusy(revision.id);
+    try {
+      const notice = notificationFacture(revision.avant,revision.apres);
+      let pdfBase64: string | undefined;
+      if(!notice.annulation){
+        const {blob} = await generateDraftPDF(factureToDraftShape(revision.apres),{final:true,download:false});
+        const bytes = new Uint8Array(await blob.arrayBuffer());
+        let binary = '';
+        for(let i=0;i<bytes.length;i+=32768) binary += String.fromCharCode(...bytes.subarray(i,i+32768));
+        pdfBase64 = btoa(binary);
+      }
+      const {data,error} = await supabase.functions.invoke('facture-notifier-revision',{body:{revisionId:revision.id,pdfBase64}});
+      if(error){
+        let details = 'La facture est conservée, mais le mail n’a pas été confirmé.';
+        try { const result = await (error as any).context?.json(); if(result?.error) details=result.error; } catch { /* Never claim delivery from a transport error. */ }
+        throw new Error(details);
+      }
+      if(data?.envoye!==true) throw new Error(data?.error || 'Envoi non confirmé.');
+      toast.success(notice.annulation ? 'Mail d’annulation envoyé au destinataire' : 'Nouvelle facture envoyée au destinataire');
+    } catch(error){
+      toast.error(error instanceof Error?error.message:'Facture conservée, envoi non confirmé.');
+    } finally {
+      setRevisionBusy(null);
+      if(editingFacture?.id===revision.facture_id) await lireRevisions(revision.facture_id);
+    }
+  };
   const [savingFactureEdit, setSavingFactureEdit] = useState(false);
   const [creatingAvoir, setCreatingAvoir] = useState<string | null>(null);
   const [apprenantOptions, setApprenantOptions] = useState<any[]>([]);
@@ -242,6 +291,7 @@ export function ComptabilitePage() {
     const tva = Number(f.montant_tva) || 0;
     const taux = ht > 0 ? Math.round((tva / ht) * 100) : 20;
     setEditingFacture(f);
+    factureEditOperation.current = crypto.randomUUID();
     setEditFactureForm({
       numero: f.numero,
       client_nom: f.client_nom,
@@ -255,6 +305,8 @@ export function ComptabilitePage() {
       numero_engagement: (f as any).numero_engagement || "",
       numero_convention: (f as any).numero_convention || "",
       apprenant_id: (f as any).apprenant_id || "",
+      type_prestation: f.type_prestation || "",
+      client_email: f.client_email || "",
     });
     setApprenantSearch("");
     loadApprenantOptions();
@@ -262,6 +314,9 @@ export function ComptabilitePage() {
 
   const saveFactureEdit = async () => {
     if (!editingFacture) return;
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editFactureForm.client_email.trim())) {
+      toast.error('Confirmez l’adresse email du destinataire de la facture.'); return;
+    }
     setSavingFactureEdit(true);
     try {
       const ht = Number(editFactureForm.montant_ht) || 0;
@@ -283,12 +338,20 @@ export function ComptabilitePage() {
         numero_engagement: editFactureForm.numero_engagement?.trim() || null,
         numero_convention: editFactureForm.numero_convention?.trim() || null,
         apprenant_id: editFactureForm.apprenant_id || null,
+        type_prestation: editFactureForm.type_prestation || null,
       };
-      const { error } = await supabase.from("factures").update(payload).eq("id", editingFacture.id);
+      const {data:revision,error} = await supabase.rpc('facture_modifier_version',{
+        _id:editingFacture.id,_operation:factureEditOperation.current,_expected:editingFacture.updated_at ?? null,
+        _patch:payload,_email:editFactureForm.client_email.trim(),
+      });
       if (error) throw error;
-      toast.success("Facture mise à jour");
+      if(!revision) throw new Error('Confirmation de la modification non reçue.');
+      const {data:confirmation,error:readError}=await supabase.from('facture_revisions').select('*').eq('id',factureEditOperation.current).single();
+      if(readError || !confirmation || confirmation.facture_id!==editingFacture.id) throw new Error('La facture peut être enregistrée ; confirmation impossible. Rouvrez-la avant de réessayer.');
+      toast.success("Facture mise à jour — ancienne version conservée");
       setEditingFacture(null);
       await fetchFactures();
+      if(confirmation.statut_envoi !== 'sans_envoi') await envoyerRevision(confirmation);
     } catch (e: any) {
       console.error(e);
       toast.error(`Erreur : ${e.message ?? e}`);
@@ -2590,7 +2653,7 @@ export function ComptabilitePage() {
               Modifier la facture {editingFacture?.numero}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2 overflow-y-auto flex-1 pr-1">
+          <div className="grid grid-cols-1 gap-4 py-2 overflow-y-auto flex-1 pr-1 [&>div]:col-span-1">
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Numéro</label>
               <Input
@@ -2643,6 +2706,20 @@ export function ComptabilitePage() {
               )}
               {!apprenantsLoading && apprenantSearch.trim().length >= 2 && filteredApprenantOptions.length === 0 &&
                 <p className="text-xs text-muted-foreground">Aucun apprenant trouvé</p>}
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Type de prestation</label>
+              <Select value={editFactureForm.type_prestation || 'non_precisee'} onValueChange={v=>setEditFactureForm(f=>({...f,type_prestation:v==='non_precisee'?'':v}))}>
+                <SelectTrigger><SelectValue placeholder="Choisir la prestation" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="non_precisee">Non précisée</SelectItem>
+                  {PRESTATIONS_FACTURE.map(p=><SelectItem key={p} value={p}>{p}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Email du destinataire de la facture</label>
+              <Input type="email" value={editFactureForm.client_email} onChange={e=>setEditFactureForm(f=>({...f,client_email:e.target.value}))} />
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Type de financement</label>
@@ -2737,14 +2814,31 @@ export function ComptabilitePage() {
             </div>
           </div>
           <DialogFooter>
+            <p className="text-xs text-muted-foreground flex-1">
+              {editFactureForm.statut==='annulee' ? 'Un mail « Facture annulée » sera envoyé au destinataire.' : editFactureForm.statut==='brouillon' ? 'Le brouillon sera enregistré sans envoi.' : 'La nouvelle facture sera envoyée et indiquera qu’elle remplace l’ancienne.'}
+            </p>
             <Button variant="outline" onClick={() => setEditingFacture(null)} disabled={savingFactureEdit}>
               Annuler
             </Button>
             <Button onClick={saveFactureEdit} disabled={savingFactureEdit}>
               <Check className="h-4 w-4 mr-2" />
-              {savingFactureEdit ? "Enregistrement..." : "Enregistrer"}
+              {savingFactureEdit ? "Enregistrement..." : editFactureForm.statut==='brouillon' ? 'Enregistrer' : "Enregistrer et envoyer"}
             </Button>
           </DialogFooter>
+          {revisionsError && <p role="alert" className="text-sm text-destructive">Historique des envois indisponible.</p>}
+          {revisionsFacture.length>0 && <div className="border-t pt-3 space-y-2 max-h-40 overflow-y-auto">
+            <h3 className="text-sm font-semibold">Versions et envois</h3>
+            {revisionsFacture.map(r=><div key={r.id} className="flex flex-wrap items-center gap-2 text-xs">
+              <span>{new Date(r.created_at).toLocaleString('fr-FR')} · {r.destinataire}</span>
+              <span>{({a_envoyer:'Non envoyé',en_cours:'Envoi engagé — confirmation à vérifier',envoye:'Envoyé',indetermine:'Envoi non confirmé — vérifier avant renvoi',echec:'Échec',sans_envoi:'Brouillon — sans envoi'} as Record<string,string>)[r.statut_envoi]}</span>
+              {r.pdf_path && <Button size="sm" variant="ghost" title="Télécharger la version conservée" onClick={async()=>{
+                const {data,error}=await supabase.storage.from('factures-revisions').createSignedUrl(r.pdf_path,60);
+                if(error || !data) {toast.error('Lecture de la version impossible.');return;}
+                await ouvrirPdfPriveUrl(data.signedUrl);
+              }}><Download className="h-4 w-4" /></Button>}
+              {r.statut_envoi==='a_envoyer' && <Button size="sm" variant="outline" disabled={!!revisionBusy} onClick={()=>void envoyerRevision(r)}>{revisionBusy===r.id?'Envoi…':'Envoyer cette version'}</Button>}
+            </div>)}
+          </div>}
         </DialogContent>
       </Dialog>
 

@@ -30,7 +30,7 @@ function eur(n: number): string {
   return `${(n || 0).toFixed(2).replace('.', ',')} €`;
 }
 
-export async function generateDraftPDF(draft: any, opts: { final?: boolean } = {}) {
+export async function generateDraftPDF(draft: any, opts: { final?: boolean; download?: boolean } = {}) {
   const isFinal = !!opts.final;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pw = doc.internal.pageSize.getWidth();
@@ -209,8 +209,8 @@ export async function generateDraftPDF(draft: any, opts: { final?: boolean } = {
   const fileName = isFinal
     ? `Facture_${draft?.numero || draft?.numeroInterne || 'facture'}.pdf`
     : `Brouillon_Facture_${draft?.numeroInterne || draft?.numero || 'draft'}.pdf`;
-  doc.save(fileName);
-  return { fileName };
+  if (opts.download !== false) doc.save(fileName);
+  return { fileName, blob: doc.output('blob') };
 }
 
 // Build draft-shaped object from a DB facture row
@@ -222,7 +222,7 @@ export function factureToDraftShape(f: any) {
   if (f?.client_opco) designationParts.push(`OPCO : ${f.client_opco}`);
   if (f?.numero_engagement) designationParts.push(`N° d'engagement : ${f.numero_engagement}`);
   if (f?.numero_convention) designationParts.push(`N° de convention : ${f.numero_convention}`);
-  const designation = ['Prestation de formation', ...designationParts].join(' — ');
+  const designation = [f?.type_prestation || 'Prestation de formation', ...designationParts].join(' — ');
   return {
     numero: f?.numero || '',
     numeroInterne: f?.numero || '',
@@ -233,7 +233,7 @@ export function factureToDraftShape(f: any) {
     refConvention: '',
     lignes: lignesFactureCommune(f).length > 0 ? lignesFactureCommune(f).map(l => ({
       stagiaire: l.stagiaire,
-      designation: l.designation,
+      designation: f?.type_prestation ? `${f.type_prestation} — ${l.designation}` : l.designation,
       tvaType: 'EXO',
       tvaTaux: 0,
       prixUnitaire: Number(l.montant_ht),

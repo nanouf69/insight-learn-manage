@@ -1,4 +1,7 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Prestations et notifications des factures — 26/11 15:26
+- [x] Neuf prestations dans Modifier la facture et PDF ; sauvegarde CAS + versions privées, original/rattachements/paiements conservés. Migration 0296 et service d’envoi dédiés actifs, interface en aperçu non publiée.
+- [x] 19 Vitest, contrats PostgreSQL versions/rattachements et deno check PASS ; PC/mobile sauvegarde/relecture/erreur/réessai/annulation/historique simulés PASS, build OK. Aucun mail ni facture réel de test ; réception réelle non vérifiée, destinataire à confirmer. Rapport docs/factures-prestations-notifications-2026-11-26.md.
 ## Cohérence progression BENTAYEB — 26/11 15:08
 - [x] Cause reproduite : journal historique admin masqué par RLS côté apprenant (657/842 contre 839/839 centre). Migration 0295 lecture seule appliquée, journal privé ; projection commune et reprise visible après erreur, aucun dossier/contenu/ticket écrit.
 - [x] 79 Vitest PASS, parité PostgreSQL jetable PASS ; contrat validation 25 scénarios, 17 exécutés PASS/8 anciens candidats ignorés. Build OK ; dossier avant/après inchangé. Parcours réel non prouvé : session disponible rôle user, pas admin ; rôle SQL authenticated non assumable. Rapport docs/bentayeb-progression-2026-11-26.md.
