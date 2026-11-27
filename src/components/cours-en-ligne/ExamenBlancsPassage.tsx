@@ -83,7 +83,7 @@ function PassageMatiere({
   matiere: Matiere;
   numero: number;
   total: number;
-  onTerminer: (reponses: Reponses) => void;
+  onTerminer: (reponses: Reponses, meta?: { attemptIdV2?: string | null }) => void;
   isBilan?: boolean;
   apprenantId?: string | null;
   userId?: string | null;
@@ -805,7 +805,7 @@ function PassageMatiere({
     return true;
   };
 
-  const terminerSiActuel = (r: Reponses) => { if (monteRef.current) onTerminer(r); };
+  const terminerSiActuel = (r: Reponses) => { if (monteRef.current) onTerminer(r, { attemptIdV2: subjectRetake ? null : attemptV2Ref.current }); };
 
   const handleTerminer = async () => {
     if (!allAnswered) {

@@ -4,7 +4,8 @@ import { FORMATION_MODULES } from "@/components/cours-en-ligne/modules-config";
 import { fetchPratiqueSlotDetails } from "@/lib/pratiqueSlots";
 import { assemblerCalculJalons, type CalculJalons, type CompletionCalc } from "@/lib/jalonsCalculCore";
 import { idsActivites } from "@/lib/jeuxPedagogiques";
-import { avecEtatServeur, chargerEtatCompletionServeur } from "@/lib/etatCompletionServeur";
+import { chargerEtatCompletionServeur } from "@/lib/etatCompletionServeur";
+import { exigerEtatServeurConcordant } from "@/lib/moduleProgressionReadModel";
 import { activitesDispenseesPourParcours } from "@/lib/exceptionsModulesEleve";
 import { modulesAttribuesDashboard, modulesExigesDashboard, resolveFormationId } from "@/lib/parcoursModulesDashboard";
 import type { GelFinAcces } from "@/lib/releveJalonsGel";
@@ -104,7 +105,7 @@ export async function chargerCalculJalons(params: {
   // Parcours réel attribué (même règle que l'écran élève, parents/enfants normalisés).
   const modulesAttribues = modulesExigesDashboard(formation, affectation.data.modules_autorises, (completionsResult.data as JalonCompletion[]) ?? [], (affectation.data as any).date_fin_cours_en_ligne).map((m) => m.id);
   const parcoursRetenu = parcoursAvecExemptionFormalites(params.apprenantId, parcours, modulesAttribues);
-  const completionsAvecPreuves = ((completionsResult.data as JalonCompletion[]) ?? []).map(row => avecEtatServeur(row, etatsServeur));
+  const completionsAvecPreuves = exigerEtatServeurConcordant((completionsResult.data as JalonCompletion[]) ?? [], etatsServeur);
   return assemblerCalculJalons({
     key, filiere, parcours: parcoursRetenu, parcoursInitial, editorRows: (editorRows ?? []) as any, examens: examens as any,
     initialDe: (id) => moduleDetail.getInitialModuleContentForVolume(id, params.typeApprenant),

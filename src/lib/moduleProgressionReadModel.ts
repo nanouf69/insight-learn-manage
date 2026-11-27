@@ -23,17 +23,26 @@ export function avecPreuvesQuizConfirmees<T extends CompletionEvidenceRow>(
   return withSubmittedModuleProof(row, proofs.filter(p => p.apprenant_id === apprenantId));
 }
 
-/** One read model for dashboard cards and their quiz counts, including admin preview. */
-export function projeterProgressionConfirmee<T extends CompletionEvidenceRow>(
-  rows: readonly T[], apprenantId: string, states: ReadonlyMap<number, EtatCompletionServeur>,
-  proofs: readonly OwnedSubmittedModuleProof[],
+export const MESSAGE_SYNCHRONISATION_PROGRESSION = 'Progression en cours de synchronisation — veuillez réessayer.';
+
+/** Preuve serveur stricte commune (cartes, compteurs et jalons) : absent ou divergent = synchronisation. */
+export function exigerEtatServeurConcordant<T extends CompletionEvidenceRow>(
+  rows: readonly T[], states: ReadonlyMap<number, EtatCompletionServeur>,
 ): T[] {
   return rows.map(row => {
     const state = states.get(Number(row.module_id));
     if (!state || (state.status ?? null) !== (row.status ?? null)
       || (row.completed_at && state.completed_at && Date.parse(row.completed_at) !== Date.parse(state.completed_at))) {
-      throw new Error('Progression en cours de synchronisation — veuillez réessayer.');
+      throw new Error(MESSAGE_SYNCHRONISATION_PROGRESSION);
     }
-    return avecPreuvesQuizConfirmees(avecEtatServeur(row, states), apprenantId, proofs);
+    return avecEtatServeur(row, states);
   });
+}
+
+/** One read model for dashboard cards and their quiz counts, including admin preview. */
+export function projeterProgressionConfirmee<T extends CompletionEvidenceRow>(
+  rows: readonly T[], apprenantId: string, states: ReadonlyMap<number, EtatCompletionServeur>,
+  proofs: readonly OwnedSubmittedModuleProof[],
+): T[] {
+  return exigerEtatServeurConcordant(rows, states).map(row => avecPreuvesQuizConfirmees(row, apprenantId, proofs));
 }

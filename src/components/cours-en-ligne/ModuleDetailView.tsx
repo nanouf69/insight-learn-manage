@@ -6902,7 +6902,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
   const etatSnapshotsEleve = useBilanSnapshotsEleve(apprenantId, module.id, studentOnly, snapshotsRev);
   // Bilan examen versionné futur (5/11) : la route serveur est connue AVANT tout rendu de l'ancien écran.
   const routeFutureConcernee = studentOnly && (module.id === 5 || module.id === 11);
-  const [routeFuture, setRouteFuture] = useState<{ route: "future" | "legacy"; owner: string } | null>(null);
+  const [routeFuture, setRouteFuture] = useState<{ route: "future" | "legacy" | "erreur"; owner: string } | null>(null);
+  const [routeFutureEssai, setRouteFutureEssai] = useState(0);
   const [apercuFuture, setApercuFuture] = useState<ApercuFuture | "erreur" | null>(null);
   useEffect(() => {
     if (!routeFutureConcernee || !apercuAdmin || !apprenantId) return;
@@ -6920,7 +6921,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       if (!annule) setRouteFuture({ route, owner });
     })();
     return () => { annule = true; };
-  }, [routeFutureConcernee, module.id]);
+  }, [routeFutureConcernee, module.id, routeFutureEssai]);
   // Ouverture d'une matière Bilan par l'élève : une seule demande par matière et par écran.
   const ouverturesDemandeesRef = useRef<Set<number>>(new Set());
   const ouvrirMatiereBilanRef = useRef<(exoId: number) => void>(() => {});
@@ -10713,6 +10714,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           module.id === 5 ? <BilanVtcComplements apprenantId={apprenantId ?? undefined} future={<BilanFutureApercuAdmin apercu={apercuFuture} presentationVtc titre={moduleData.nom} description={moduleData.description} />} legacy={cible => <ActivitesModuleContext.Provider value={activitesEtat}><LearnerPreview secureMode complementsVtc cibleComplement={cible} /></ActivitesModuleContext.Provider>} /> : <BilanFutureApercuAdmin apercu={apercuFuture} />
         ) : routeFutureConcernee && !apercuAdmin && !routeFuture ? (
           <div className="p-8 text-center text-muted-foreground">Chargement de votre passage…</div>
+        ) : routeFutureConcernee && !apercuAdmin && routeFuture?.route === "erreur" ? (
+          <div role="alert" className="p-8 text-center space-y-3">
+            <p className="text-destructive">Lecture de votre passage impossible pour le moment. Vos réponses sont conservées.</p>
+            <Button variant="outline" onClick={() => { setRouteFuture(null); setRouteFutureEssai(v => v + 1); }}>Réessayer</Button>
+          </div>
         ) : routeFutureConcernee && routeFuture?.route === "future" ? (
           module.id === 5 ? <BilanVtcComplements apprenantId={apprenantId ?? undefined} future={<BilanFutureExam moduleId={5} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />} legacy={cible => <ActivitesModuleContext.Provider value={activitesEtat}><LearnerPreview secureMode complementsVtc cibleComplement={cible} /></ActivitesModuleContext.Provider>} /> : <BilanFutureExam moduleId={11} ownerId={routeFuture.owner} apprenantId={apprenantId ?? undefined} titre={moduleData.nom} description={moduleData.description} onBack={onBack} />
         ) : versionLyon === null || etatSnapshotsEleve.statut === "chargement" ? (

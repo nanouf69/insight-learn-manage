@@ -25,6 +25,7 @@ import { confirmationPresentielRequise } from "@/lib/confirmationPresentielEB";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { answersAreEqual } from "@/lib/answerPersistence";
+import { tentativeNoyauConfirmee } from "@/lib/confirmationNoyauEB";
 import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
 
 import { enqueueQuizResultSave } from "@/lib/quizResultPersistence";
@@ -1368,7 +1369,7 @@ export default function ExamensBlancsPage({
     }
   };
 
-  const handleTerminerMatiere = async (reponses: Reponses) => {
+  const handleTerminerMatiere = async (reponses: Reponses, meta?: { attemptIdV2?: string | null }) => {
     try {
       if (!examenChoisi) return;
       const matiere = examenChoisi.matieres[matiereIndex];
@@ -1392,25 +1393,23 @@ export default function ExamensBlancsPage({
       let tentativeNoyauId: string | null = null;
       if (apprenantId && !subjectRetake) {
         try {
-          const { data: tentativeNoyau } = await supabase
-            .from("exam_attempts_v2")
-            .select("attempt_id, snapshot")
-            .eq("apprenant_id", apprenantId)
-            .eq("exam_id", examenChoisi.id)
-            .in("etat", ["en_cours", "terminee"])
-            .order("started_at", { ascending: false })
-            .limit(5);
-          const tentative = ((tentativeNoyau as { attempt_id: string; snapshot: any }[] | null) ?? []).find(
-            (row) => String(row?.snapshot?.matiere ?? "") === String(matiere.id),
-          );
-          if (tentative?.attempt_id) {
-            tentativeNoyauId = tentative.attempt_id;
-            const { count } = await supabase
-              .from("answer_state")
-              .select("question_id", { count: "exact", head: true })
-              .eq("attempt_id", tentative.attempt_id);
-            const saisies = Object.keys(reponses ?? {}).length;
-            confirmeParNoyau = (count ?? 0) >= saisies && (count ?? 0) > 0;
+          // Preuve liée à la tentative V2 AFFICHÉE (jamais « une des 5 plus récentes »).
+          const attemptAffiche = meta?.attemptIdV2 ?? null;
+          if (attemptAffiche) {
+            tentativeNoyauId = attemptAffiche;
+            const [tRes, aRes] = await Promise.all([
+              supabase.from("exam_attempts_v2").select("attempt_id, apprenant_id, exam_id, snapshot")
+                .eq("attempt_id", attemptAffiche).eq("apprenant_id", apprenantId).maybeSingle(),
+              supabase.from("answer_state").select("question_id, valeur").eq("attempt_id", attemptAffiche),
+            ]);
+            confirmeParNoyau = !tRes.error && !aRes.error && tentativeNoyauConfirmee({
+              attemptIdAffiche: attemptAffiche, apprenantId, examenId: examenChoisi.id, matiereId: matiere.id,
+              tentative: tRes.data as any, lignes: aRes.data as any, reponses: reponses as any,
+            });
+            if (!confirmeParNoyau) {
+              toast.error("Vos réponses sont encore en attente de confirmation. Elles restent conservées ; réessayez dans un instant.", { duration: 15000 });
+              return;
+            }
           }
         } catch (erreurNoyau) {
           console.warn("[ExamSubmission][EB] Vérification noyau impossible:", erreurNoyau);

@@ -918,6 +918,11 @@ export async function viderFileNoyau(attemptId?: string | null, options?: { forc
   }
 }
 
+/** Tentatives distinctes ayant encore des réponses en file (lecture seule). */
+export function attemptsEnFileNoyau(): string[] {
+  return [...new Set(lireFile().map((e) => e.attemptId).filter(Boolean))];
+}
+
 /** Nombre de réponses encore non confirmées par le noyau (pour cette tentative si précisée). */
 export function reponsesNoyauEnAttente(attemptId?: string | null): number {
   const file = lireFile();

@@ -23,6 +23,6 @@ describe("Tableau de bord = lecteur de l'état serveur", () => {
   });
   it("5 — la synchronisation des réponses en attente reste disponible", () => {
     expect(typeof answers.flushOwnAnswerSavesBeforeLogout).toBe("function");
-    expect(dashboard).toMatch(/flushOwnAnswerSavesBeforeLogout/);
+    expect(dashboard).toMatch(/flushToutesFilesAvantDeconnexion/);
   });
 });

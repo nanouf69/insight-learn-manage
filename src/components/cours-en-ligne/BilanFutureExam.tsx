@@ -41,14 +41,37 @@ type Revision = { ids: number[]; answers: Record<string, string[]>; validee: boo
 
 const rpc = (name: string, args: Record<string, unknown>) => (supabase as any).rpc(name, args);
 
-/** Server route: 'future' | 'legacy'. A read error returns 'legacy' (status quo for everyone before opening). */
-export async function lireRouteBilanFuture(moduleId: number): Promise<"future" | "legacy"> {
+export type LectureResultatRemise =
+  | { etat: "non_remise" }
+  | { etat: "remise"; resultat: { correct_count: number; question_count: number } }
+  | { etat: "erreur" };
+
+/** Distingue vraie absence (non remise) et erreur de lecture d'une remise prouvée. */
+export async function lireResultatRemise(
+  submitted: boolean,
+  lire: () => Promise<{ data: any; error: unknown }>,
+): Promise<LectureResultatRemise> {
+  if (!submitted) return { etat: "non_remise" };
+  try {
+    const { data, error } = await lire();
+    if (error || !data) return { etat: "erreur" };
+    return { etat: "remise", resultat: data };
+  } catch { return { etat: "erreur" }; }
+}
+
+/**
+ * Server route: 'future' | 'legacy' | 'erreur'. A read error is NOT a legacy verdict:
+ * the caller shows a recoverable error and retries, never silently switches route.
+ */
+export async function lireRouteBilanFuture(moduleId: number): Promise<"future" | "legacy" | "erreur"> {
   if (moduleId !== 5 && moduleId !== 11) return "legacy";
   try {
     const { data, error } = await rpc("bilan_future_route", { p_module: moduleId });
-    if (error) { console.error("[BilanFuture] route", error.code); return "legacy"; }
-    return data === "future" ? "future" : "legacy";
-  } catch { return "legacy"; }
+    if (error) { console.error("[BilanFuture] route", error.code); return "erreur"; }
+    if (data === "future") return "future";
+    if (data === "legacy") return "legacy";
+    return "erreur";
+  } catch { return "erreur"; }
 }
 
 /** Same card form as the Examen Blanc "Résultats par matière" (Coeff., Barème, Éliminatoire, x / 20). */
@@ -121,6 +144,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
   const [relecture, setRelecture] = useState(false);
   const [nonRepondues, setNonRepondues] = useState<Set<number>>(new Set());
   const [erreur, setErreur] = useState<string | null>(null);
+  const [erreurRelire, setErreurRelire] = useState<number | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [enAttente, setEnAttente] = useState(0);
   const [showCalculator, setShowCalculator] = useState(false);
@@ -165,7 +189,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
   const ouvrir = useCallback(async (exo: number) => {
     const tok = ++ouvertureCourante.current;
     const actuel = () => tok === ouvertureCourante.current;
-    setErreur(null); setPassage(null); setCorrection(null); setRevisionMode(false); setRelecture(false); setNonRepondues(new Set()); setOuvert(exo);
+    setErreur(null); setErreurRelire(null); setPassage(null); setCorrection(null); setRevisionMode(false); setRelecture(false); setNonRepondues(new Set()); setOuvert(exo);
     window.scrollTo?.({ top: 0, behavior: "smooth" });
     const o = await rpc("bilan_future_open", { p_module: moduleId, p_exercise: exo });
     if (!actuel()) return;
@@ -182,8 +206,13 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
     for (const d of readQueue(localStorage, receipt)) {
       if ((revisions[d.questionId] ?? 0) < d.revision) { answers[d.questionId] = d.answer; revisions[d.questionId] = d.revision; }
     }
-    const sub = rs.data.submitted ? (await (supabase as any).from("bilan_future_submissions").select("correct_count, question_count").eq("receipt_id", receipt.passageId).maybeSingle()).data : null;
+    const lecture = await lireResultatRemise(rs.data.submitted === true, () => (supabase as any).from("bilan_future_submissions").select("correct_count, question_count").eq("receipt_id", receipt.passageId).maybeSingle());
     if (!actuel()) return;
+    if (lecture.etat === "erreur") {
+      // Remise prouvée par le serveur mais résultat illisible : jamais « non remise ».
+      setErreur("Lecture de votre résultat impossible. Vos réponses sont conservées ; réessayez."); setErreurRelire(exo); return;
+    }
+    const sub = lecture.etat === "remise" ? lecture.resultat : null;
     setPassage({ receipt, questions: qs.data.questions ?? [], answers, revisions, submitted: sub });
     if (sub) void chargerCorrection(receipt, tok); else void flush(receipt);
   }, [moduleId, ownerId, chargerCorrection, flush]);
@@ -398,7 +427,7 @@ export function BilanFutureExam({ moduleId, ownerId, apprenantId, titre, descrip
           <div className="grid grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_88px] gap-3 sm:gap-4" data-testid="bilan-future-passage">
             <div className="space-y-4 min-w-0">
               <MatiereCard moduleId={moduleId} nom={nom} onCalculator={() => setShowCalculator(v => !v)}>
-                  {erreur && <div role="alert" className="w-full rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-center">{erreur}</div>}
+                  {erreur && <div role="alert" className="w-full rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-center">{erreur}{erreurRelire != null && <div className="mt-2"><Button variant="outline" onClick={() => void ouvrir(erreurRelire)}>Relire</Button></div>}</div>}
                   {!passage && !erreur && <p className="text-muted-foreground">Chargement de votre passage…</p>}
                   <QuestionsFaussesEffectuees confirme={reprise.revision?.submitted === true} />
                   {enRevision && (

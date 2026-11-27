@@ -92,6 +92,11 @@ export function enqueueQuizResultSave(payload: QuizResultPayload) {
   void flushQuizResultSaves();
 }
 
+/** Notes en attente appartenant à ce compte seulement (jamais celles d'un autre compte). */
+export function getPendingQuizResultCountFor(userId: string): number {
+  return readQueue().filter((it) => isOwnedByCurrentUser(it, userId)).length;
+}
+
 export function getPendingQuizResultCount(): number {
   return readQueue().length;
 }

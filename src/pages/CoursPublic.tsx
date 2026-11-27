@@ -81,7 +81,8 @@ import { lireFenetresEmargement, fenetresDues, delaiProchaineFenetre, horaireFen
 import { choisirFeuilleDue, clesTraitees, cleAuthentification, SuiviOuvertureEmargement } from "@/lib/emargementDu";
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { flushOwnAnswerSavesBeforeLogout, setAnswerSaveOwnership } from "@/lib/answerPersistence";
+import { setAnswerSaveOwnership } from "@/lib/answerPersistence";
+import { flushToutesFilesAvantDeconnexion } from "@/lib/flushAvantDeconnexion";
 import { isLearnerPreviewReadOnly, setLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
 import { applyPratiqueUnlockElearning, computeServerCompletedModuleIds, computeUnlockState, getLearnerModuleDisplayState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 import { appliquerDerogationsModules, lireDerogationsModules } from '@/lib/moduleAccessDerogation';
@@ -1665,13 +1666,17 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   handleRetourModuleRef.current = handleBackFromModule;
   const handleRetourModule = useCallback(() => { setSelectedExerciseTarget(null); void handleRetourModuleRef.current(); }, []);
 
-  const handleLogout = useCallback(async () => {
-    // Tablette partagée : les réponses encore en attente doivent partir AVANT
-    // la déconnexion, tant que la session de cet apprenant est valide.
+  const handleLogout = useCallback(async (): Promise<boolean> => {
+    // Tablette partagée : toutes les files de réponses du compte actif doivent
+    // être confirmées par le serveur AVANT la déconnexion. Échec = compte
+    // laissé ouvert, files intactes, message clair.
+    let flush: { ok: boolean } = { ok: false };
     try {
-      await flushOwnAnswerSavesBeforeLogout();
-    } catch {
-      /* la file reste intacte : renvoi à la prochaine connexion du même compte */
+      flush = await flushToutesFilesAvantDeconnexion({ userId: user?.id ?? null, apprenantId: apprenant?.id ?? null });
+    } catch { flush = { ok: false }; }
+    if (!flush.ok) {
+      toast.error("Déconnexion suspendue : certaines réponses ne sont pas encore confirmées par le serveur. Elles restent conservées sur cet appareil. Vérifiez votre connexion puis réessayez.", { duration: 15000 });
+      return false;
     }
     await endConnexion();
     await signOut();
@@ -1682,14 +1687,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     lastKnownUserIdRef.current = null;
     fetchAttemptRef.current = 0;
     lastFetchedUserIdRef.current = null;
-  }, [endConnexion, signOut]);
+    return true;
+  }, [endConnexion, signOut, user?.id, apprenant?.id]);
 
   // Bind the force-disconnect implementation used by inactivity/presence hooks
   useEffect(() => {
     forceDisconnectImplRef.current = async () => {
       toast.warning("Déconnexion automatique pour inactivité prolongée (30 min sans activité + 5 min sans réponse).");
-      await handleLogout();
-      navigate("/cours-en-ligne", { replace: true });
+      if (await handleLogout()) navigate("/cours-en-ligne", { replace: true });
     };
   }, [handleLogout, navigate]);
 
@@ -1806,7 +1811,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               </button>
             </p>
           </div>
-          <Button size="sm" variant="outline" className="shrink-0 text-xs" onClick={handleLogout}>
+          <Button size="sm" variant="outline" className="shrink-0 text-xs" onClick={() => void handleLogout()}>
             Se déconnecter
           </Button>
         </div>
@@ -1849,7 +1854,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   : `Votre accès a expiré le ${fin.toLocaleDateString('fr-FR')}. Contactez votre centre de formation.`
               }
             </p>
-            <Button variant="destructive" size="sm" onClick={handleLogout}>
+            <Button variant="destructive" size="sm" onClick={() => void handleLogout()}>
               <LogOut className="w-3.5 h-3.5 mr-1" />
               Déconnexion
             </Button>
@@ -2541,7 +2546,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                 variant="outline"
                 size="sm"
                 className="text-xs gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={handleLogout}
+                onClick={() => void handleLogout()}
               >
                 <LogOut className="w-3.5 h-3.5" />
                 Se déconnecter
