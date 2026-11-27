@@ -11,6 +11,7 @@ import os, pathlib, subprocess, tempfile, unittest, json
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 MIG = ROOT / 'src/test/fixtures/validation_admin_preuve_legacy_0304.sql'
 MIG2 = ROOT / 'src/test/fixtures/questions_affichees_0305.sql'
+MIG3 = ROOT / 'src/test/fixtures/questions_affichees_retrait_0307.sql'
 for k in [k for k in os.environ if k.startswith('PG')]:
     os.environ.pop(k)
 TEMP = tempfile.mkdtemp(prefix='va-sql-', dir='/tmp'); os.chown(TEMP, 1000, 1000)
@@ -212,51 +213,21 @@ def afficher(uid, ex, ids, aid=A):
     return as_user(uid, f"SELECT array_to_string(public.enregistrer_questions_affichees('{aid}', '{ex}', {arr}), ',')")
 
 class QuestionsAffichees(Contrat):
-    """0305 : couverture exacte contre la liste serveur enregistrée avant la remise."""
-    def test_01_couverture_exacte_suffit_sans_validation_admin(self):
+    """0307 : la liste fournie par le navigateur (0305) n'est plus une preuve ni appelable par l'élève."""
+    def test_01_eleve_ne_peut_plus_envoyer_de_liste(self):
+        self.assertIn('permission denied', err(afficher(U, 'module_4_exo_100', ['100001'])))
+
+    def test_02_liste_ecrite_par_service_ne_prouve_plus_rien(self):
         for ex in EXOS:
-            self.assertEqual(sql(afficher(U, f'module_4_exo_{ex}', [f'{ex}001', f'{ex}002'])), f'{ex}001,{ex}002')
+            sql(f"INSERT INTO quiz_questions_affichees(apprenant_id, exercice_id, question_ids, empreinte, created_at) VALUES ('{A}', 'module_4_exo_{ex}', ARRAY['{ex}001','{ex}002'], 'x', now() - interval '1 hour')")
         self.tout_soumettre()
-        self.assertEqual(etat(), 'true|completed')
+        self.assertEqual(etat(), 'false|in_progress')
         self.assertEqual(sql("SELECT count(*) FROM module_completion_validations_admin"), '0')
 
-    def test_02_question_affichee_sans_reponse_bloque(self):
-        for ex in EXOS:
-            sql(afficher(U, f'module_4_exo_{ex}', [f'{ex}001', f'{ex}002', f'{ex}003']))
+    def test_03_validation_admin_append_only_conservee(self):
         self.tout_soumettre()
-        self.assertEqual(etat(), 'false|in_progress')
-
-    def test_03_liste_apres_remise_refusee_et_sans_effet(self):
-        self.tout_soumettre()
-        self.assertIn('déjà remise', err(afficher(U, 'module_4_exo_100', ['100001'])))
-        self.assertEqual(etat(), 'false|in_progress')
-
-    def test_04_liste_posterieure_a_la_remise_ignoree(self):
-        for ex in EXOS:
-            sql(afficher(U, f'module_4_exo_{ex}', [f'{ex}001', f'{ex}002']))
-        self.tout_soumettre()
-        sql("ALTER TABLE quiz_questions_affichees DISABLE TRIGGER USER; UPDATE quiz_questions_affichees SET created_at = now(); ALTER TABLE quiz_questions_affichees ENABLE TRIGGER USER;")
-        self.assertEqual(etat(), 'false|in_progress')
-
-    def test_05_revision_doublon_vide_autre_compte_refuses(self):
-        self.assertIn('origine', err(afficher(U, 'module_4_revision_exo_100', ['100001'])))
-        self.assertIn('invalide', err(afficher(U, 'module_4_exo_100', ['100001', '100001'])))
-        self.assertIn('invalide', err(afficher(U, 'module_4_exo_100', [])))
-        self.assertIn('non autorisé', err(afficher(UB, 'module_4_exo_100', ['100001'])))
-
-    def test_06_immuable_premiere_liste_conservee(self):
-        sql(afficher(U, 'module_4_exo_100', ['100001']))
-        self.assertEqual(sql(afficher(U, 'module_4_exo_100', ['100001', '100009'])), '100001')
-        self.assertIn('ajout seul', err("UPDATE quiz_questions_affichees SET question_ids='{x}'"))
-        self.assertIn('ajout seul', err("DELETE FROM quiz_questions_affichees"))
-        self.assertIn('permission denied', err(as_user(U, f"INSERT INTO quiz_questions_affichees(apprenant_id,exercice_id,question_ids,empreinte) VALUES ('{A}','module_4_exo_101','{{x}}','x')")))
-
-    def test_07_liste_d_un_autre_eleve_ne_prouve_rien(self):
-        for ex in EXOS:
-            sql(afficher(UB, f'module_4_exo_{ex}', [f'{ex}001', f'{ex}002'], aid=B))
-        self.tout_soumettre()
-        self.assertEqual(etat(), 'false|in_progress')
-        self.assertEqual(etat(aid=B), 'false|in_progress')  # B n'a rien remis
+        self.assertEqual(sql(valider(ADMIN)), '4')
+        self.assertEqual(etat(), 'true|completed')
 
 def main():
     subprocess.run(AS_USER + ['initdb', '-D', DATA, '-A', 'trust', '--no-locale', '-U', 'lovable'], check=True, stdout=subprocess.DEVNULL)
@@ -269,6 +240,7 @@ def main():
         sql(POL)
         sql(MIG.read_text())
         sql(MIG2.read_text())
+        sql(MIG3.read_text())
         sql(f"INSERT INTO apprenants VALUES ('{A}','{U}'),('{B}','{UB}'); INSERT INTO user_roles VALUES ('{ADMIN}','admin');")
         r = unittest.main(exit=False, verbosity=2).result
         return 0 if r.wasSuccessful() else 1

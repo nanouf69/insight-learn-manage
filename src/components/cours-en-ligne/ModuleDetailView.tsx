@@ -67,7 +67,6 @@ import {
   fetchQuizAttempts,
   isAttemptSubmitted,
   submitQuizAttempt,
-  enregistrerQuestionsAffichees,
 } from "@/lib/quizAttempts";
 import { useQuestionTimeTracking } from "@/hooks/useQuestionTimeTracking";
 import { reconcileHistoricalAnswers } from "@/lib/historicalAnswerReconciliation";
@@ -9983,12 +9982,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             if (!answersAreEqual(brouillonActuel, exoAnswers)) { echec("brouillon_modifie"); return false; }
                             etapeEnCours = "validation_serveur";
                             if (!enRevision) {
-                              // Liste serveur des questions affichées (avant la remise) : preuve exacte de couverture.
-                              await enregistrerQuestionsAffichees({
-                                apprenantId,
-                                exerciceId,
-                                questionIds: questionsCompteesExo.map((q: any) => String(q?.id ?? "")),
-                              });
                               const submitted = await submitQuizAttempt({
                                 apprenantId,
                                 exerciceId,

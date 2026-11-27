@@ -4,7 +4,7 @@ const rpc = vi.fn();
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: (...a: unknown[]) => rpc(...a) } }));
 
 import { decisionFinModule, messageListesQuiz, LIBELLE_NON_CONFIRME, LIBELLE_NON_REPONDU, MESSAGE_VERIFICATION_IMPOSSIBLE } from "@/lib/finModuleDecision";
-import { enregistrerQuestionsAffichees } from "@/lib/quizAttempts";
+import { INSTANTANE_OUVERTURE_ACTIF, ouvrirInstantaneQuiz, affichageConformeInstantane, questionsSansReponse } from "@/lib/quizInstantaneOuverture";
 
 describe("quiz en attente : non confirmé ≠ non répondu", () => {
   it("nomme chaque quiz avec son état exact", () => {
@@ -31,21 +31,40 @@ describe("quiz en attente : non confirmé ≠ non répondu", () => {
   });
 });
 
-describe("enregistrerQuestionsAffichees", () => {
+describe("instantané serveur à l'ouverture (candidat, désactivé)", () => {
   beforeEach(() => rpc.mockReset());
-  it("envoie les identifiants exacts dédoublonnés pour une tentative d'origine", async () => {
-    rpc.mockResolvedValue({ data: ["1", "2"], error: null });
-    const r = await enregistrerQuestionsAffichees({ apprenantId: "a", exerciceId: "module_4_exo_103", questionIds: ["1", "2", "2", " "] });
-    expect(rpc).toHaveBeenCalledWith("enregistrer_questions_affichees", { _apprenant_id: "a", _exercice_id: "module_4_exo_103", _question_ids: ["1", "2"] });
-    expect(r).toEqual(["1", "2"]);
+  it("reste désactivé tant que le SQL candidat n'est pas appliqué", () => {
+    expect(INSTANTANE_OUVERTURE_ACTIF).toBe(false);
   });
-  it("révision ou liste vide : aucun appel", async () => {
-    expect(await enregistrerQuestionsAffichees({ apprenantId: "a", exerciceId: "module_4_revision_exo_103", questionIds: ["1"] })).toBeNull();
-    expect(await enregistrerQuestionsAffichees({ apprenantId: "a", exerciceId: "module_4_exo_103", questionIds: [] })).toBeNull();
+  it("n'envoie aucune liste : seulement compte et tentative d'origine", async () => {
+    rpc.mockResolvedValue({ data: [{ question_ids: ["1", "2"], empreinte: "e" }], error: null });
+    expect(await ouvrirInstantaneQuiz("a", "module_4_exo_103")).toEqual({ etat: "ok", questionIds: ["1", "2"], empreinte: "e" });
+    expect(rpc).toHaveBeenCalledWith("ouvrir_quiz_instantane", { _apprenant_id: "a", _exercice_id: "module_4_exo_103" });
+  });
+  it("révision : règle précédente, aucun appel", async () => {
+    expect(await ouvrirInstantaneQuiz("a", "module_4_revision_exo_103")).toEqual({ etat: "regle_precedente" });
     expect(rpc).not.toHaveBeenCalled();
   });
-  it("erreur serveur : null, jamais une fausse liste", async () => {
-    rpc.mockResolvedValue({ data: null, error: { code: "P0561" } });
-    expect(await enregistrerQuestionsAffichees({ apprenantId: "a", exerciceId: "module_4_exo_103", questionIds: ["1"] })).toBeNull();
+  it("erreur de lecture/écriture serveur : erreur réessayable, jamais de liste", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "P0573" } });
+    expect((await ouvrirInstantaneQuiz("a", "module_4_exo_103")).etat).toBe("erreur");
+    rpc.mockRejectedValue(new Error("réseau"));
+    expect((await ouvrirInstantaneQuiz("a", "module_4_exo_103")).etat).toBe("erreur");
+    rpc.mockResolvedValue({ data: [], error: null });
+    expect((await ouvrirInstantaneQuiz("a", "module_4_exo_103")).etat).toBe("erreur");
+  });
+  it("tentative antérieure ou quiz non couvert : règle précédente", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "P0571" } });
+    expect(await ouvrirInstantaneQuiz("a", "module_4_exo_103")).toEqual({ etat: "regle_precedente" });
+  });
+  it("affichage différent, doublon ou question en plus : non conforme", () => {
+    expect(affichageConformeInstantane(["2", "1"], ["1", "2"])).toBe(true);
+    expect(affichageConformeInstantane(["1", "1"], ["1", "2"])).toBe(false);
+    expect(affichageConformeInstantane(["1", "2", "3"], ["1", "2"])).toBe(false);
+    expect(affichageConformeInstantane(["1"], ["1", "2"])).toBe(false);
+  });
+  it("réponses partielles détectées contre l'instantané", () => {
+    expect(questionsSansReponse(103, ["1", "2", "3"], { "103-1": "A", "103-2": [], "103-3": " " })).toEqual(["2", "3"]);
+    expect(questionsSansReponse(103, ["1"], { "103-1": ["B"] })).toEqual([]);
   });
 });

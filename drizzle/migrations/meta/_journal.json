@@ -2143,6 +2143,20 @@
       "when": 1795799243136,
       "tag": "0305_questions_affichees",
       "breakpoints": true
+    },
+    {
+      "idx": 306,
+      "version": "7",
+      "when": 1795799801777,
+      "tag": "0306_questions_affichees_retrait_confiance_navigateur",
+      "breakpoints": true
+    },
+    {
+      "idx": 307,
+      "version": "7",
+      "when": 1795799843628,
+      "tag": "0307_questions_affichees_retrait_confiance_navigateur_sql",
+      "breakpoints": true
     }
   ]
 }

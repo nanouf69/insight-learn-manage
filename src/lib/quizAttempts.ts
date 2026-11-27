@@ -121,31 +121,6 @@ export const isAttemptSubmitted = (
  * Écrit status=submitted, submitted_at, score, bonnes réponses, total,
  * réponses, tentative, apprenant et exercice.
  */
-/**
- * Enregistre côté serveur (une seule fois, avant la remise) les identifiants exacts des
- * questions affichées pour la tentative d'origine. Renvoie la liste conservée par le serveur,
- * ou null si l'enregistrement est impossible (la remise reste alors jugée par l'ancienne règle).
- */
-export async function enregistrerQuestionsAffichees(params: {
-  apprenantId: string;
-  exerciceId: string;
-  questionIds: string[];
-}): Promise<string[] | null> {
-  const ids = Array.from(new Set(params.questionIds.map((i) => String(i).trim()).filter(Boolean)));
-  if (!/^module_\d+_exo_\d+$/.test(params.exerciceId) || ids.length === 0) return null;
-  if (blockLearnerWrite("enregistrer_questions_affichees")) return null;
-  const { data, error } = await (supabase as any).rpc("enregistrer_questions_affichees", {
-    _apprenant_id: params.apprenantId,
-    _exercice_id: params.exerciceId,
-    _question_ids: ids,
-  });
-  if (error) {
-    console.warn("[quizAttempts] enregistrer_questions_affichees:", error);
-    return null;
-  }
-  return Array.isArray(data) ? (data as string[]) : null;
-}
-
 export async function submitQuizAttempt(params: {
   apprenantId: string;
   exerciceId: string;
