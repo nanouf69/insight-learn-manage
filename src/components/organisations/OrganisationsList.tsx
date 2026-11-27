@@ -547,13 +547,8 @@ export function OrganisationsList() {
                 <p><strong>À :</strong> {selectedEmail.recipients?.join(', ') || '-'}</p>
                 <p><strong>Date :</strong> {selectedEmail.sent_at ? format(new Date(selectedEmail.sent_at), "dd MMMM yyyy 'à' HH:mm", { locale: fr }) : selectedEmail.received_at ? format(new Date(selectedEmail.received_at), "dd MMMM yyyy 'à' HH:mm", { locale: fr }) : '-'}</p>
               </div>
-              {selectedEmail.body_html ? (
-                <div className="border rounded-md p-4 bg-background" dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }} />
-              ) : (
-                <p className="text-sm">{selectedEmail.body_preview || 'Aucun contenu'}</p>
-              )}
               {!relai ? (
-                <div className="flex gap-2 justify-end">
+                <div className="flex gap-2 justify-start">
                   <Button variant="outline" size="sm" className="gap-2" onClick={() => ouvrirRelai("renvoi")}>
                     <RefreshCw className="h-4 w-4" /> Renvoyer
                   </Button>
@@ -574,6 +569,11 @@ export function OrganisationsList() {
                     </Button>
                   </div>
                 </div>
+              )}
+              {selectedEmail.body_html ? (
+                <div className="border rounded-md p-4 bg-background" dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }} />
+              ) : (
+                <p className="text-sm">{selectedEmail.body_preview || 'Aucun contenu'}</p>
               )}
             </div>
           )}
