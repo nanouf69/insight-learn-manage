@@ -1,4 +1,5 @@
 import { isQuestionQrc, qrcReponsesAttendues } from "@/lib/questionQrc";
+import { exerciceVisibleApprenant } from "@/lib/exerciceVisibleApprenant";
 import { ajouterLyonVtc, COURS_LYON_VTC_ID, PDF_LYON_VTC, estPdfLyonVtc } from '@/lib/pratiqueVtcLyonRessource';
 import { fusionnerQuizLyon, retirerAjoutsQuizLyon } from '@/lib/pratiqueVtcLyonFusion';
 import { lireVersionQuizLyon, type VersionQuizLyon } from '@/lib/pratiqueVtcLyonVersion';
@@ -7111,7 +7112,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const activeCours = moduleData.cours.filter(c => c.actif && !(hideFormulaires && c.checklistType && HIDDEN_CHECKLIST_TYPES.includes(c.checklistType)));
     // Module 11 : l'entrée « H - Exercice complémentaire » (607, définie dans le code, jamais répondue)
     // est remplacée à l'écran par les quiz intégrés en bas du module ; ses questions restent dans le code.
-    const activeExercices = moduleData.exercices.filter(e => e.actif && !exerciceRemplaceParQuizIntegres(Number(moduleData.id), Number(e.id))) as ExerciceItem[];
+    const activeExercices = moduleData.exercices.filter(e => exerciceVisibleApprenant(Number(moduleData.id), e)) as ExerciceItem[];
     // Toujours la liste d'exercices la plus récente (évite un calcul de révision
     // fait sur une liste pas encore chargée après rechargement).
     const activeExercicesRef = useRef<ExerciceItem[]>(activeExercices);
