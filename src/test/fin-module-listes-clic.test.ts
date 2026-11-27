@@ -72,6 +72,15 @@ describe("clic « Terminé » : mêmes listes que l'affichage", () => {
     expect(decisionFinModule({ etatServeur: undefined, ...sansSucces, listes: listes(base) }).action).toBe("erreur");
   });
 
+  it("repli sans listes : une remise n'est jamais annoncée « confirmée »", () => {
+    const d = decisionFinModule({ etatServeur: null, exosSoumis: new Set([100]), quizValides: [],
+      quizRestants: [{ id: "100", label: "Bilan T3P" }, { id: "104", label: "Bilan Anglais" }] });
+    expect(d.action).toBe("bloquer");
+    if (d.action !== "bloquer") return;
+    expect(d.message).not.toContain(TITRE_QUIZ_CONFIRMES);
+    expect(d.message).toContain("Quiz remis au serveur (vérification par le serveur à l'enregistrement) (1) : « Bilan T3P »");
+  });
+
   it("verdict serveur complet : sortie sans écriture, listes ignorées", () => {
     expect(decisionFinModule({ etatServeur: { status: "completed", preuve_complete: true }, ...sansSucces, listes: listes(base) })).toEqual({ action: "sortie" });
   });

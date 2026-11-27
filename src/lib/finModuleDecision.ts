@@ -46,6 +46,8 @@ export function precisionQuizEnAttente(q: QuizManquant): string | null {
   return q.reponsesLocales > 0 ? LIBELLE_NON_CONFIRME : LIBELLE_NON_REPONDU;
 }
 
+export const TITRE_QUIZ_REMIS_SANS_COUVERTURE = "Quiz remis au serveur (vérification par le serveur à l'enregistrement)";
+
 export const LIBELLE_SANS_REMISE_SERVEUR = "aucune remise confirmée par le serveur";
 
 /** Deux groupes nominatifs ; « non répondu » jamais affirmé ici (pas de lecture serveur des brouillons). */
@@ -55,7 +57,8 @@ export function messageListesQuiz(valides: string[], enAttente: QuizManquant[]):
     const t = q.label && q.label !== q.id ? `« ${q.label} »` : `quiz n° ${q.id}`;
     return `${t} (${(q.reponsesLocales ?? 0) > 0 ? LIBELLE_NON_CONFIRME : LIBELLE_SANS_REMISE_SERVEUR})`;
   }).join(", ");
-  return `Quiz confirmés par le serveur (${valides.length}) : ${v}. Quiz en attente ou indisponibles (${enAttente.length}) : ${a}.`;
+  // Repli sans carte de couverture serveur : une remise y est seulement « remise », jamais « confirmée ».
+  return `${TITRE_QUIZ_REMIS_SANS_COUVERTURE} (${valides.length}) : ${v}. Quiz en attente ou indisponibles (${enAttente.length}) : ${a}.`;
 }
 
 export function decisionFinModule(p: {

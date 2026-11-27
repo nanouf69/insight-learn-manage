@@ -10411,7 +10411,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           const isQuizPageTmp = p?.type === "exercice-single" && p.exercice?.questions?.length > 0;
           const estEtapeFacultative = p?.type === "exercice-single" && Number(p.exercice.id) === ID_ETAPE_QUIZ_COMPLEMENTAIRES;
           // Un quiz n'est jamais « fait » avant la relecture des validations serveur.
-          const isCompleted = completedPages.has(i) && (!isQuizPageTmp || quizValideServeur(p.exercice.id));
+          // Coche d'un quiz : mêmes listes serveur que le compteur et le tableau de bord quand elles sont lues.
+          const confirmeListes = isQuizPageTmp && listesQuiz?.lisible ? idsQuizConfirmes(listesQuiz).has(String(p.exercice.id)) : null;
+          const isCompleted = isQuizPageTmp && confirmeListes !== null ? confirmeListes : completedPages.has(i) && (!isQuizPageTmp || quizValideServeur(p.exercice.id));
           const isQuizPage = p?.type === "exercice-single" && p.exercice.questions && p.exercice.questions.length > 0;
           const rawLabel = p?.type === "cours"
             ? `📖 ${p.cours.titre}`
