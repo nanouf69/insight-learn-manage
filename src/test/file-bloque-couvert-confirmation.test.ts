@@ -12,7 +12,7 @@ if (typeof globalThis.localStorage === "undefined") {
 }
 
 import {
-  enqueueAnswerSave, flushAnswerSavesAndWait, getBlockedAnswerSavesFor, getBlockedAnswerSaves,
+  enqueueAnswerSave, flushAnswerSavesAndWait, flushOwnAnswerSavesBeforeLogout, getBlockedAnswerSavesFor, getBlockedAnswerSaves,
   primeKnownWriteSeq, __testResetMemorySeq, setAnswerSaveAuthToken, setAnswerSaveOwnership,
 } from "@/lib/answerPersistence";
 
@@ -69,6 +69,10 @@ describe("file : ancien envoi bloqué couvert par une sauvegarde plus récente c
     await flushAnswerSavesAndWait(APP, EXO, 500);
     expect(fetchMock.mock.calls.length).toBe(appels);
     expect(st.reponses["100-1"]).toEqual(["D"]);
+    // Déconnexion : l'ancien envoi couvert ne retarde ni ne fait échouer.
+    const t0 = Date.now();
+    expect(await flushOwnAnswerSavesBeforeLogout(2000)).toBe(true);
+    expect(Date.now() - t0).toBeLessThan(500);
   });
 
   it("garde-fou : un ancien envoi avec une question non couverte reste bloqué et conservé", async () => {
@@ -81,6 +85,8 @@ describe("file : ancien envoi bloqué couvert par une sauvegarde plus récente c
     expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(false);
     expect(getBlockedAnswerSavesFor(APP, EXO)).toBe(1);
     expect(st.reponses).toEqual({ "100-1": ["D"], "100-9": ["E"] }); // rien d'écrasé par l'ancien
+    // Déconnexion : l'envoi non couvert reste bloquant.
+    expect(await flushOwnAnswerSavesBeforeLogout(300)).toBe(false);
   });
 
   it("garde-fou : une confirmation sur un autre exercice ne débloque rien", async () => {
@@ -114,5 +120,7 @@ describe("file : ancien envoi bloqué couvert par une sauvegarde plus récente c
     save({ "100-1": ["D"] }); // 100-9 absente, et le serveur avait une autre valeur (Z ≠ B)
     expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(false);
     expect(getBlockedAnswerSavesFor(APP, EXO)).toBe(1);
+    // Déconnexion : valeur serveur différente = non couvert, reste bloquant.
+    expect(await flushOwnAnswerSavesBeforeLogout(300)).toBe(false);
   });
 });

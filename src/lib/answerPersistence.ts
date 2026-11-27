@@ -806,7 +806,9 @@ function reponsesContiennentSansConflit(candidate: unknown, previous: unknown, o
  */
 export async function flushOwnAnswerSavesBeforeLogout(timeoutMs = 8000): Promise<boolean> {
   if (!canSynchronizeAnswers()) return true;
-  const hasOwn = () => readQueue().some(item => item.payload.apprenant_id === sessionApprenantId && isOwnedByCurrentUser(item));
+  // Un ancien envoi bloqué rendu obsolète par une sauvegarde confirmée qui le couvre
+  // n'a plus rien à envoyer : il ne retarde ni ne fait échouer la déconnexion.
+  const hasOwn = () => readQueue().some(item => item.payload.apprenant_id === sessionApprenantId && isOwnedByCurrentUser(item) && !item.superseded_by);
   if (!hasOwn()) return !queueReadFailed;
   void processQueue();
   const startedAt = Date.now();
