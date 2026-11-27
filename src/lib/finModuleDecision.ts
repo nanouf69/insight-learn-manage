@@ -6,7 +6,7 @@
  * - ligne « completed » mais preuve incomplète (ligne historique périmée) : blocage nommant le quiz manquant ;
  * - module non validé : blocage si un quiz manque, sinon enregistrement serveur.
  */
-export interface QuizManquant { id: string; label: string; missingQuestionIds?: string[] }
+export interface QuizManquant { id: string; label: string; missingQuestionIds?: string[]; /** Réponses présentes sur cet appareil (non prouvées). */ reponsesLocales?: number }
 export interface EtatServeurModule { status: string | null; preuve_complete: boolean | null }
 export type DecisionFinModule =
   | { action: "sortie" }
@@ -35,9 +35,22 @@ export function listesStatutQuiz(stats: { completedLabels?: string[]; remainingQ
   return { valides, enAttente };
 }
 
+export const LIBELLE_NON_CONFIRME = "réponses présentes, non confirmées par le serveur";
+export const LIBELLE_NON_REPONDU = "non répondu";
+
+/** Précision d'un quiz en attente : brouillon local non prouvé ≠ aucune réponse. Inconnu = rien ajouté. */
+export function precisionQuizEnAttente(q: QuizManquant): string | null {
+  if (q.reponsesLocales == null) return null;
+  return q.reponsesLocales > 0 ? LIBELLE_NON_CONFIRME : LIBELLE_NON_REPONDU;
+}
+
 export function messageListesQuiz(valides: string[], enAttente: QuizManquant[]): string {
   const v = valides.length ? valides.map((l) => `« ${l} »`).join(", ") : "aucun";
-  const a = enAttente.map((q) => (q.label && q.label !== q.id ? `« ${q.label} »` : `quiz n° ${q.id}`)).join(", ");
+  const a = enAttente.map((q) => {
+    const t = q.label && q.label !== q.id ? `« ${q.label} »` : `quiz n° ${q.id}`;
+    const p = precisionQuizEnAttente(q);
+    return p ? `${t} (${p})` : t;
+  }).join(", ");
   return `Quiz validés (${valides.length}) : ${v}. ${LIBELLE_QUIZ_EN_ATTENTE} (${enAttente.length}) : ${a}.`;
 }
 

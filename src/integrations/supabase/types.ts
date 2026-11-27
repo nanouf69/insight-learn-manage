@@ -9283,6 +9283,36 @@ export type Database = {
           },
         ]
       }
+      quiz_questions_affichees: {
+        Row: {
+          apprenant_id: string
+          auteur_uid: string | null
+          created_at: string
+          empreinte: string
+          exercice_id: string
+          id: string
+          question_ids: string[]
+        }
+        Insert: {
+          apprenant_id: string
+          auteur_uid?: string | null
+          created_at?: string
+          empreinte: string
+          exercice_id: string
+          id?: string
+          question_ids: string[]
+        }
+        Update: {
+          apprenant_id?: string
+          auteur_uid?: string | null
+          created_at?: string
+          empreinte?: string
+          exercice_id?: string
+          id?: string
+          question_ids?: string[]
+        }
+        Relationships: []
+      }
       quiz_questions_overrides: {
         Row: {
           choix: Json
@@ -11409,6 +11439,14 @@ export type Database = {
           closed_max_duration: number
           closed_no_response: number
         }[]
+      }
+      enregistrer_questions_affichees: {
+        Args: {
+          _apprenant_id: string
+          _exercice_id: string
+          _question_ids: string[]
+        }
+        Returns: string[]
       }
       est_compte_test: { Args: { _apprenant_id: string }; Returns: boolean }
       est_dossier_lie_emargement: {
