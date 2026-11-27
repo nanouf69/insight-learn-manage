@@ -53,7 +53,7 @@ import { Input } from "@/components/ui/input";
 import { getAvatarUrl } from "@/lib/avatarUrl";
 import { FinancementApprenantCard } from "@/components/crm/apprenant-sections/FinancementApprenantCard";
 import { useApprenantTauxRealisation } from "@/hooks/useApprenantTauxRealisation";
-import { useCandidatModules } from "@/hooks/useCandidatModules";
+import { useCandidatModules, useListesQuizRestants } from "@/hooks/useCandidatModules";
 import { useCrmDossierRefresh } from "@/hooks/useCrmDossierRefresh";
 import { HeuresPresentielValidees } from "@/components/crm/apprenant-sections/HeuresPresentielValidees";
 import { JalonsPonderesCard } from "@/components/crm/apprenant-sections/JalonsPonderesCard";
@@ -66,6 +66,7 @@ import { TauxPresenceSessionsCard, useTauxPresenceHeures } from "@/components/cr
 
 import { ALL_MODULES, FORMATION_MODULES, MANAGED_MODULE_IDS, DEFAULT_MODULES_BY_TYPE } from "@/components/cours-en-ligne/modules-config";
 import { readEdgeFunctionError } from "@/lib/edgeFunctionError";
+import QuizStatutListes from "@/components/cours-en-ligne/QuizStatutListes";
 
 
 // Derive ordered formation modules from shared config
@@ -359,6 +360,12 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
   const { data: tauxData, isError: tauxErreur } = useApprenantTauxRealisation(apprenantId, apprenant);
   const modulesQuery = useCandidatModules(apprenantId);
   const modulesProgression = !modulesQuery.isError && !modulesQuery.isFetching && modulesQuery.data?.etat === "ok" ? modulesQuery.data : null;
+  const quizRestantsQuery = useListesQuizRestants(apprenantId,
+    modulesProgression ? modulesProgression.restants.filter((r) => r.raison === "module" && !r.pratique).map((r) => Number(r.id)) : null);
+  // Lecture en erreur : chaque module restant affiché « non vérifiable », jamais « confirmé ».
+  const quizParModule: Record<number, any> | null = quizRestantsQuery.isError && modulesProgression
+    ? Object.fromEntries(modulesProgression.restants.map((r) => [r.id, { lisible: false, confirmes: [], enAttente: [] }]))
+    : quizRestantsQuery.data ?? null;
   // Lecture en erreur : aucun ancien taux affiché, jamais un faux 0 h.
   const tauxBrut = tauxErreur ? null : tauxData;
   const presenceHeures = useTauxPresenceHeures(apprenantId, !!apprenant && !!regleSuiviFormation(apprenant).filiere, regleSuiviFormation(apprenant).filiere);
@@ -789,6 +796,23 @@ export default function ApprenantDetailPage({ apprenantId, onBack }: ApprenantDe
         </div>
       )}
 
+      {/* Modules restants : quiz nominatifs (remises d'origine couvrant le contenu serveur), lecture seule. */}
+      {modulesProgression && quizParModule && modulesProgression.restants.some((r) => quizParModule[r.id]) && (
+        <div className="w-full rounded-lg border bg-card shadow-sm px-4 py-3 space-y-3" data-testid="crm-quiz-modules-restants">
+          <h3 className="text-sm font-semibold">Quiz des modules restants</h3>
+          {modulesProgression.restants.filter((r) => quizParModule[r.id]).map((r) => {
+            const l = quizParModule[r.id];
+            return (
+              <div key={r.id} className="space-y-1">
+                <p className="text-sm font-medium">{r.nom}</p>
+                {l.lisible
+                  ? <QuizStatutListes listes={l} testId={`crm-quiz-listes-${r.id}`} />
+                  : <p className="text-xs text-destructive">État des quiz non vérifiable : lecture du serveur impossible, réessayez.</p>}
+              </div>
+            );
+          })}
+        </div>
+      )}
       {/* Validation manuelle des heures de présence (admin) */}
       {taux && <HeuresPresentielValidees apprenantId={apprenant.id} />}
 

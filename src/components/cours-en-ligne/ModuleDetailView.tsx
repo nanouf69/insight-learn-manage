@@ -21,8 +21,8 @@ import { reponsesArchiveHorsRevision } from '@/lib/bilanRevisionPrecedence';
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { decisionFinModule, MESSAGE_VERIFICATION_IMPOSSIBLE } from "@/lib/finModuleDecision";
 import { chargerEtatCompletionServeur } from "@/lib/etatCompletionServeur";
-import { chargerPreuvesQuizModules, chargerReponsesQuizOrigine, avecPreuvesQuizConfirmees } from '@/lib/moduleProgressionReadModel';
-import { etatServeurQuizModule, listesQuizModule, texteListesQuiz, type ListesQuiz } from '@/lib/quizStatutListes';
+import { chargerPreuvesQuizModules, chargerQuestionsServeurModules, chargerReponsesQuizOrigine, avecPreuvesQuizConfirmees } from '@/lib/moduleProgressionReadModel';
+import { etatServeurQuizModule, listesQuizModule, statutBloquantEcran, texteListesQuiz, type ListesQuiz } from '@/lib/quizStatutListes';
 import QuizStatutListes from './QuizStatutListes';
 import { MODULES_QUESTIONS_FACULTATIVES } from '@/lib/moduleCompletionEvidence';
 import { hasRecordedAnswer } from "@/lib/moduleCompletionEvidence";
@@ -7132,9 +7132,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       let annule = false;
       (async () => {
         try {
-          const [lignes, etats] = await Promise.all([chargerReponsesQuizOrigine(apprenantId), chargerEtatCompletionServeur(apprenantId)]);
+          const [lignes, etats, questions] = await Promise.all([chargerReponsesQuizOrigine(apprenantId), chargerEtatCompletionServeur(apprenantId),
+            chargerQuestionsServeurModules([modulePourListes])]);
           const e = etats.get(modulePourListes);
-          if (!annule) setEtatQuizServeur({ cle: cleEtatQuiz, serveur: etatServeurQuizModule(lignes, modulePourListes, apprenantId),
+          if (!annule) setEtatQuizServeur({ cle: cleEtatQuiz,
+            serveur: etatServeurQuizModule(lignes, modulePourListes, apprenantId, questions.get(modulePourListes) ?? new Map()),
             moduleConfirme: e?.status === "completed" && e?.preuve_complete !== false });
         } catch (err) {
           console.error("[ModuleDetailView] état des quiz illisible", err);
@@ -8554,8 +8556,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         // Listes serveur relues au clic : erreur = aucun succès ; quiz en attente = blocage nominatif.
         let listesClic: ListesQuiz;
         try {
-          const lignes = await chargerReponsesQuizOrigine(apprenantId);
-          listesClic = listesQuizModule({ requis: quizRequisListes, serveur: etatServeurQuizModule(lignes, Number(module.id), apprenantId),
+          const [lignes, questions] = await Promise.all([chargerReponsesQuizOrigine(apprenantId), chargerQuestionsServeurModules([Number(module.id)])]);
+          listesClic = listesQuizModule({ requis: quizRequisListes,
+            serveur: etatServeurQuizModule(lignes, Number(module.id), apprenantId, questions.get(Number(module.id)) ?? new Map()),
             reponsesLocales: (id) => Object.entries(selectedAnswersRef.current ?? {}).filter(([cle, v]) => cle.startsWith(`${id}-`) && hasRecordedAnswer(v)).length });
         } catch {
           listesClic = listesQuizModule({ requis: quizRequisListes, serveur: null });
@@ -8564,8 +8567,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           toast.error(MESSAGE_VERIFICATION_IMPOSSIBLE, { id: "fin-module", duration: 12000 });
           return false;
         }
-        if (listesClic.enAttente.length > 0) {
-          const premier = listesClic.enAttente.find((q) => q.statut !== "indisponible");
+        // « remis, couverture non vérifiable » ne bloque pas l'écran : le serveur tranche seul à l'enregistrement.
+        if (listesClic.enAttente.some((q) => statutBloquantEcran(q.statut))) {
+          const premier = listesClic.enAttente.find((q) => q.statut !== "indisponible" && statutBloquantEcran(q.statut));
           const pageQuiz = premier ? pages.findIndex((p: any) => p?.type === "exercice-single" && String(p.exercice?.id) === premier.id) : -1;
           setEtatQuizTick((t) => t + 1);
           toast.error(`Module à terminer. ${texteListesQuiz(listesClic)}`, {

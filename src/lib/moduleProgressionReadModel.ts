@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { fetchAllRows } from '@/lib/supabase/fetch-all-rows';
 import { freshSessionRead } from '@/lib/sessionRpc';
 import { avecEtatServeur, type EtatCompletionServeur } from '@/lib/etatCompletionServeur';
+import { quizServeurModule, type QuizRef } from '@/lib/quizStatutListes';
 import { withSubmittedModuleProof, type CompletionEvidenceRow, type SubmittedModuleProof } from '@/lib/moduleCompletionEvidence';
 
 export interface OwnedSubmittedModuleProof extends SubmittedModuleProof { apprenant_id: string }
@@ -14,6 +15,27 @@ export async function chargerPreuvesQuizModules(apprenantId: string): Promise<Ow
     .eq('apprenant_id', apprenantId).eq('status', 'submitted')
     .not('submitted_at', 'is', null).like('exercice_id', 'module_%_exo_%')
     .order('id').range(from, to)));
+}
+
+/**
+ * Server content only (module_editor_state): active, non-deleted question IDs per quiz, per module.
+ * Read error = thrown (callers show « non vérifiable », never « confirmé »).
+ */
+export async function chargerQuizServeurModules(moduleIds?: readonly number[]): Promise<Map<number, Array<QuizRef & { questionIds: string[] }>>> {
+  const { data, error } = await freshSessionRead<{ data: Array<{ module_id: number; module_data: unknown; deleted_exercices: unknown }> | null; error: unknown }>(() => {
+    let q = supabase.from('module_editor_state').select('module_id, module_data, deleted_exercices');
+    if (moduleIds) q = q.in('module_id', [...moduleIds]);
+    return q as any;
+  });
+  if (error) throw error;
+  const res = new Map<number, Array<QuizRef & { questionIds: string[] }>>();
+  for (const row of data ?? []) res.set(Number(row.module_id), quizServeurModule(row.module_data, row.deleted_exercices));
+  return res;
+}
+
+export async function chargerQuestionsServeurModules(moduleIds?: readonly number[]): Promise<Map<number, Map<string, string[]>>> {
+  const quiz = await chargerQuizServeurModules(moduleIds);
+  return new Map([...quiz].map(([m, l]) => [m, new Map(l.map((q) => [q.id, q.questionIds]))]));
 }
 
 /** Account-scoped original-attempt rows of every status (drafts included), for pending-quiz labels only. */

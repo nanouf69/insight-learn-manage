@@ -8,7 +8,39 @@ import { computeServerCompletedModuleIds, type CompletionLite } from '@/lib/modu
 import { ACTIVITES_CODE } from '@/lib/jeuxPedagogiques';
 import { fetchAllRows } from '@/lib/supabase/fetch-all-rows';
 import { chargerEtatCompletionServeur } from '@/lib/etatCompletionServeur';
-import { projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
+import { chargerQuizServeurModules, chargerReponsesQuizOrigine, projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
+import { etatServeurQuizModule, listesQuizModule, type ListesQuiz } from '@/lib/quizStatutListes';
+import { MODULES_QUESTIONS_FACULTATIVES } from '@/lib/moduleCompletionEvidence';
+
+/** Modules dont les quiz ne sont pas exigés un par un (facultatifs, Bilans examen 5/11, examens blancs). */
+const horsListesQuiz = (id: number) => MODULES_QUESTIONS_FACULTATIVES.has(id) || id === 5 || id === 11 || (id >= 35 && id <= 38);
+
+/**
+ * Listes nominatives des quiz pour les modules restants (lecture seule) : contenu serveur + remises d'origine
+ * du compte. Toute erreur de lecture = « non vérifiable » pour ces modules, jamais « confirmé ».
+ */
+export async function chargerListesQuizRestants(apprenantId: string, moduleIds: readonly number[]): Promise<Record<number, ListesQuiz>> {
+  const ids = moduleIds.filter((id) => !horsListesQuiz(id));
+  const res: Record<number, ListesQuiz> = {};
+  if (!ids.length) return res;
+  let quiz: Awaited<ReturnType<typeof chargerQuizServeurModules>> | null = null;
+  let lignes: Awaited<ReturnType<typeof chargerReponsesQuizOrigine>> | null = null;
+  try {
+    [quiz, lignes] = await Promise.all([chargerQuizServeurModules(ids), chargerReponsesQuizOrigine(apprenantId)]);
+  } catch (e) {
+    console.error('[CRM] quiz des modules restants illisibles', e);
+  }
+  for (const id of ids) {
+    if (!quiz || !lignes) { res[id] = { lisible: false, confirmes: [], enAttente: [] }; continue; }
+    const requis = quiz.get(id) ?? [];
+    if (!requis.length) continue;
+    res[id] = listesQuizModule({
+      requis: requis.map((q) => ({ id: q.id, label: q.label })),
+      serveur: etatServeurQuizModule(lignes, id, apprenantId, new Map(requis.map((q) => [q.id, q.questionIds]))),
+    });
+  }
+  return res;
+}
 
 export const CANDIDAT_MODULES_KEY = 'candidat-modules-confirmes';
 
@@ -33,8 +65,21 @@ export async function chargerCandidatModules(apprenantId: string) {
   // jamais un repli sur des détails incomplets ou un ancien drapeau completed.
   const completions = projeterProgressionConfirmee(recordedCompletions, apprenantId, etatsServeur, []);
   const done = computeServerCompletedModuleIds(completions, DASHBOARD_PARENT_TO_CHILDREN, normalizeModuleIdForDashboard);
-  return progressionModulesEleve(modulesExigesDashboard(formation, apprenant.modules_autorises, completions, (apprenant as any).date_fin_cours_en_ligne), id => done.has(id),
+  const progression = progressionModulesEleve(modulesExigesDashboard(formation, apprenant.modules_autorises, completions, (apprenant as any).date_fin_cours_en_ligne), id => done.has(id),
     new Set(activites.filter(a => a.completed === true).map(a => String(a.exercice_id))), undefined, apprenantId, completions);
+  return progression;
+}
+
+/** Fiche CRM seulement (jamais dans les listes) : quiz nominatifs des modules restants, relus à chaque changement. */
+export function useListesQuizRestants(apprenantId: string | undefined, moduleIds: readonly number[] | null) {
+  const { user } = useAuth();
+  const cle = moduleIds ? [...moduleIds].sort((a, b) => a - b).join(',') : null;
+  return useQuery({
+    queryKey: ['crm-quiz-modules-restants', user?.id, apprenantId, cle],
+    enabled: !!user?.id && !!apprenantId && cle !== null,
+    staleTime: 0, gcTime: 0, refetchOnWindowFocus: true,
+    queryFn: () => chargerListesQuizRestants(apprenantId!, moduleIds ?? []),
+  });
 }
 
 export function useCandidatModules(apprenantId?: string) {

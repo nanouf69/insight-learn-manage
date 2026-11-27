@@ -51,7 +51,7 @@ import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { exosSoumisDuModule as exosSoumisDuModuleDashboard } from "@/lib/moduleProgressionReadModel";
 import { avecEtatServeur, chargerEtatCompletionServeur, type EtatCompletionServeur } from "@/lib/etatCompletionServeur";
-import { chargerPreuvesQuizModules, chargerReponsesQuizOrigine, projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
+import { chargerPreuvesQuizModules, chargerQuestionsServeurModules, chargerReponsesQuizOrigine, projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
 import { etatServeurQuizModule, listesQuizModule, type ListesQuiz } from '@/lib/quizStatutListes';
 import QuizStatutListes from '@/components/cours-en-ligne/QuizStatutListes';
 import { getPendingAnswers } from '@/lib/answerPersistence';
@@ -907,6 +907,16 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [preuvesQuizDashboard, setPreuvesQuizDashboard] = useState<{ owner: string; proofs: any[] } | null>(null);
   // Lignes d'origine du compte (brouillons compris) ; rows null = lecture en erreur (jamais « non répondu »).
   const [reponsesQuizDashboard, setReponsesQuizDashboard] = useState<{ owner: string; rows: any[] | null } | null>(null);
+  // Questions serveur par quiz (contenu module_editor_state) : une remise n'est « confirmée » que si elle les couvre toutes.
+  // undefined = en cours, null = lecture en erreur (listes « non vérifiables », jamais un succès).
+  const [questionsServeurDashboard, setQuestionsServeurDashboard] = useState<Map<number, Map<string, string[]>> | null | undefined>(undefined);
+  useEffect(() => {
+    let annule = false;
+    chargerQuestionsServeurModules()
+      .then((m) => { if (!annule) setQuestionsServeurDashboard(m); })
+      .catch((e) => { console.error("[CoursPublic] questions serveur illisibles", e); if (!annule) setQuestionsServeurDashboard(null); });
+    return () => { annule = true; };
+  }, [apprenant?.id]);
   const [quizAttendusParModule, setQuizAttendusParModule] = useState<Record<number, Array<{ id: string; label: string; questionIds: string[] }>>>({});
   useEffect(() => {
     let annule = false;
@@ -2178,12 +2188,14 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const stats: any = moduleQuizStatsById[module.id];
     const requis = stats?.requiredQuizzes as Array<{ id: string; label: string }> | undefined;
     if (!requis?.length || !apprenant?.id) continue;
-    const lignes = reponsesQuizDashboard?.owner === apprenant.id ? reponsesQuizDashboard.rows : null;
+    if (questionsServeurDashboard === undefined) continue;
+    const lignesBrutes = reponsesQuizDashboard?.owner === apprenant.id ? reponsesQuizDashboard.rows : null;
+    const lignes = questionsServeurDashboard === null ? null : lignesBrutes;
     const etat = (completionsByModuleId[module.id] || []).find((r: any) => r?.status === "completed" && r?.preuve_serveur === true);
     const attendus = quizAttendusParModule[module.id];
     listesQuizParModule[module.id] = listesQuizModule({
       requis,
-      serveur: lignes ? etatServeurQuizModule(lignes, module.id, apprenant.id) : null,
+      serveur: lignes ? etatServeurQuizModule(lignes, module.id, apprenant.id, questionsServeurDashboard?.get(Number(module.id)) ?? new Map()) : null,
       moduleConfirme: !!etat,
       affichables: attendus?.length ? new Set(attendus.map((q) => String(q.id))) : undefined,
       reponsesLocales: (id) => Object.values(getPendingAnswers(apprenant.id, `module_${module.id}_exo_${id}`) ?? {}).filter((v) => v != null && v !== "" && !(Array.isArray(v) && v.length === 0)).length,
