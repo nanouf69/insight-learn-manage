@@ -164,6 +164,36 @@ interface QueueItem {
   rebase_operation_id?: string;
   /** Déjà débloqué une fois pour le transport sans U+0000 (aucune boucle). */
   transport_nul_reessai?: boolean;
+  /**
+   * Élément bloqué rendu obsolète par une sauvegarde PLUS RÉCENTE du même
+   * compte/dossier/exercice, confirmée par le serveur et contenant chacune de
+   * ses questions. Conservé en file comme trace (jamais renvoyé, jamais
+   * supprimé), il ne bloque plus la validation.
+   */
+  superseded_by?: { operation_id: string; write_seq: number; at: string };
+}
+
+/** Bloqué et encore pertinent : pas couvert par une sauvegarde plus récente confirmée. */
+const estBloqueActif = (item: QueueItem): boolean => item.blocked === true && !item.superseded_by;
+
+/**
+ * Un élément bloqué est couvert par une sauvegarde confirmée si elle est du
+ * même compte/dossier/exercice, mise en file APRÈS lui, et contient chacune de
+ * ses questions (sa valeur, plus récente, fait foi). Jamais l'inverse.
+ */
+export function bloqueCouvertParConfirmation(
+  bloque: { payload: { apprenant_id: string; exercice_id: string; reponses?: unknown }; queued_at: string; owner_user_id?: string | null },
+  confirme: { payload: { apprenant_id: string; exercice_id: string; reponses?: unknown }; queued_at: string; owner_user_id?: string | null },
+): boolean {
+  if (bloque.payload.apprenant_id !== confirme.payload.apprenant_id) return false;
+  if (bloque.payload.exercice_id !== confirme.payload.exercice_id) return false;
+  if ((bloque.owner_user_id ?? null) !== (confirme.owner_user_id ?? null)) return false;
+  const tB = Date.parse(bloque.queued_at), tC = Date.parse(confirme.queued_at);
+  if (!Number.isFinite(tB) || !Number.isFinite(tC) || tC < tB) return false;
+  const a = bloque.payload.reponses, b = confirme.payload.reponses;
+  if (!a || !b || typeof a !== "object" || typeof b !== "object" || Array.isArray(a) || Array.isArray(b)) return false;
+  const cles = Object.keys(a as Record<string, unknown>);
+  return cles.length > 0 && cles.every((k) => Object.prototype.hasOwnProperty.call(b, k));
 }
 
 type Listener = (state: AnswerSaveState, pending: number, pendingAnswers: number) => void;
@@ -389,7 +419,7 @@ export const getAnswerSaveRejectionFor = (
 ): AnswerSaveRejection | null => {
   if (!authUserId || !apprenantId) return null;
   return definitiveRejections.get(rejectionKey(authUserId, apprenantId, exerciceId)) ?? readQueue().find(item =>
-    item.payload.apprenant_id === apprenantId && item.payload.exercice_id === exerciceId && isOwnedByCurrentUser(item) && item.blocked && item.rejection
+    item.payload.apprenant_id === apprenantId && item.payload.exercice_id === exerciceId && isOwnedByCurrentUser(item) && estBloqueActif(item) && item.rejection
   )?.rejection ?? null;
 };
 
@@ -546,7 +576,7 @@ export function getBlockedAnswerSavesFor(apprenantId: string, exerciceId: string
       item.payload.apprenant_id === apprenantId &&
       item.payload.exercice_id === exerciceId &&
       isOwnedByCurrentUser(item) &&
-      item.blocked === true,
+      estBloqueActif(item),
   ).length;
 }
 
@@ -1016,7 +1046,7 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
     const proprietaire = item.payload.user_id ?? authUserId;
     const conflitMemorise = definitiveRejections.has(rejectionKey(proprietaire, item.payload.apprenant_id, item.payload.exercice_id));
     const conflitEnFile = readQueue().some((other) =>
-      other.id !== item.id && other.blocked === true &&
+      other.id !== item.id && estBloqueActif(other) &&
       other.payload.apprenant_id === item.payload.apprenant_id &&
       other.payload.exercice_id === item.payload.exercice_id
     );
@@ -1254,6 +1284,20 @@ async function processQueueLocked(): Promise<void> {
               : q
           );
         }
+        // Anciens éléments bloqués entièrement couverts par cette sauvegarde
+        // plus récente confirmée : marqués obsolètes (trace conservée, jamais
+        // renvoyés). Un élément dont une question manque reste bloqué.
+        {
+          const at = new Date().toISOString();
+          queue = queue.map((q) =>
+            q.id !== item.id && estBloqueActif(q) && isOwnedByCurrentUser(q) && bloqueCouvertParConfirmation(q, item)
+              ? { ...q, superseded_by: { operation_id: item.id, write_seq: confirmedSeq, at } }
+              : q
+          );
+          const resteBloque = queue.some((q) => q.id !== item.id && estBloqueActif(q) &&
+            q.payload.apprenant_id === item.payload.apprenant_id && q.payload.exercice_id === item.payload.exercice_id);
+          if (!resteBloque) definitiveRejections.delete(rejectionKey(item.payload.user_id ?? authUserId, item.payload.apprenant_id, item.payload.exercice_id));
+        }
         // Retirer l'élément traité (identifié par son id).
         queue = queue.filter((q) => q.id !== item.id);
         writeQueue(queue);
@@ -1297,7 +1341,7 @@ async function processQueueLocked(): Promise<void> {
     }
     const remaining = queue.filter(isActivelyPending);
     if (remaining.length === 0) {
-      setState(queue.some(item => item.blocked && item.payload.apprenant_id === sessionApprenantId && isOwnedByCurrentUser(item)) ? "error" : "saved");
+      setState(queue.some(item => estBloqueActif(item) && item.payload.apprenant_id === sessionApprenantId && isOwnedByCurrentUser(item)) ? "error" : "saved");
     } else {
       setState("error");
       const delay = Math.max(0, Math.min(...remaining.map(item => Math.max(0, (item.retry_after ?? Date.now()) - Date.now()))));
@@ -1376,7 +1420,7 @@ export function enqueueAnswerSave(payload: AnswerSavePayload): void {
       const remplaces = new Set(precedents.filter((q) => q.id !== envoiEnCoursId).map((q) => q.id));
       queue = queue.filter((q) => !remplaces.has(q.id));
       const conflitRestant = queue.some((q) =>
-        q.blocked && q.payload.apprenant_id === payload.apprenant_id && q.payload.exercice_id === payload.exercice_id
+        estBloqueActif(q) && q.payload.apprenant_id === payload.apprenant_id && q.payload.exercice_id === payload.exercice_id
       );
       if (!conflitRestant) definitiveRejections.delete(rejectionKey(payload.user_id ?? authUserId, payload.apprenant_id, payload.exercice_id));
     }
