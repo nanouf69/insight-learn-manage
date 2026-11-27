@@ -11022,6 +11022,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </CardContent>
           </Card>
 
+          {/* Même support authentifié que l’aperçu élève, sans activité ni écriture. */}
+          {[6, 8].includes(Number(module.id)) && (
+            <PratiqueQuestionsSupport
+              key={`questions-pratique-edition-${module.id}`}
+              moduleId={Number(module.id)}
+              coursId={2}
+            />
+          )}
+
           {/* Cours */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
