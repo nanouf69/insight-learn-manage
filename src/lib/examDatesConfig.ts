@@ -120,7 +120,8 @@ export const ALL_DATES_EXAMEN_REUSSITE = ALL_DATES_EXAMEN_THEORIQUE
     dateLimiteLibelle: d.dateLimiteLibelle,
   }));
 
-// ── Dates d'examen pratique 2026 ──
+// ── Dates d'examen pratique TAXI/VTC (Rhône 69) 2026–2028 ──
+// Ajouts en fin de liste seulement : les index existants restent stables.
 export const ALL_DATES_EXAMEN_PRATIQUE = [
   "Du 23 février au 6 mars 2026",
   "Du 4 au 13 mai 2026",
@@ -129,6 +130,13 @@ export const ALL_DATES_EXAMEN_PRATIQUE = [
   "Du 2 au 13 novembre 2026",
   "Du 16 au 23 décembre 2026",
   "Début janvier 2027",
+  "Du 4 au 13 janvier 2027",
+  "Du 22 février au 5 mars 2027",
+  "Du 3 au 14 mai 2027",
+  "Du 28 juin au 9 juillet 2027",
+  "Du 1er au 10 septembre 2027",
+  "Du 8 au 19 novembre 2027",
+  "Janvier 2028",
 ];
 
 // Version sans accents pour ExamenReussitePage
@@ -140,6 +148,13 @@ export const ALL_DATES_EXAMEN_PRATIQUE_NO_ACCENT = [
   "Du 2 au 13 novembre 2026",
   "Du 16 au 23 decembre 2026",
   "Début janvier 2027",
+  "Du 4 au 13 janvier 2027",
+  "Du 22 fevrier au 5 mars 2027",
+  "Du 3 au 14 mai 2027",
+  "Du 28 juin au 9 juillet 2027",
+  "Du 1er au 10 septembre 2027",
+  "Du 8 au 19 novembre 2027",
+  "Janvier 2028",
 ];
 
 
