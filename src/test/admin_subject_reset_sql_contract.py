@@ -19,8 +19,11 @@ class Contract(unittest.TestCase):
   c.sql(catalog['schema'])
   for definition in catalog['functions']:c.sql(definition)
   c.sql(catalog['rls']);c.sql(catalog['triggers'])
+  # Mirrors production: core_tentatives_neutralisees_pkey PRIMARY KEY (attempt_id).
+  c.sql("DO $$BEGIN IF NOT EXISTS(SELECT 1 FROM pg_index i WHERE i.indrelid='public.core_tentatives_neutralisees'::regclass AND i.indisunique AND i.indnatts=1) THEN ALTER TABLE public.core_tentatives_neutralisees ADD PRIMARY KEY(attempt_id); END IF; END$$")
   c.sql(Path('docs/sql-revue/2026-11-11-subject-reset.sql').read_text())
   c.sql(Path('docs/sql-revue/2026-11-11-subject-reset-expired-empty.sql').read_text())
+  c.sql(Path('docs/sql-revue/2026-11-27-subject-reset-empty-legacy-row.sql').read_text())
   c.sql(f"INSERT INTO auth.users VALUES('{U}','learner@example.invalid'),('{ADMIN}','admin@example.invalid');INSERT INTO apprenants(id,auth_user_id,nom,prenom,email) VALUES('{A}','{U}','FICTIF','Élève','learner@example.invalid');UPDATE apprenants SET modules_autorises=ARRAY[35,36,37,38];INSERT INTO user_roles(user_id,role) VALUES('{ADMIN}','admin');")
  @classmethod
  def sql(c,q,check=True):
@@ -113,4 +116,24 @@ class Contract(unittest.TestCase):
   self.assertEqual(self.sql("SELECT matiere_id FROM exam_subject_reset_authorizations WHERE exam_id='EB1-TAXI' ORDER BY matiere_id").stdout.splitlines(),['reglementation_taxi','reglementation_taxi2'])
   self.assertEqual(before,self.sql(proof).stdout)
   self.assertEqual(self.sql("SELECT count(*) FROM exam_subject_reset_authorizations WHERE exam_id='EB1-TAXI' AND actor IS NOT NULL AND learner_name='Élève FICTIF'").stdout.strip(),'2')
+ def _expired_copy(self,exam,mid,attempt,legacy):
+  self.seed(exam,mid);version='ffffffff-'+attempt[9:13]+'-1111-1111-111111111111'
+  content={'exam_id':exam,'matieres':[{'subject_id':mid,'titre':'Securite','duree':30}],'questions':[{'id':mid+':1','matiere':mid,'type':'QCM','enonce':'Fictif','choix':[{'id':'A','texte':'Oui','correct':True}]}]}
+  snap={**content,'matiere':mid,'matieres':[{'id':mid,'duree':30}]}
+  self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint,motif,is_test) VALUES('{version}','VTC','{exam[2]}','{exam}',1,'publiee','{json.dumps(content)}','t','isolated',true);INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,started_at,is_test) VALUES('{attempt}','{A}','{exam}','{version}','{json.dumps(snap)}','t',now()-interval '65 days',true);INSERT INTO apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,started_at,tentative) VALUES('{A}','{U}','{exam}__{mid}',1800,now()-interval '65 days',1);SET session_replication_role=replica;INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,submitted_at,tentative) VALUES('{A}','{U}','{exam}__{mid}','examen_blanc','{legacy}',true,'submitted',now()-interval '65 days',1);SET session_replication_role=origin")  # historical row predates P0530
+ def test_11_anonymized_empty_legacy_row_expired_v2_copy_recoverable(self):
+  # Anonymized 27/11 case: legacy row submitted with {} + expired V2 copy without answers.
+  attempt='eeeeeeee-1111-1111-1111-111111111111';self._expired_copy('EB5','securite',attempt,'{}')
+  proof="SELECT jsonb_build_object('r',(SELECT jsonb_agg(to_jsonb(r)) FROM reponses_apprenants r WHERE exercice_id='EB5__securite'),'t',(SELECT jsonb_agg(to_jsonb(t)) FROM apprenant_examen_timers t WHERE exercice_id='EB5__securite'))"
+  before=self.sql(proof).stdout
+  c=self.context('EB5','securite');self.assertTrue(c['expired_empty']);self.assertEqual(c['status'],'en_attente');self.assertEqual(c['source_attempt_id'],attempt)
+  self.authorize(c,'aaaaaaaa-c001-1111-1111-111111111111')
+  self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{attempt}'").stdout.strip(),'abandonnee')
+  r=json.loads(self.start(self.context('EB5','securite'),'bbbbbbbb-c001-1111-1111-111111111111').stdout.splitlines()[-1]);self.assertEqual(r['tentative'],2)
+  self.assertEqual(before,self.sql(proof).stdout)
+ def test_12_filled_legacy_row_keeps_copy_locked(self):
+  attempt='eeeeeeee-2222-1111-1111-111111111111';self._expired_copy('EB2-TAXI','securite',attempt,'{"1":["A"]}')
+  c=self.context('EB2-TAXI','securite');self.assertFalse(c['expired_empty']);self.assertEqual(c['status'],'en_cours')
+  self.assertNotEqual(self.authorize(c,'aaaaaaaa-c002-1111-1111-111111111111',check=False).returncode,0)
+  self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{attempt}'").stdout.strip(),'en_cours')
 if __name__=='__main__':unittest.main(verbosity=2)

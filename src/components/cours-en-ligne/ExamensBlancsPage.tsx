@@ -1,4 +1,5 @@
 import { questionsFaussesDuPassage } from "@/lib/revisionQuestionsFigees";
+import { etapeApresMatiereSansResultat } from "@/lib/matiereSansResultatNavigation";
 import { useCorrigesSources } from "@/hooks/useCorrigesSources";
 import { matierePedagogique, sourcePour, type CorrigeSource } from "@/lib/corrigesSources";
 import { CORRIGES_TROIS_SURFACES_ACTIFS } from "@/lib/corrigesSourcesActivation";
@@ -1353,14 +1354,13 @@ export default function ExamensBlancsPage({
   /** Sortie d'une matière sans résultat (aucune note fabriquée, rien écrit). */
   const handleMatiereSansResultat = () => {
     if (!examenChoisi) return;
-    let nextIndex = -1;
-    for (let i = matiereIndex + 1; i < examenChoisi.matieres.length; i++) {
-      if (!tousResultats[i]) { nextIndex = i; break; }
-    }
-    if (nextIndex >= 0) {
-      setMatiereIndex(nextIndex);
-      setPhase("transition");
-      persistExamSession("examen", examenChoisi.id, nextIndex, tousResultats);
+    // Jamais l'écran « transition » : il exige un résultat et restait blanc.
+    const etape = etapeApresMatiereSansResultat(matiereIndex, examenChoisi.matieres.length, tousResultats);
+    setLastMatiereResult(null);
+    if (etape.phase === "examen") {
+      setMatiereIndex(etape.matiereIndex);
+      setPhase("examen");
+      persistExamSession("examen", examenChoisi.id, etape.matiereIndex, tousResultats);
     } else {
       setPhase("selection");
       setSelectionRefreshKey(k => k + 1);

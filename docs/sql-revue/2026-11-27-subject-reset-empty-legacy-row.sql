@@ -1,0 +1,237 @@
+-- 27/11/2026: an expired, entirely empty V2 copy stays blocked by an older
+-- legacy answer row only when that row holds a filled answer. A row with no
+-- filled value (e.g. pre-P0530 empty closure) is not an answer.
+-- Read-only rule change: no learner row is written by this migration.
+CREATE OR REPLACE FUNCTION public.exam_subject_reset_expired_empty(p_attempt_id uuid, p_source_exercice_id text)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+ SELECT EXISTS(
+  SELECT 1 FROM public.exam_attempts_v2 a
+  CROSS JOIN LATERAL(
+   SELECT min((m->>'duree')::numeric) AS duration_minutes,count(*) AS subject_count
+   FROM jsonb_array_elements(coalesce(a.snapshot->'matieres','[]'::jsonb)) m
+   WHERE m->>'duree' ~ '^[0-9]+([.][0-9]+)?$'
+  ) d
+  WHERE a.attempt_id=p_attempt_id AND a.etat='en_cours' AND a.finished_at IS NULL
+   AND a.snapshot->>'matiere'=split_part(p_source_exercice_id,'__',2)
+   AND d.subject_count=1 AND d.duration_minutes>0
+   AND a.started_at+make_interval(secs=>d.duration_minutes*60)<=now()
+   AND NOT EXISTS(SELECT 1 FROM public.answer_state s WHERE s.attempt_id=a.attempt_id)
+   AND NOT EXISTS(SELECT 1 FROM public.answer_events e WHERE e.attempt_id=a.attempt_id)
+   AND NOT EXISTS(SELECT 1 FROM public.core_exam_results r WHERE r.attempt_id=a.attempt_id)
+   AND NOT EXISTS(SELECT 1 FROM public.core_tentatives_neutralisees n WHERE n.attempt_id=a.attempt_id)
+   -- A legacy row blocks only when it holds at least one filled answer.
+   AND NOT EXISTS(SELECT 1 FROM public.reponses_apprenants r
+    WHERE r.apprenant_id=a.apprenant_id AND r.exercice_id=p_source_exercice_id
+     AND (jsonb_typeof(r.reponses) IS DISTINCT FROM 'object'
+      OR EXISTS(SELECT 1 FROM jsonb_each(r.reponses) v
+       WHERE v.value NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb,'{}'::jsonb)
+        AND NOT (jsonb_typeof(v.value)='string' AND btrim(v.value#>>'{}')=''))))
+   AND NOT EXISTS(SELECT 1 FROM public.apprenant_quiz_results q
+    WHERE q.apprenant_id=a.apprenant_id AND q.quiz_id=a.exam_id AND q.quiz_type='examen_blanc'
+     AND q.matiere_id=a.snapshot->>'matiere'
+     AND q.tentative=coalesce(nullif(substring(p_source_exercice_id FROM '__t([0-9]+)$'),'')::integer,1))
+ );
+$function$;
+REVOKE ALL ON FUNCTION public.exam_subject_reset_expired_empty(uuid,text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.exam_subject_reset_expired_empty(uuid,text) TO service_role;
+CREATE OR REPLACE FUNCTION public.start_exam_subject_retake(p_operation_id uuid, p_apprenant_id uuid, p_exam_id text, p_matiere_id text, p_source_exercice_id text, p_source_attempt_id uuid DEFAULT NULL::uuid)
+ RETURNS exam_subject_retakes
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+DECLARE
+  receipt public.exam_subject_retakes;
+  old_attempt public.exam_attempts_v2;
+  new_attempt public.exam_attempts_v2;
+  answer public.reponses_apprenants;
+  timer public.apprenant_examen_timers;
+  subject jsonb;
+  closed_at timestamptz;
+  last_closed timestamptz;
+  v_authorization uuid;
+  next_number integer;
+  new_key text;
+  engine text := 'ancien';
+  duration_seconds integer;
+  source_number integer;
+  context jsonb;
+  scoped public.exam_subject_reset_authorizations;
+  published public.exam_content_versions;
+  fresh_snapshot jsonb;
+BEGIN
+  IF auth.uid() IS NULL OR NOT public.core_est_proprietaire(p_apprenant_id) THEN
+    RAISE EXCEPTION 'Session ou droits insuffisants pour refaire cette matière.' USING ERRCODE='42501';
+  END IF;
+  PERFORM public.core_assert_session_owner(p_apprenant_id);
+  IF p_operation_id IS NULL OR p_source_exercice_id IS NULL OR p_matiere_id IS NULL OR p_exam_id IS NULL
+     OR p_exam_id !~* '^(EB[1-6](-TAXI)?|eb[1-6]-(ta|va))$'
+     OR p_matiere_id !~ '^[a-zA-Z0-9_-]+$'
+     OR NOT (p_source_exercice_id=p_exam_id||'__'||p_matiere_id
+       OR (split_part(p_source_exercice_id,'__',1)=p_exam_id
+           AND split_part(p_source_exercice_id,'__',2)=p_matiere_id
+           AND split_part(p_source_exercice_id,'__',3) ~ '^t[0-9]+$'
+           AND array_length(string_to_array(p_source_exercice_id,'__'),1)=3)) THEN
+    RAISE EXCEPTION 'Identité du passage non prouvée.' USING ERRCODE='P0482';
+  END IF;
+  -- Serialize all retakes for this learner/exam: unique numeric projection, atomic authorization.
+  PERFORM pg_advisory_xact_lock(hashtextextended('subject-retake:'||p_apprenant_id||':'||p_exam_id,0));
+  SELECT * INTO receipt FROM public.exam_subject_retakes WHERE operation_id=p_operation_id;
+  IF FOUND THEN
+    IF receipt.apprenant_id<>p_apprenant_id OR receipt.exam_id<>p_exam_id
+       OR receipt.matiere_id<>p_matiere_id OR receipt.source_exercice_id<>p_source_exercice_id
+       OR receipt.source_attempt_id IS DISTINCT FROM p_source_attempt_id THEN
+      RAISE EXCEPTION 'Opération déjà liée à un autre passage.' USING ERRCODE='P0482';
+    END IF;
+    RETURN receipt;
+  END IF;
+  SELECT * INTO receipt FROM public.exam_subject_retakes
+    WHERE apprenant_id=p_apprenant_id AND exam_id=p_exam_id AND matiere_id=p_matiere_id
+      AND source_exercice_id=p_source_exercice_id
+      AND exercice_id<>source_exercice_id;
+  IF FOUND THEN
+    IF receipt.source_attempt_id IS DISTINCT FROM p_source_attempt_id THEN
+      RAISE EXCEPTION 'Identité du passage différente.' USING ERRCODE='P0482';
+    END IF;
+    RETURN receipt;
+  END IF;
+  context := public.exam_subject_reset_context(p_apprenant_id,p_exam_id,p_matiere_id);
+  IF context->>'source_exercice_id' IS DISTINCT FROM p_source_exercice_id
+     OR nullif(context->>'source_attempt_id','')::uuid IS DISTINCT FROM p_source_attempt_id THEN
+    RAISE EXCEPTION 'Le passage source a changé ; relisez cette matière.' USING ERRCODE='P0482';
+  END IF;
+  IF context->>'status' IN ('en_cours','ambigu') THEN
+    RAISE EXCEPTION '%', context->>'reason' USING ERRCODE='P0478';
+  END IF;
+  SELECT a.* INTO scoped FROM public.exam_subject_reset_authorizations a
+    WHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id AND a.matiere_id=p_matiere_id
+      AND a.source_exercice_id=p_source_exercice_id
+      AND a.source_attempt_id IS NOT DISTINCT FROM p_source_attempt_id
+      AND a.version_token=context->>'version_token'
+      AND NOT EXISTS (SELECT 1 FROM public.exam_subject_retakes r WHERE r.authorization_id=a.operation_id)
+    ORDER BY a.created_at DESC LIMIT 1;
+  SELECT e INTO STRICT subject FROM public.module_editor_state m,
+    LATERAL jsonb_array_elements(coalesce(m.module_data->'matieres','[]'::jsonb)) e
+    WHERE m.module_data->>'id'=p_exam_id AND e->>'id'=p_matiere_id;
+  IF subject IS NULL OR jsonb_array_length(coalesce(subject->'questions','[]'::jsonb))=0 THEN
+    RAISE EXCEPTION 'Sujet officiel indisponible ; aucune reprise créée.' USING ERRCODE='P0487';
+  END IF;
+  duration_seconds := (subject->>'duree')::integer * 60;
+  IF duration_seconds IS NULL OR duration_seconds<=0 THEN
+    RAISE EXCEPTION 'Durée officielle indisponible.' USING ERRCODE='P0487';
+  END IF;
+  SELECT * INTO answer FROM public.reponses_apprenants
+    WHERE apprenant_id=p_apprenant_id AND exercice_id=p_source_exercice_id;
+  SELECT * INTO timer FROM public.apprenant_examen_timers
+    WHERE apprenant_id=p_apprenant_id AND exercice_id=p_source_exercice_id ORDER BY tentative DESC LIMIT 1;
+  IF answer.completed IS TRUE OR answer.status='submitted' THEN
+    closed_at := coalesce(answer.submitted_at,answer.updated_at);
+  END IF;
+  IF timer.id IS NOT NULL AND now()>=timer.started_at+make_interval(secs=>timer.duree_secondes) THEN
+    closed_at := coalesce(closed_at,timer.started_at+make_interval(secs=>timer.duree_secondes));
+  END IF;
+  IF p_source_attempt_id IS NOT NULL THEN
+    SELECT * INTO old_attempt FROM public.exam_attempts_v2 WHERE attempt_id=p_source_attempt_id FOR UPDATE;
+    IF NOT FOUND OR old_attempt.apprenant_id<>p_apprenant_id OR old_attempt.exam_id<>p_exam_id
+       OR coalesce(old_attempt.snapshot->>'matiere',p_matiere_id)<>p_matiere_id THEN
+      RAISE EXCEPTION 'Le passage ne correspond pas à cette matière et à ce compte.' USING ERRCODE='42501';
+    END IF;
+    IF old_attempt.finished_at IS NULL OR (old_attempt.etat IS DISTINCT FROM 'terminee' AND NOT (
+      old_attempt.etat='abandonnee' AND scoped.operation_id IS NOT NULL
+      AND EXISTS(SELECT 1 FROM public.core_tentatives_neutralisees n
+        WHERE n.attempt_id=old_attempt.attempt_id AND n.motif='subject-reset-expired-empty:'||scoped.operation_id::text)
+      AND NOT EXISTS(SELECT 1 FROM public.answer_state s WHERE s.attempt_id=old_attempt.attempt_id)
+      AND NOT EXISTS(SELECT 1 FROM public.answer_events e WHERE e.attempt_id=old_attempt.attempt_id)
+      AND NOT EXISTS(SELECT 1 FROM public.core_exam_results x WHERE x.attempt_id=old_attempt.attempt_id)
+      -- Same rule as exam_subject_reset_expired_empty: only a filled legacy answer blocks.
+      AND NOT EXISTS(SELECT 1 FROM public.reponses_apprenants x WHERE x.apprenant_id=p_apprenant_id AND x.exercice_id=p_source_exercice_id
+        AND (jsonb_typeof(x.reponses) IS DISTINCT FROM 'object'
+          OR EXISTS(SELECT 1 FROM jsonb_each(x.reponses) v
+            WHERE v.value NOT IN ('null'::jsonb,'""'::jsonb,'[]'::jsonb,'{}'::jsonb)
+              AND NOT (jsonb_typeof(v.value)='string' AND btrim(v.value#>>'{}')=''))))
+    )) THEN
+      RAISE EXCEPTION 'Clôture du passage serveur non prouvée ; reprenez la copie existante.' USING ERRCODE='P0478';
+    END IF;
+    closed_at:=old_attempt.finished_at;
+    IF jsonb_array_length(coalesce(old_attempt.snapshot->'questions','[]'))=0
+       OR jsonb_array_length(coalesce(old_attempt.snapshot->'matieres','[]'))<>1 THEN
+      RAISE EXCEPTION 'Copie figée incomplète ; revue manuelle requise.' USING ERRCODE='P0487';
+    END IF;
+    engine:='v2';
+  ELSIF EXISTS (SELECT 1 FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id
+      AND a.snapshot->>'matiere'=p_matiere_id) THEN
+    RAISE EXCEPTION 'Identifiant du passage serveur requis ; contactez l’administration.' USING ERRCODE='P0482';
+  END IF;
+  IF closed_at IS NULL AND context->>'status'<>'non_commencee' THEN
+    RAISE EXCEPTION 'Cette matière est encore en cours ; reprenez sa copie existante.' USING ERRCODE='P0478';
+  END IF;
+  IF EXISTS (SELECT 1 FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_apprenant_id
+      AND a.exam_id=p_exam_id AND a.snapshot->>'matiere'=p_matiere_id AND a.etat='en_cours'
+      AND a.attempt_id IS DISTINCT FROM p_source_attempt_id) THEN
+    RAISE EXCEPTION 'Une autre copie de cette matière est en cours ; aucun doublon créé.' USING ERRCODE='P0478';
+  END IF;
+  SELECT greatest(closed_at,
+    (SELECT max(coalesce(r.submitted_at,r.updated_at)) FROM public.reponses_apprenants r
+      WHERE r.apprenant_id=p_apprenant_id AND r.exercice_type='examen_blanc'
+        AND split_part(r.exercice_id,'__',1)=p_exam_id AND r.completed),
+    (SELECT max(a.finished_at) FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id AND a.etat='terminee'))
+    INTO last_closed;
+  IF context->>'status'<>'non_commencee' AND scoped.operation_id IS NULL AND now()<last_closed+interval '48 hours' THEN
+    SELECT id INTO v_authorization FROM public.exam_retake_authorizations a WHERE a.apprenant_id=p_apprenant_id
+      AND a.exam_id=p_exam_id AND a.consumed_at IS NULL AND a.revoked_at IS NULL ORDER BY created_at LIMIT 1 FOR UPDATE;
+    IF v_authorization IS NULL THEN
+      RAISE EXCEPTION 'Demandez une autorisation à l’administration, ou attendez 48 heures après la fin du passage (%).',
+        to_char((last_closed+interval '48 hours') AT TIME ZONE 'Europe/Paris','DD/MM/YYYY HH24:MI') USING ERRCODE='P0471';
+    END IF;
+  END IF;
+  SELECT greatest(coalesce((SELECT max(greatest(r.tentative,coalesce(nullif(substring(r.exercice_id FROM '__t([0-9]+)$'),'')::integer,1)))
+    FROM public.reponses_apprenants r WHERE r.apprenant_id=p_apprenant_id AND split_part(r.exercice_id,'__',1)=p_exam_id),1),
+    coalesce((SELECT max(r.tentative) FROM public.exam_subject_retakes r WHERE r.apprenant_id=p_apprenant_id AND r.exam_id=p_exam_id),1),
+    coalesce((SELECT max(r.tentative) FROM public.apprenant_quiz_results r WHERE r.apprenant_id=p_apprenant_id AND r.quiz_id=p_exam_id),1))+1 INTO next_number;
+  IF context->>'status'='non_commencee' THEN next_number:=1; END IF;
+  new_key:=p_exam_id||'__'||p_matiere_id||CASE WHEN next_number=1 THEN '' ELSE '__t'||next_number END;
+  SELECT * INTO published FROM public.exam_content_versions
+    WHERE exam_id=p_exam_id AND statut='publiee' ORDER BY version_number DESC LIMIT 1;
+  IF FOUND THEN
+    SELECT jsonb_build_object('exam_id',p_exam_id,'exam_libelle',published.content->>'exam_libelle',
+      'filiere',published.filiere,'exam_numero',published.exam_numero,'matiere',p_matiere_id,
+      'tentative',next_number,'subject_retake_source',p_source_attempt_id,
+      'matieres',(SELECT jsonb_agg(m ORDER BY (m->>'ordre')::int) FROM jsonb_array_elements(published.content->'matieres') m WHERE m->>'subject_id'=p_matiere_id),
+      'questions',(SELECT jsonb_agg(q ORDER BY (q->>'ordre')::int) FROM jsonb_array_elements(published.content->'questions') q WHERE q->>'matiere'=p_matiere_id)) INTO fresh_snapshot;
+    IF jsonb_array_length(coalesce(fresh_snapshot->'questions','[]'))=0
+       OR jsonb_array_length(coalesce(fresh_snapshot->'matieres','[]'))<>1 THEN
+      RAISE EXCEPTION 'Version publiée incomplète pour cette matière.' USING ERRCODE='P0487';
+    END IF;
+    SELECT jsonb_build_object('id',p_matiere_id,'nom',m->>'titre','duree',(m->>'duree')::int,
+      'coefficient',(m->>'coefficient')::numeric,'noteSur',(m->>'note_sur')::numeric,
+      'noteEliminatoire',(m->>'note_eliminatoire')::numeric,'ptsQCM',m->'pts_qcm','ptsQRC',m->'pts_qrc',
+      'questions',(SELECT jsonb_agg((q-'matiere'-'ordre')||jsonb_build_object('id',substring(q->>'id' FROM length(p_matiere_id)+2)::int) ORDER BY (q->>'ordre')::int)
+        FROM jsonb_array_elements(fresh_snapshot->'questions')q)) INTO subject
+     FROM jsonb_array_elements(fresh_snapshot->'matieres')m;
+    duration_seconds:=(subject->>'duree')::int*60;
+    IF duration_seconds IS NULL OR duration_seconds<=0 THEN RAISE EXCEPTION 'Durée publiée absente.' USING ERRCODE='P0487'; END IF;
+    engine:='v2';
+    INSERT INTO public.exam_attempts_v2(apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,etat,is_test)
+      VALUES(p_apprenant_id,p_exam_id,published.id,fresh_snapshot,md5(fresh_snapshot::text),'en_cours',published.is_test)
+      RETURNING * INTO new_attempt;
+  ELSIF engine='v2' THEN
+    RAISE EXCEPTION 'Aucune version publiée pour ouvrir une nouvelle copie.' USING ERRCODE='P0487';
+  END IF;
+  -- Receipt exists before the answer INSERT: delay trigger can verify the exact scoped grant.
+  INSERT INTO public.exam_subject_retakes(operation_id,apprenant_id,exam_id,matiere_id,source_exercice_id,source_attempt_id,
+      attempt_id,exercice_id,tentative,moteur,matiere,authorization_id)
+    VALUES(p_operation_id,p_apprenant_id,p_exam_id,p_matiere_id,p_source_exercice_id,p_source_attempt_id,
+      new_attempt.attempt_id,new_key,next_number,engine,subject,coalesce(scoped.operation_id,v_authorization)) RETURNING * INTO receipt;
+  INSERT INTO public.reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,tentative)
+    VALUES(p_apprenant_id,auth.uid(),new_key,'examen_blanc',next_number);
+  INSERT INTO public.apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,tentative)
+    VALUES(p_apprenant_id,auth.uid(),new_key,duration_seconds,next_number);
+  IF v_authorization IS NOT NULL THEN
+    UPDATE public.exam_retake_authorizations SET consumed_at=now() WHERE id=v_authorization AND consumed_at IS NULL;
+  END IF;
+  RETURN receipt;
+END $function$;
