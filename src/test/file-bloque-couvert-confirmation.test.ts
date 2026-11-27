@@ -94,4 +94,25 @@ describe("file : ancien envoi bloqué couvert par une sauvegarde plus récente c
     await flushAnswerSavesAndWait(APP, "module_4_revision_exo_101", 3000);
     expect(getBlockedAnswerSavesFor(APP, EXO)).toBe(1);
   });
+  it("collision : une question renvoyée par le serveur avec une autre valeur n'est pas couverte, blocage conservé", async () => {
+    let n = 0;
+    const fetchMock = vi.fn(async (_u: string, init: RequestInit) => {
+      const b = JSON.parse(String(init.body)); n += 1;
+      const premier = n === 1;
+      return { ok: true, text: async () => "", json: async () => ({
+        success: true, confirmed: true, write_seq: premier ? 4 : 5,
+        accepted_event_ids: (b.events ?? []).map((e: any) => e.event_id),
+        skipped_questions: premier ? ["100-1"] : [],
+        stored_reponses: premier ? { "100-1": ["A"], "100-9": ["Z"] } : null,
+      }) };
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    save({ "100-1": ["C"], "100-9": ["B"] });
+    expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(false);
+    expect(getBlockedAnswerSavesFor(APP, EXO)).toBe(1);
+    primeKnownWriteSeq(APP, EXO, 4);
+    save({ "100-1": ["D"] }); // 100-9 absente, et le serveur avait une autre valeur (Z ≠ B)
+    expect(await flushAnswerSavesAndWait(APP, EXO, 3000)).toBe(false);
+    expect(getBlockedAnswerSavesFor(APP, EXO)).toBe(1);
+  });
 });
