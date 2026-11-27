@@ -53,7 +53,7 @@ describe("couverture serveur d'une remise", () => {
   it("Bilan assemblé à l'écran (identifiants absents du contenu serveur) = non vérifiable côté serveur", () => {
     const l = listesQuizModule({ requis, serveur: etatServeurQuizModule([remise("1", { "1-970011": "A", "1-970012": "B" })], 2, A, q) });
     expect(l.enAttente[0]).toEqual({ id: "1", label: "Quiz Un", statut: "remis_non_verifie" });
-    expect(LIBELLES_STATUT_QUIZ.remis_non_verifie).toBe("remis au serveur, couverture complète non vérifiable côté serveur");
+    expect(LIBELLES_STATUT_QUIZ.remis_non_verifie).toBe("remis au serveur, non confirmé : couverture complète non vérifiable, le serveur décide à l'enregistrement");
   });
   it("quiz sans liste serveur (défini dans le code) = non vérifiable, jamais confirmé", () => {
     const l = listesQuizModule({ requis: [{ id: "9", label: "Quiz code" }], serveur: etatServeurQuizModule([{ ...remise("9", { "9-1": "A" }) }], 2, A, q) });

@@ -22,7 +22,7 @@ import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { decisionFinModule, MESSAGE_VERIFICATION_IMPOSSIBLE } from "@/lib/finModuleDecision";
 import { chargerEtatCompletionServeur } from "@/lib/etatCompletionServeur";
 import { chargerPreuvesQuizModules, chargerQuestionsServeurModules, chargerReponsesQuizOrigine, avecPreuvesQuizConfirmees } from '@/lib/moduleProgressionReadModel';
-import { etatServeurQuizModule, listesQuizModule, statutBloquantEcran, texteListesQuiz, type ListesQuiz } from '@/lib/quizStatutListes';
+import { etatServeurQuizModule, idsQuizConfirmes, listesQuizModule, moduleConfirmeServeur, texteListesQuiz, type ListesQuiz } from '@/lib/quizStatutListes';
 import QuizStatutListes from './QuizStatutListes';
 import { MODULES_QUESTIONS_FACULTATIVES } from '@/lib/moduleCompletionEvidence';
 import { hasRecordedAnswer } from "@/lib/moduleCompletionEvidence";
@@ -7137,7 +7137,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           const e = etats.get(modulePourListes);
           if (!annule) setEtatQuizServeur({ cle: cleEtatQuiz,
             serveur: etatServeurQuizModule(lignes, modulePourListes, apprenantId, questions.get(modulePourListes) ?? new Map()),
-            moduleConfirme: e?.status === "completed" && e?.preuve_complete !== false });
+            moduleConfirme: moduleConfirmeServeur(e) });
         } catch (err) {
           console.error("[ModuleDetailView] état des quiz illisible", err);
           if (!annule) setEtatQuizServeur({ cle: cleEtatQuiz, serveur: null, moduleConfirme: false });
@@ -8541,7 +8541,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       } else if (completionPersistedRef.current) {
         etatServeur = { status: "completed", preuve_complete: null };
       }
-      const decisionFin = decisionFinModule({
+      const entreeDecision = {
         etatServeur,
         quizRestants: historicalQuizProof?.remainingQuizzes?.map((q) => ({
           ...q,
@@ -8550,11 +8550,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         })),
         exosSoumis: submittedExoIdsRef.current,
         quizValides: historicalQuizProof?.completedLabels,
-      });
+      };
+      let decisionFin = decisionFinModule(entreeDecision);
       if (decisionFin.action === "sortie") return true;
-      if (listesQuizApplicables && apprenantId) {
-        // Listes serveur relues au clic : erreur = aucun succès ; quiz en attente = blocage nominatif.
-        let listesClic: ListesQuiz;
+      // Listes serveur relues au clic : seule source de la décision ET du texte (même carte de couverture
+      // que le tableau de bord et le bandeau). Erreur = aucun succès ; remise non vérifiée = en attente,
+      // jamais « confirmée », non bloquante : le serveur tranche à l'enregistrement.
+      let listesClic: ListesQuiz | null = null;
+      if (listesQuizApplicables && apprenantId && etatServeur !== undefined && quizRequisListes.length > 0) {
         try {
           const [lignes, questions] = await Promise.all([chargerReponsesQuizOrigine(apprenantId), chargerQuestionsServeurModules([Number(module.id)])]);
           listesClic = listesQuizModule({ requis: quizRequisListes,
@@ -8563,32 +8566,19 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         } catch {
           listesClic = listesQuizModule({ requis: quizRequisListes, serveur: null });
         }
-        if (!listesClic.lisible) {
-          toast.error(MESSAGE_VERIFICATION_IMPOSSIBLE, { id: "fin-module", duration: 12000 });
-          return false;
-        }
-        // « remis, couverture non vérifiable » ne bloque pas l'écran : le serveur tranche seul à l'enregistrement.
-        if (listesClic.enAttente.some((q) => statutBloquantEcran(q.statut))) {
-          const premier = listesClic.enAttente.find((q) => q.statut !== "indisponible" && statutBloquantEcran(q.statut));
-          const pageQuiz = premier ? pages.findIndex((p: any) => p?.type === "exercice-single" && String(p.exercice?.id) === premier.id) : -1;
-          setEtatQuizTick((t) => t + 1);
-          toast.error(`Module à terminer. ${texteListesQuiz(listesClic)}`, {
-            id: "fin-module", duration: 15000,
-            ...(pageQuiz >= 0 ? { action: { label: `Ouvrir « ${premier!.label} »`, onClick: () => goToPage(pageQuiz) } } : {}),
-          });
-          return false;
-        }
+        decisionFin = decisionFinModule({ ...entreeDecision, listes: listesClic });
+        setEtatQuizTick((t) => t + 1);
       }
       if (decisionFin.action === "erreur") {
         toast.error(decisionFin.message, { id: "fin-module", duration: 12000 });
         return false;
       }
       if (decisionFin.action === "bloquer") {
-        const premier = Number(decisionFin.manquants[0]?.id);
-        const pageQuiz = pages.findIndex((p: any) => p?.type === "exercice-single" && Number(p.exercice?.id) === premier);
+        const premier = decisionFin.manquants.find((q) => q.statut !== "indisponible");
+        const pageQuiz = premier ? pages.findIndex((p: any) => p?.type === "exercice-single" && String(p.exercice?.id) === String(premier.id)) : -1;
         toast.error(decisionFin.message, {
           id: "fin-module", duration: 15000,
-          ...(pageQuiz >= 0 ? { action: { label: `Ouvrir « ${decisionFin.manquants[0]?.label} »`, onClick: () => goToPage(pageQuiz) } } : {}),
+          ...(pageQuiz >= 0 ? { action: { label: `Ouvrir « ${premier!.label} »`, onClick: () => goToPage(pageQuiz) } } : {}),
         });
         return false;
       }
@@ -8645,7 +8635,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         if (!ok) {
           completionPersistedRef.current = false;
           if (wasLastCompletionRefusedIncomplete()) {
-            toast.error(lastCompletionRefusalText(), { duration: 12000 });
+            // Refus serveur : mêmes listes que la décision (remises non vérifiées affichées en attente).
+            toast.error(listesClic?.lisible ? `${lastCompletionRefusalText()} ${texteListesQuiz(listesClic)}` : lastCompletionRefusalText(), { id: "fin-module", duration: 15000 });
           } else if (await isLearnerSessionExpired(null)) {
             toast.error(SESSION_EXPIREE_MESSAGE, { duration: 15000 });
           } else {
@@ -10458,7 +10449,11 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       const coursPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p?.type === "cours");
       const quizPages = pages.map((p, i) => ({ p, i })).filter(({ p }) => p?.type === "exercice-single" && p.exercice?.questions?.length > 0);
       const coursCompleted = coursPages.filter(({ i }) => completedPages.has(i)).length;
-      const quizCompleted = quizPages.filter(({ i, p }) => completedPages.has(i) && quizValideServeur((p as any).exercice.id)).length;
+      // Compteur « x/y quiz » : mêmes listes serveur que le tableau de bord quand elles sont lues (remise non vérifiée ≠ confirmée).
+      const confirmesListes = listesQuiz?.lisible ? idsQuizConfirmes(listesQuiz) : null;
+      const quizCompleted = confirmesListes
+        ? quizPages.filter(({ p }) => confirmesListes.has(String((p as any).exercice.id))).length
+        : quizPages.filter(({ i, p }) => completedPages.has(i) && quizValideServeur((p as any).exercice.id)).length;
 
       return (
         <ProgressionBar percent={progressPercent} legend={(coursPages.length > 0 || quizPages.length > 0) && (

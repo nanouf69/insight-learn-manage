@@ -6,7 +6,9 @@
  * - ligne « completed » mais preuve incomplète (ligne historique périmée) : blocage nommant le quiz manquant ;
  * - module non validé : blocage si un quiz manque, sinon enregistrement serveur.
  */
-export interface QuizManquant { id: string; label: string; missingQuestionIds?: string[]; /** Réponses présentes sur cet appareil (non prouvées). */ reponsesLocales?: number }
+import { quizBloquants, texteListesQuiz, type ListesQuiz, type StatutQuizEnAttente } from "@/lib/quizStatutListes";
+
+export interface QuizManquant { id: string; label: string; missingQuestionIds?: string[]; /** Réponses présentes sur cet appareil (non prouvées). */ reponsesLocales?: number; statut?: StatutQuizEnAttente }
 export interface EtatServeurModule { status: string | null; preuve_complete: boolean | null }
 export type DecisionFinModule =
   | { action: "sortie" }
@@ -63,11 +65,31 @@ export function decisionFinModule(p: {
   exosSoumis: ReadonlySet<number>;
   /** Libellés des quiz déjà confirmés par le serveur. */
   quizValides?: string[];
+  /**
+   * Listes nominatives relues au clic (quizStatutListes, même carte de couverture que l'affichage).
+   * Fournies = seule source de la décision et du texte ; null = lecture en erreur (aucun succès).
+   * Une remise non vérifiée (« remis_non_verifie ») reste en attente, ne bloque pas l'écran et
+   * n'est jamais présentée comme confirmée : le serveur tranche à l'enregistrement.
+   */
+  listes?: ListesQuiz | null;
 }): DecisionFinModule {
   if (p.etatServeur === undefined) return { action: "erreur", message: MESSAGE_VERIFICATION_IMPOSSIBLE };
-  const manquants = (p.quizRestants ?? []).filter((q) => !p.exosSoumis.has(Number(q.id)));
   const valideServeur = p.etatServeur?.status === "completed";
   if (valideServeur && p.etatServeur!.preuve_complete !== false) return { action: "sortie" };
+  if (p.listes !== undefined) {
+    if (!p.listes || !p.listes.lisible) return { action: "erreur", message: MESSAGE_VERIFICATION_IMPOSSIBLE };
+    const texte = texteListesQuiz(p.listes);
+    const bloquants = quizBloquants(p.listes);
+    if (bloquants.length) {
+      return { action: "bloquer", message: `Module à terminer. ${texte}`,
+        manquants: bloquants.map((q) => ({ id: String(q.id), label: q.label, statut: q.statut })) };
+    }
+    if (valideServeur) {
+      return { action: "erreur", message: `Module à terminer : la validation n'est pas encore confirmée par le serveur. ${texte} Réessayez dans un instant.` };
+    }
+    return { action: "enregistrer" };
+  }
+  const manquants = (p.quizRestants ?? []).filter((q) => !p.exosSoumis.has(Number(q.id)));
   if (manquants.length) {
     return { action: "bloquer", manquants,
       message: `Module à terminer. ${messageListesQuiz([...(p.quizValides ?? []), ...(p.quizRestants ?? []).filter((q) => p.exosSoumis.has(Number(q.id))).map((q) => q.label)], manquants)}` };

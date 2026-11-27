@@ -52,7 +52,7 @@ import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { exosSoumisDuModule as exosSoumisDuModuleDashboard } from "@/lib/moduleProgressionReadModel";
 import { avecEtatServeur, chargerEtatCompletionServeur, type EtatCompletionServeur } from "@/lib/etatCompletionServeur";
 import { chargerPreuvesQuizModules, chargerQuestionsServeurModules, chargerReponsesQuizOrigine, projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
-import { etatServeurQuizModule, listesQuizModule, type ListesQuiz } from '@/lib/quizStatutListes';
+import { etatServeurQuizModule, listesQuizModule, moduleConfirmeServeur, type ListesQuiz } from '@/lib/quizStatutListes';
 import QuizStatutListes from '@/components/cours-en-ligne/QuizStatutListes';
 import { getPendingAnswers } from '@/lib/answerPersistence';
 import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
@@ -2191,7 +2191,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     if (questionsServeurDashboard === undefined) continue;
     const lignesBrutes = reponsesQuizDashboard?.owner === apprenant.id ? reponsesQuizDashboard.rows : null;
     const lignes = questionsServeurDashboard === null ? null : lignesBrutes;
-    const etat = (completionsByModuleId[module.id] || []).find((r: any) => r?.status === "completed" && r?.preuve_serveur === true);
+    // Même verdict strict que le détail du module (moduleConfirmeServeur) : preuve inconnue = non confirmé.
+    const etat = (completionsByModuleId[module.id] || []).find((r: any) => moduleConfirmeServeur({ status: r?.status, preuve_complete: r?.preuve_serveur }));
     const attendus = quizAttendusParModule[module.id];
     listesQuizParModule[module.id] = listesQuizModule({
       requis,

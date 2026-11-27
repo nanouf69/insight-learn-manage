@@ -16,11 +16,24 @@ export const LIBELLES_STATUT_QUIZ: Record<StatutQuizEnAttente, string> = {
   non_confirme: "réponses présentes, non confirmées par le serveur",
   indisponible: "quiz exigé mais indisponible à l'écran — contactez le centre",
   non_verifiable: "état non vérifiable : lecture du serveur impossible, réessayez",
-  remis_non_verifie: "remis au serveur, couverture complète non vérifiable côté serveur",
+  remis_non_verifie: "remis au serveur, non confirmé : couverture complète non vérifiable, le serveur décide à l'enregistrement",
 };
 
 /** États d'attente qui bloquent la sortie côté écran ; « remis_non_verifie » est tranché par le serveur seul. */
 export const statutBloquantEcran = (s: StatutQuizEnAttente) => s !== "remis_non_verifie";
+
+/**
+ * Verdict serveur « module confirmé » commun au tableau de bord, au détail et au clic « Terminé » :
+ * ligne completed ET preuve actuelle explicitement complète. Preuve inconnue (null) = non confirmé.
+ */
+export const moduleConfirmeServeur = (e: { status?: string | null; preuve_complete?: boolean | null } | null | undefined) =>
+  e?.status === "completed" && e?.preuve_complete === true;
+
+/** Quiz en attente qui bloquent l'écran (ordre conservé) ; jamais les remises non vérifiées. */
+export const quizBloquants = (l: ListesQuiz) => l.enAttente.filter((q) => statutBloquantEcran(q.statut));
+
+/** Ids des quiz confirmés (compteurs « x/y quiz ») ; module confirmé = listes déjà complètes. */
+export const idsQuizConfirmes = (l: ListesQuiz) => new Set(l.confirmes.map((q) => String(q.id)));
 
 /**
  * Questions actives non supprimées de chaque quiz du contenu SERVEUR (module_editor_state),
