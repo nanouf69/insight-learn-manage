@@ -2115,6 +2115,13 @@
       "when": 1795726145840,
       "tag": "0301_renumerotation_journal_valeur_enregistree",
       "breakpoints": true
+    },
+    {
+      "idx": 302,
+      "version": "7",
+      "when": 1795768536879,
+      "tag": "0302_devis_envoi_destinataires",
+      "breakpoints": true
     }
   ]
 }

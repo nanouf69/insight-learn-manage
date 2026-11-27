@@ -3630,6 +3630,59 @@ export type Database = {
         }
         Relationships: []
       }
+      devis_envoi_destinataires: {
+        Row: {
+          apprenant_id: string | null
+          created_at: string
+          devis_envoi_id: string
+          email: string
+          envoye_le: string | null
+          erreur: string | null
+          id: string
+          reference: string | null
+          role: string
+          statut: string
+          tentatives: number
+          updated_at: string
+        }
+        Insert: {
+          apprenant_id?: string | null
+          created_at?: string
+          devis_envoi_id: string
+          email: string
+          envoye_le?: string | null
+          erreur?: string | null
+          id?: string
+          reference?: string | null
+          role: string
+          statut?: string
+          tentatives?: number
+          updated_at?: string
+        }
+        Update: {
+          apprenant_id?: string | null
+          created_at?: string
+          devis_envoi_id?: string
+          email?: string
+          envoye_le?: string | null
+          erreur?: string | null
+          id?: string
+          reference?: string | null
+          role?: string
+          statut?: string
+          tentatives?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devis_envoi_destinataires_devis_envoi_id_fkey"
+            columns: ["devis_envoi_id"]
+            isOneToOne: false
+            referencedRelation: "devis_envois"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devis_envois: {
         Row: {
           apprenant_id: string | null

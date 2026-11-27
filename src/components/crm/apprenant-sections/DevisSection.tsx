@@ -1,4 +1,5 @@
 import { datesVtcAVenir, datesTaxiAVenir, sessionsAVenir, SESSIONS_VTC, SESSIONS_TAXI } from "@/lib/sessionsCatalogue";
+import { planDestinatairesDevis, envoyerDevisAuxDestinataires, emailValide, type JournalDevis, type Destinataire, type ResultatDestinataire } from "@/lib/devisDestinataires";
 import { useState, useRef, useEffect } from "react";
 import { FileText, Download, Plus, Trash2, Eye, CheckCircle2, XCircle, Clock, Receipt, PenLine, RotateCcw, Send, FileDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -922,6 +923,11 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [sendingDevisEmail, setSendingDevisEmail] = useState(false);
+  const [dernierEnvoiDevis, setDernierEnvoiDevis] = useState<null | {
+    devisEnvoiId: string; reference: string; base64: string; fileName: string;
+    destinataires: Destinataire[]; sujetStagiaire: string; corpsStagiaire: string;
+    sujetFinanceur: string; corpsFinanceur: string; resultats: ResultatDestinataire[];
+  }>(null);
   const [financeurMode, setFinanceurMode] = useState<'apprenant' | 'organisation'>('apprenant');
   const [organismes, setOrganismes] = useState<any[]>([]);
   const [organisationsApprenants, setOrganisationsApprenants] = useState<OrganisationDevis[]>([]);
@@ -1465,7 +1471,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     }
   };
 
-  const generateDevisPDF = async (opts?: { returnBase64?: boolean }): Promise<{ base64: string; fileName: string } | void> => {
+  const generateDevisPDF = async (opts?: { returnBase64?: boolean }): Promise<{ base64: string; fileName: string; numDevis: string } | void> => {
     if (isFcTaxiPdf && (sessionDate || '').split(' + ').filter(x => x.trim()).length < 2) {
       toast.error("Devis FC TAXI : choisissez les deux jours de la session (14 h sur 2 jours).");
       return;
@@ -1540,7 +1546,7 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
       if (opts?.returnBase64) {
         const dataUri = doc.output('datauristring');
         const base64 = dataUri.split(',')[1] || '';
-        return { base64, fileName };
+        return { base64, fileName, numDevis };
       }
       doc.save(fileName);
       toast.success("Devis PDF généré avec succès !");
@@ -1553,10 +1559,54 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   };
 
 
+  const financementTiers = isOrgFinanceur || !!apprenant.financeur_nom;
+  const emailFinanceurDevis = isOrgFinanceur ? organismeSelectionne?.email : apprenant.financeur_email;
+  const nomFinanceurDevis = isOrgFinanceur ? organismeSelectionne?.nom : apprenant.financeur_nom;
+
+  const executerEnvoisDevis = async (e: NonNullable<typeof dernierEnvoiDevis>) => {
+    const journal: JournalDevis = {
+      async reserver(d) {
+        const { error } = await supabase.from('devis_envoi_destinataires').insert({ devis_envoi_id: e.devisEnvoiId, apprenant_id: apprenant.id, reference: e.reference, role: d.role, email: d.email, statut: 'en_cours' });
+        if (!error) return { ok: true };
+        if (error.code !== '23505') throw error;
+        const { data: relance, error: upErr } = await supabase.from('devis_envoi_destinataires').select('statut, tentatives').eq('devis_envoi_id', e.devisEnvoiId).eq('email', d.email).maybeSingle();
+        if (upErr || !relance) throw upErr || new Error('Journal illisible');
+        if (relance.statut !== 'echec') return { ok: false, statut: relance.statut as 'envoye' | 'en_cours' };
+        const { data: pris, error: casErr } = await supabase.from('devis_envoi_destinataires').update({ statut: 'en_cours', erreur: null, tentatives: (relance.tentatives ?? 1) + 1 }).eq('devis_envoi_id', e.devisEnvoiId).eq('email', d.email).eq('statut', 'echec').select('id');
+        if (casErr) throw casErr;
+        return pris && pris.length === 1 ? { ok: true } : { ok: false, statut: 'en_cours' };
+      },
+      async marquer(d, statut, erreur) {
+        const { error } = await supabase.from('devis_envoi_destinataires').update({ statut, erreur: erreur ?? null, envoye_le: statut === 'envoye' ? new Date().toISOString() : null }).eq('devis_envoi_id', e.devisEnvoiId).eq('email', d.email).eq('statut', 'en_cours');
+        if (error) throw error;
+      },
+    };
+    const resultats = await envoyerDevisAuxDestinataires(e.destinataires, journal, async (d) => {
+      const pourFinanceur = d.role === 'financeur';
+      const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+        body: {
+          action: 'send', userEmail: 'contact@ftransport.fr', to: d.email,
+          subject: pourFinanceur ? e.sujetFinanceur : e.sujetStagiaire,
+          body: pourFinanceur ? e.corpsFinanceur : e.corpsStagiaire,
+          apprenantId: apprenant.id,
+          attachments: [{ name: e.fileName, contentType: 'application/pdf', contentBytes: e.base64 }],
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error(String((data as any).error));
+    });
+    setDernierEnvoiDevis({ ...e, resultats });
+    const ok = resultats.filter(r => r.statut === 'envoye' || r.statut === 'deja_envoye');
+    const ko = resultats.filter(r => r.statut === 'echec' || r.statut === 'en_cours_ailleurs');
+    if (ok.length) toast.success(`Devis ${e.reference} envoyé à ${ok.map(r => r.email).join(' et ')}`);
+    for (const r of ko) toast.error(r.statut === 'echec' ? `Échec d'envoi à ${r.email} : ${r.erreur}` : `Envoi à ${r.email} déjà en cours, non relancé.`);
+  };
+
   const envoyerDevisParEmail = async () => {
-    const destinataire = devisClient.email || apprenant.email;
-    if (!destinataire) {
-      toast.error(isOrgFinanceur ? "Cette organisation n'a pas d'adresse email." : "L'apprenant n'a pas d'adresse email.");
+    const plan = planDestinatairesDevis({ financementTiers, emailStagiaire: apprenant.email, emailFinanceur: emailFinanceurDevis });
+    for (const a of plan.alertes) toast.warning(a);
+    if (!plan.destinataires.length) {
+      toast.error("Aucune adresse email valide : devis non envoyé.");
       return;
     }
     if (!validateBeforeSend()) return;
@@ -1565,10 +1615,10 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
     if (contratSnapshot === false) return;
     setSendingDevisEmail(true);
     try {
-      let result: { base64: string; fileName: string } | void;
+      let result: { base64: string; fileName: string; numDevis: string } | void;
       result = await generateDevisPDF({ returnBase64: true });
       if (!result) throw new Error("Impossible de générer le PDF");
-      const { base64, fileName } = result;
+      const { base64, fileName, numDevis } = result;
 
       // Upload dans storage
       const bin = atob(base64);
@@ -1598,8 +1648,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         date_devis: dateDevis || null,
         date_validite: dateValidite || null,
         contrat_conditions: (contratSnapshot ?? null) as never,
-      }).select('token').single();
-      if (isFcTaxiPdf && !devisRecord?.token) throw new Error("Enregistrement du devis non confirmé : aucun mail envoyé");
+      }).select('id, token').single();
+      if (!devisRecord?.id) throw new Error("Enregistrement du devis non confirmé : aucun mail envoyé");
 
       const appUrl = 'https://insight-learn-manage.lovable.app';
       const devisLink = devisRecord?.token ? `${appUrl}/devis?token=${devisRecord.token}` : '';
@@ -1609,19 +1659,17 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
         (devisLink ? `<br/><br/>📝 <a href="${devisLink}" style="display:inline-block;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Consulter et signer le devis en ligne</a>` : '') +
         `<br/><br/><em style="font-size:12px;color:#888;">Le devis est également joint en PDF à cet email.</em>`;
 
-      const { error } = await supabase.functions.invoke('sync-outlook-emails', {
-        body: {
-          action: 'send',
-          userEmail: 'contact@ftransport.fr',
-          to: destinataire,
-          subject: em.subject,
-          body: bodyHtml,
-          apprenantId: apprenant.id,
-          attachments: [{ name: fileName, contentType: 'application/pdf', contentBytes: base64 }],
-        },
+      const nomStagiaire = `${apprenant.prenom || ''} ${apprenant.nom || ''}`.trim();
+      const corpsFinanceur = `Bonjour,<br/><br/>Veuillez trouver ci-joint le devis <strong>${numDevis}</strong> concernant la formation de <strong>${nomStagiaire}</strong>${nomFinanceurDevis ? `, dont le financement est assuré par ${nomFinanceurDevis}` : ''}.<br/><br/>` +
+        (devisLink ? `<a href="${devisLink}" style="display:inline-block;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Consulter le devis en ligne</a><br/><br/>` : '') +
+        `Nous restons à votre disposition pour toute question.<br/><br/>Cordialement,<br/>FTRANSPORT`;
+      await executerEnvoisDevis({
+        devisEnvoiId: devisRecord.id, reference: numDevis, base64, fileName,
+        destinataires: plan.destinataires,
+        sujetStagiaire: em.subject, corpsStagiaire: bodyHtml,
+        sujetFinanceur: `Devis ${numDevis} – formation de ${nomStagiaire}`, corpsFinanceur,
+        resultats: [],
       });
-      if (error) throw error;
-      toast.success(`Devis envoyé par email à ${destinataire}`);
     } catch (err: any) {
       console.error(err);
       toast.error("Erreur envoi devis : " + (err.message || ""));
@@ -2116,13 +2164,31 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
             </Button>
             <Button onClick={envoyerDevisParEmail} disabled={sendingDevisEmail || generating || !apprenant.email || !lignes[0]?.designation?.trim() || !sessionDate || !dateValidite} title={!apprenant.email ? "L'apprenant n'a pas d'email" : !lignes[0]?.designation?.trim() ? "Renseignez l'intitulé" : !sessionDate ? "Choisissez les dates de formation" : !dateValidite ? "Renseignez la date de validité" : `Envoi à ${apprenant.email}`} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white">
               <Send className="w-4 h-4" />
-              {sendingDevisEmail ? "Envoi en cours..." : `Envoyer par mail au client${apprenant.email ? ` (${apprenant.email})` : ''}`}
+              {sendingDevisEmail ? "Envoi en cours..." : `Envoyer par mail ${financementTiers && emailValide(emailFinanceurDevis) ? 'au stagiaire et au financeur' : 'au stagiaire'}`}
             </Button>
             <Button variant="outline" onClick={() => setShowPreview(!showPreview)} className="flex items-center gap-2">
               <Eye className="w-4 h-4" />
               {showPreview ? "Masquer" : "Aperçu"} les CGV
             </Button>
           </div>
+          {financementTiers && !emailValide(emailFinanceurDevis) && (
+            <p className="text-sm text-destructive">Email financeur {emailFinanceurDevis ? 'invalide' : 'absent'} : le devis sera envoyé au stagiaire uniquement.</p>
+          )}
+          {dernierEnvoiDevis && dernierEnvoiDevis.resultats.length > 0 && (
+            <div className="rounded-lg border p-3 text-sm space-y-1">
+              <p className="font-medium">Envoi du devis {dernierEnvoiDevis.reference}</p>
+              {dernierEnvoiDevis.resultats.map(r => (
+                <p key={r.email} className={r.statut === 'echec' || r.statut === 'en_cours_ailleurs' ? 'text-destructive' : 'text-muted-foreground'}>
+                  {r.role === 'financeur' ? 'Financeur' : r.role === 'stagiaire_financeur' ? 'Stagiaire et financeur' : 'Stagiaire'} — {r.email} : {r.statut === 'envoye' || r.statut === 'deja_envoye' ? 'envoyé' : r.statut === 'echec' ? `échec (${r.erreur})` : 'en cours, non confirmé'}
+                </p>
+              ))}
+              {dernierEnvoiDevis.resultats.some(r => r.statut === 'echec') && (
+                <Button size="sm" variant="outline" disabled={sendingDevisEmail} onClick={async () => { setSendingDevisEmail(true); try { await executerEnvoisDevis(dernierEnvoiDevis); } finally { setSendingDevisEmail(false); } }}>
+                  Relancer les envois en échec
+                </Button>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
