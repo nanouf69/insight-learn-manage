@@ -66,3 +66,17 @@ export function questionsRevisionRestantes(revision: Record<string, Rep> | null 
 export function validationEcritRevision(p: { dejaRemis: boolean; revisionOuverte: boolean }): boolean {
   return !p.dejaRemis || p.revisionOuverte;
 }
+
+/**
+ * Les contrôles/résultats du quiz initial ne s'affichent jamais par-dessus une
+ * reprise réellement ouverte, même si un état « résultats » résiduel subsiste.
+ */
+export function resultatsInitiauxAffiches(p: { showResults: boolean; revisionOuverte: boolean }): boolean {
+  return p.showResults && !p.revisionOuverte;
+}
+
+/** Un clic de réponse est accepté hors aperçu/verrou, sauf résultats initiaux réellement affichés. */
+export function reponseQuizAcceptee(p: { apercuAdmin: boolean; verrouillee: boolean; showResults: boolean; revisionOuverte: boolean }): boolean {
+  if (p.apercuAdmin || p.verrouillee) return false;
+  return !resultatsInitiauxAffiches(p);
+}

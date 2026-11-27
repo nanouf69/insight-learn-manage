@@ -2118,7 +2118,7 @@ const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/Co
 const QuizJoursFeries = lazy(() => import("./cas-pratique-feries/QuizJoursFeries"));
 import QuizExterneBilan, { quizIntegresBilan, exerciceRemplaceParQuizIntegres, etapeQuizComplementaires, ID_ETAPE_QUIZ_COMPLEMENTAIRES } from "./QuizExterneBilan";
 import { getCachedSignedUrl, signCourseObject } from "@/lib/signedCourseUrlCache";
-import { exoSauvegardable, revisionsSessionARestaurer, revisionFaussesTerminee, revisionRepriseProuvee, questionsRevisionRestantes, validationEcritRevision } from "@/lib/revisionFaussesEtat";
+import { exoSauvegardable, revisionsSessionARestaurer, revisionFaussesTerminee, revisionRepriseProuvee, questionsRevisionRestantes, validationEcritRevision, resultatsInitiauxAffiches, reponseQuizAcceptee } from "@/lib/revisionFaussesEtat";
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -7040,6 +7040,14 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const revisionOuverteRef = useRef<Set<number>>(new Set());
     // Révisions terminées relues/confirmées (affichage seul ; la note initiale reste figée).
     const [revisionsTerminees, setRevisionsTerminees] = useState<Record<number, Record<string, string | string[]>>>({});
+    // Une reprise réellement ouverte prime sur un état « résultats affichés » résiduel
+    // (sessionStorage, hydratation d'archive, autre onglet) : clics acceptés, contrôles
+    // de résultat initiaux masqués. La remise initiale reste intouchée (écriture sous
+    // l'identifiant de révision uniquement).
+    const resultatsAffiches = (exoId: number) => resultatsInitiauxAffiches({
+      showResults: showResultsFor.has(exoId),
+      revisionOuverte: revisionOuverteRef.current.has(exoId),
+    });
     const peutSauvegarderExo = (exoId: number, force = false) => exoSauvegardable({
       soumis: submittedExoIdsRef.current.has(exoId),
       fige: !!passagesFiges[exoId],
@@ -8348,9 +8356,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     const { trackQuestion } = useQuestionTimeTracking(apprenantId);
 
     const handleAnswer = (exoId: number, qId: number, lettre: string, multi?: boolean, target?: HTMLElement | null) => {
-      if (apercuAdmin) return;
-      if (Object.prototype.hasOwnProperty.call(reponsesVerrouilleesRef.current, `${exoId}-${qId}`)) return;
-      if (showResultsFor.has(exoId)) return;
+      if (!reponseQuizAcceptee({
+        apercuAdmin: !!apercuAdmin,
+        verrouillee: Object.prototype.hasOwnProperty.call(reponsesVerrouilleesRef.current, `${exoId}-${qId}`),
+        showResults: showResultsFor.has(exoId),
+        revisionOuverte: revisionOuverteRef.current.has(exoId),
+      })) return;
       onLearnerActivity?.();
       captureAnswerScrollPosition(target);
       const ansKey = `${exoId}-${qId}`;
@@ -9481,7 +9492,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                         placeholder="Écrivez votre réponse ici..."
                         value={qrcAnswers[key] ?? (typeof selected === "string" ? selected : "")}
                         onChange={(e) => handleQrcAnswerChange(key, e.target.value)}
-                        disabled={showResultsFor.has(exo.id) || (qrcResult !== undefined && qrcResult !== "loading" && !qrcResult?.indisponible)}
+                        disabled={resultatsAffiches(exo.id) || (qrcResult !== undefined && qrcResult !== "loading" && !qrcResult?.indisponible)}
                         className="mt-2"
                       />
                       {qrcResult && qrcResult !== "loading" && qrcResult.indisponible && (
@@ -9519,7 +9530,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
                 const multi = isMultiAnswer(q);
                 const selectedArr = Array.isArray(selected) ? selected : selected ? [selected] : [];
-                const exoShowResults = showResultsFor.has(exo.id);
+                const exoShowResults = resultatsAffiches(exo.id);
                 const answerIsCorrect = isAnswerCorrect(selected, q);
                 const isQcmWrong = (isInRevision && selectedArr.length > 0 && !answerIsCorrect) || (exoShowResults && !answerIsCorrect);
 
@@ -9628,7 +9639,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
 
               {exoTotalQ > 0 && (
                 <div className="flex justify-center gap-4">
-                  {!showResultsFor.has(exo.id) ? (
+                  {!resultatsAffiches(exo.id) ? (
                     <div className="flex flex-col items-center gap-3 w-full">
                     {validationFailedFor.has(exo.id) && validatingExo !== exo.id && (
                       <div role="alert" className="w-full rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-center">
@@ -10255,7 +10266,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             // Après validation (ou mode révision), les erreurs s'affichent en rouge
             const sidebarKey = `${exo.id}-${q.id}`;
             const isQrcQ = isQuestionQrc(q);
-            const sidebarShowResults = showResultsFor.has(exo.id);
+            const sidebarShowResults = resultatsAffiches(exo.id);
             const sidebarInRevision = !!revisionEffective(exo.id, questionsSafe) && revisionEffective(exo.id, questionsSafe)!.has(String(q.id));
             let isWrong = false;
             if (isQrcQ) {
@@ -10292,7 +10303,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       if (passage) return passage.nb_repondues >= passage.nb_questions;
       return !!historicalQuizProof && historicalQuizProof.totalQuizzes > 0
         && !historicalQuizProof.remainingQuizzes.some(q => q.id === String(exoId))
-        && Array.isArray(moduleData.exercices) && showResultsFor.has(exoId);
+        && Array.isArray(moduleData.exercices) && resultatsAffiches(exoId);
     };
     const renderProgressionSteps = (isMobileView = false) => (
       <div className={isMobileView ? "space-y-1" : "space-y-1.5"}>
@@ -10622,7 +10633,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
               hasUnvalidatedQuiz = !inlineQuizValidated.has(pageData.cours.id);
             }
             if (pageData?.type === "exercice-single") {
-              hasUnvalidatedQuiz = !showResultsFor.has(pageData.exercice.id);
+              hasUnvalidatedQuiz = !resultatsAffiches(pageData.exercice.id);
             }
             return (
             <Button
