@@ -94,3 +94,19 @@ describe("D1 — sortie sûre partagée", () => {
     expect(bloc.indexOf("return;")).toBeLessThan(bloc.indexOf('window.location.href = "/login"'));
   });
 });
+
+describe("marqueur local _non_envoye_apres_validation", () => {
+  it("jamais renvoyé au serveur ni réhydraté dans le formulaire", async () => {
+    const { donneesBrouillon, confirmerParRelecture } = await import("@/lib/brouillonsFormulaires");
+    const local = { q: 1, _pending: true, _autosave_meta: { titre: "T" }, _non_envoye_apres_validation: true };
+    expect(donneesBrouillon(local)).toEqual({ q: 1 });
+    const kv = new Map([["autosave_pending_a1_x", JSON.stringify(local)]]);
+    vi.stubGlobal("localStorage", { getItem: (k: string) => kv.get(k) ?? null, setItem: () => {}, removeItem: () => {}, key: () => null, length: 0 });
+    const { loadSavedDraft } = await import("@/hooks/useAutoSave");
+    expect(loadSavedDraft("a1", "x")).toEqual({ q: 1, _pending: true });
+    vi.unstubAllGlobals();
+    expect(await confirmerParRelecture(async () => ({ data: { donnees: { q: 1 } }, error: null }), { apprenantId: "a1", typeDocument: "x", titre: "T" }, { q: 1 })).toBe(true);
+    expect(await confirmerParRelecture(async () => ({ data: { donnees: { q: 2 } }, error: null }), { apprenantId: "a1", typeDocument: "x", titre: "T" }, { q: 1 })).toBe(false);
+    expect(await confirmerParRelecture(async () => { throw new Error("réseau"); }, { apprenantId: "a1", typeDocument: "x", titre: "T" }, { q: 1 })).toBe(false);
+  });
+});

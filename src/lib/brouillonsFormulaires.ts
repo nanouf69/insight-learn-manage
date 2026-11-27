@@ -36,8 +36,20 @@ export const memesDonnees = (a: unknown, b: unknown) => canon(a) === canon(b);
 
 /** Données à envoyer : sans les marqueurs locaux. */
 export function donneesBrouillon(entree: Record<string, unknown>): Record<string, unknown> {
-  const { _pending, [META_BROUILLON]: _meta, ...reste } = entree;
+  const { _pending, [META_BROUILLON]: _meta, _non_envoye_apres_validation: _marque, ...reste } = entree;
   return reste;
+}
+
+/** Relecture serveur d'un envoi : identique, ou remplacé par une validation déjà enregistrée. */
+export async function confirmerParRelecture(
+  relire: DepsBrouillons["relire"], a: { apprenantId: string; typeDocument: string; titre: string }, donnees: Record<string, unknown>,
+): Promise<boolean> {
+  try {
+    const r = await relire(a);
+    if (r.error || !r.data) return false;
+    const serveur = r.data.donnees as Record<string, unknown> | null;
+    return memesDonnees(serveur, donnees) || (serveur?._status === "completed" && donnees._status !== "completed");
+  } catch { return false; }
 }
 
 export type ResultatBrouillons = { ok: boolean; aRouvrir: string[]; nonConfirmes: string[] };

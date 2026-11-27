@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { savePublicFormDocument } from "@/lib/savePublicFormDocument";
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 import { bounded } from "@/lib/sessionRpc";
-import { enregistrerFormulaireMonte, donneesBrouillon, META_BROUILLON } from "@/lib/brouillonsFormulaires";
+import { enregistrerFormulaireMonte, donneesBrouillon, META_BROUILLON, confirmerParRelecture, depsBrouillonsNavigateur } from "@/lib/brouillonsFormulaires";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -338,10 +338,13 @@ export function useAutoSave({
         const data = pendingDataRef.current;
         if (!data) return true;
         if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-        return await triggerSave(data);
+        if (!(await triggerSave(data))) return false;
+        // Saisie modifiée pendant l'envoi : non confirmée tant qu'elle n'est pas elle-même envoyée.
+        if (pendingDataRef.current) return false;
+        return confirmerParRelecture(depsBrouillonsNavigateur().relire, { apprenantId, typeDocument, titre }, donneesBrouillon(data));
       },
     });
-  }, [enabled, apprenantId, typeDocument, triggerSave]);
+  }, [enabled, apprenantId, typeDocument, titre, triggerSave]);
 
   // beforeunload protection
   useEffect(() => {
