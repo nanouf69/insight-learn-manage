@@ -26,6 +26,56 @@ export function OrganisationsList() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [relai, setRelai] = useState<null | { mode: "transfert" | "renvoi"; to: string; subject: string; note: string }>(null);
+  const [relaiEnvoi, setRelaiEnvoi] = useState(false);
+
+  const ouvrirRelai = (mode: "transfert" | "renvoi") => {
+    if (!selectedEmail) return;
+    const sujet = selectedEmail.subject || "";
+    setRelai({
+      mode,
+      to: mode === "renvoi" ? (selectedEmail.recipients || []).join(", ") : "",
+      subject: mode === "transfert" && !/^tr\s*:/i.test(sujet) ? `TR: ${sujet}` : sujet,
+      note: "",
+    });
+  };
+
+  const envoyerRelai = async () => {
+    if (!relai || !selectedEmail) return;
+    const destinataires = relai.to.split(/[,;\s]+/).map(e => e.trim()).filter(Boolean);
+    if (destinataires.length === 0 || destinataires.some(e => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))) {
+      toast.error("Adresse email du destinataire invalide");
+      return;
+    }
+    if (!relai.subject.trim()) { toast.error("Veuillez renseigner un objet"); return; }
+    const original = selectedEmail.body_html || String(selectedEmail.body_preview || "").replace(/\n/g, "<br>");
+    const dateTxt = selectedEmail.sent_at || selectedEmail.received_at
+      ? format(new Date(selectedEmail.sent_at || selectedEmail.received_at), "dd MMMM yyyy 'à' HH:mm", { locale: fr }) : "-";
+    const note = relai.note.trim() ? relai.note.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>") + "<br><br>" : "";
+    const htmlBody = relai.mode === "transfert"
+      ? `${note}---------- Message transféré ----------<br>De : ${selectedEmail.sender_name || selectedEmail.sender_email || 'contact@ftransport.fr'}<br>Date : ${dateTxt}<br>Objet : ${selectedEmail.subject || ''}<br>À : ${(selectedEmail.recipients || []).join(', ')}<br><br>${original}`
+      : `${note}${original}`;
+    setRelaiEnvoi(true);
+    try {
+      for (const to of destinataires) {
+        const { data, error } = await supabase.functions.invoke('sync-outlook-emails', {
+          body: { action: 'send', userEmail: 'contact@ftransport.fr', to, subject: relai.subject, body: htmlBody },
+        });
+        if (error || !data?.success) throw new Error(`Échec de l'envoi à ${to}`);
+        await supabase.from('emails').insert({
+          subject: relai.subject, body_html: htmlBody, body_preview: (relai.note || selectedEmail.body_preview || '').slice(0, 200),
+          sender_email: 'contact@ftransport.fr', recipients: [to], type: 'sent', is_read: true, sent_at: new Date().toISOString(),
+        });
+      }
+      toast.success(relai.mode === "transfert" ? "Email transféré !" : "Email renvoyé !");
+      setRelai(null);
+      queryClient.invalidateQueries({ queryKey: ['org-emails'] });
+    } catch (err: any) {
+      toast.error('Erreur : ' + (err.message || 'Échec'));
+    } finally {
+      setRelaiEnvoi(false);
+    }
+  };
   const queryClient = useQueryClient();
 
   const handleSendEmail = async () => {
@@ -485,8 +535,8 @@ export function OrganisationsList() {
       </Dialog>
 
       {/* Dialog détail email */}
-      <Dialog open={!!selectedEmail} onOpenChange={(open) => { if (!open) setSelectedEmail(null); }}>
-        <DialogContent className="max-w-2xl max-h-[70vh] overflow-y-auto">
+      <Dialog open={!!selectedEmail} onOpenChange={(open) => { if (!open) { setSelectedEmail(null); setRelai(null); } }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base">{selectedEmail?.subject}</DialogTitle>
           </DialogHeader>
@@ -501,6 +551,29 @@ export function OrganisationsList() {
                 <div className="border rounded-md p-4 bg-background" dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }} />
               ) : (
                 <p className="text-sm">{selectedEmail.body_preview || 'Aucun contenu'}</p>
+              )}
+              {!relai ? (
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => ouvrirRelai("renvoi")}>
+                    <RefreshCw className="h-4 w-4" /> Renvoyer
+                  </Button>
+                  <Button size="sm" className="gap-2" onClick={() => ouvrirRelai("transfert")}>
+                    <Send className="h-4 w-4" /> Transférer
+                  </Button>
+                </div>
+              ) : (
+                <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+                  <h4 className="text-sm font-semibold">{relai.mode === "transfert" ? "Transférer ce mail" : "Renvoyer ce mail"}</h4>
+                  <Input aria-label="Destinataire" placeholder="Adresse email du destinataire" value={relai.to} onChange={(e) => setRelai({ ...relai, to: e.target.value })} />
+                  <Input aria-label="Objet" placeholder="Objet" value={relai.subject} onChange={(e) => setRelai({ ...relai, subject: e.target.value })} />
+                  <Textarea aria-label="Message ajouté" placeholder="Message à ajouter au-dessus (facultatif)" rows={3} value={relai.note} onChange={(e) => setRelai({ ...relai, note: e.target.value })} />
+                  <div className="flex justify-end gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setRelai(null)} disabled={relaiEnvoi}>Annuler</Button>
+                    <Button size="sm" className="gap-2" onClick={envoyerRelai} disabled={relaiEnvoi}>
+                      {relaiEnvoi ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Envoyer
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           )}
