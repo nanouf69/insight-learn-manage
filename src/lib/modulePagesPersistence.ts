@@ -112,3 +112,18 @@ export function installModulePagesPersistence() {
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') void resumeModulePages(); });
   supabase.auth.onAuthStateChange(() => { setTimeout(() => { void resumeModulePages(); }, 0); });
 }
+
+/** Pages du compte `owner` non encore relues sur le serveur (mémoire + stockage local). */
+export function pendingModulePagesCountFor(owner: string): number {
+  const keys = new Set([...memory.keys()].filter(k => k.startsWith(`${PREFIX}${owner}:`)));
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k?.startsWith(`${PREFIX}${owner}:`)) keys.add(k); } } catch { /* memory only */ }
+  let n = 0;
+  for (const k of keys) { const e = read(k); if (e && e.owner === owner && !e.confirmed) n++; }
+  return n;
+}
+/** Déconnexion : envoie et confirme les pages du seul compte actif ; aucune entrée supprimée. */
+export async function flushModulePagesAvantDeconnexion(owner: string): Promise<boolean> {
+  if (pendingModulePagesCountFor(owner) === 0) return true;
+  await resumeModulePages();
+  return pendingModulePagesCountFor(owner) === 0;
+}

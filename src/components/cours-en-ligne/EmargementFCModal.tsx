@@ -15,6 +15,7 @@ import { creneauLabel, creneauHoraire, creneauHorairePratique } from "@/lib/agen
 import { checkSignatureAgainstReferences } from "@/lib/signatureSimilarity";
 import { sendAdminNotification } from "@/lib/sendAdminNotification";
 import { maintenantParis } from '@/lib/heureParis';
+import { sortieApprenantSecurisee } from "@/lib/flushAvantDeconnexion";
 
 // Alerte signature : journal d'erreurs + e-mail à contact@ftransport.fr.
 // Ne bloque jamais l'élève ; au plus une alerte par élève toutes les 10 min.
@@ -154,6 +155,8 @@ export const EmargementFCModal = ({
   // Identity already confirmed globally via IdentityConfirmModal (with photo) after login.
   // Skip the redundant in-modal identity gate to avoid a double confirmation.
   const [identityConfirmed, setIdentityConfirmed] = useState(true);
+  const [sortieEnCours, setSortieEnCours] = useState(false);
+  const [erreurSortie, setErreurSortie] = useState<string | null>(null);
   const [confirmPresenceLieu, setConfirmPresenceLieu] = useState(false);
   const effectiveDate = dateEmargement || todayISO();
   const horaire = (c: CreneauKey) => horairesReels?.[c] ?? (pratique ? creneauHorairePratique(c) : creneauHoraire(c));
@@ -408,22 +411,30 @@ export const EmargementFCModal = ({
                 </div>
               </AlertDescription>
             </Alert>
+            {erreurSortie && (
+              <Alert variant="destructive" role="alert"><AlertTriangle className="h-4 w-4" /><AlertDescription>{erreurSortie}</AlertDescription></Alert>
+            )}
             <DialogFooter className="flex-col-reverse sm:flex-row gap-3">
               <Button
                 variant="outline"
                 size="lg"
                 className="w-full sm:w-auto text-base sm:text-lg py-5 sm:py-6"
+                disabled={sortieEnCours}
                 onClick={async () => {
-                  toast({
-                    title: "Identité incorrecte",
-                    description: "Vous allez être déconnecté pour des raisons de sécurité.",
-                    variant: "destructive",
-                  });
-                  try { await supabase.auth.signOut({ scope: "local" }); } catch { /* noop */ }
+                  setSortieEnCours(true); setErreurSortie(null);
+                  const { data: sess } = await supabase.auth.getSession().catch(() => ({ data: { session: null } }) as any);
+                  const r = await sortieApprenantSecurisee({ userId: sess?.session?.user?.id ?? null, apprenantId });
+                  setSortieEnCours(false);
+                  if (!r.ok) {
+                    setErreurSortie(r.message);
+                    toast({ title: "Identité incorrecte", description: r.message, variant: "destructive" });
+                    return;
+                  }
+                  toast({ title: "Identité incorrecte", description: "Vous avez été déconnecté pour des raisons de sécurité.", variant: "destructive" });
                   window.location.href = "/login";
                 }}
               >
-                <UserX className="w-5 h-5 sm:w-6 sm:h-6 mr-2" /> Non, ce n'est pas moi
+                {sortieEnCours ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <UserX className="w-5 h-5 sm:w-6 sm:h-6 mr-2" />} {erreurSortie ? "Réessayer la déconnexion" : "Non, ce n'est pas moi"}
               </Button>
               <Button
                 size="lg"

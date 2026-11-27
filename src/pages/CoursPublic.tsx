@@ -82,7 +82,7 @@ import { choisirFeuilleDue, clesTraitees, cleAuthentification, SuiviOuvertureEma
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { setAnswerSaveOwnership } from "@/lib/answerPersistence";
-import { flushToutesFilesAvantDeconnexion, MESSAGE_DECONNEXION_SUSPENDUE } from "@/lib/flushAvantDeconnexion";
+import { flushToutesFilesAvantDeconnexion, MESSAGE_DECONNEXION_SUSPENDUE, messageDeconnexionSuspendue } from "@/lib/flushAvantDeconnexion";
 import { isLearnerPreviewReadOnly, setLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
 import { applyPratiqueUnlockElearning, computeServerCompletedModuleIds, computeUnlockState, getLearnerModuleDisplayState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 import { appliquerDerogationsModules, lireDerogationsModules } from '@/lib/moduleAccessDerogation';
@@ -1670,12 +1670,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Tablette partagée : toutes les files de réponses du compte actif doivent
     // être confirmées par le serveur AVANT la déconnexion. Échec = compte
     // laissé ouvert, files intactes, message clair.
-    let flush: { ok: boolean } = { ok: false };
+    let flush: { ok: boolean; nonConfirmees?: any[] } = { ok: false };
     try {
       flush = await flushToutesFilesAvantDeconnexion({ userId: user?.id ?? null, apprenantId: apprenant?.id ?? null });
     } catch { flush = { ok: false }; }
     if (!flush.ok) {
-      toast.error(MESSAGE_DECONNEXION_SUSPENDUE, { duration: 15000 });
+      toast.error(messageDeconnexionSuspendue(flush), { duration: 15000 });
       return false;
     }
     await endConnexion();
@@ -2851,10 +2851,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
               onClick={async () => {
                 // Même barrière que la sortie principale : aucune déconnexion tant qu'une file du compte n'est pas confirmée.
-                let flush: { ok: boolean } = { ok: false };
+                let flush: { ok: boolean; nonConfirmees?: any[] } = { ok: false };
                 try { flush = await flushToutesFilesAvantDeconnexion({ userId: user?.id ?? null, apprenantId: apprenant?.id ?? null }); } catch { flush = { ok: false }; }
                 if (!flush.ok) {
-                  toast.error(MESSAGE_DECONNEXION_SUSPENDUE, { duration: 15000 });
+                  toast.error(messageDeconnexionSuspendue(flush), { duration: 15000 });
                   return;
                 }
                 let fermee = false;

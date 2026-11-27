@@ -5,7 +5,9 @@
  *  1. answerPersistence (reponses_apprenants, quiz/modules/révisions) ;
  *  2. pont noyau V2 (answer_state des examens blancs), filtrée sur les tentatives du compte ;
  *  3. Bilans futurs 5/11 (bilan-future:v1:<compte>:<reçu>:<version>) ;
- *  4. notes de quiz en attente (apprenant_quiz_results) du compte.
+ *  4. notes de quiz en attente (apprenant_quiz_results) du compte ;
+ *  5. pages de cours lues (module_pages_pending_v1:<compte>:…) ;
+ *  6. brouillons de formulaires (autosave_pending_<dossier>_<type>), relus sur le serveur.
  * Aucune file n'est vidée sans accusé serveur ; les éléments d'un autre compte
  * ne sont ni envoyés ni supprimés et ne bloquent pas cette déconnexion.
  */
@@ -14,10 +16,14 @@ import { flushOwnAnswerSavesBeforeLogout } from "@/lib/answerPersistence";
 import { attemptsEnFileNoyau, viderFileNoyau } from "@/features/noyau-passage/pontV2";
 import { FUTURE_QUEUE_PREFIX, flushQueue, type KV, type SaveRpc } from "@/lib/bilanFutureTransport";
 import { flushQuizResultSaves, getPendingQuizResultCountFor } from "@/lib/quizResultPersistence";
+import { flushModulePagesAvantDeconnexion } from "@/lib/modulePagesPersistence";
+import { flushBrouillonsFormulaires } from "@/lib/brouillonsFormulaires";
 
 export const MESSAGE_DECONNEXION_SUSPENDUE = "Déconnexion suspendue : certaines réponses ne sont pas encore confirmées par le serveur. Elles restent conservées sur cet appareil. Vérifiez votre connexion puis réessayez.";
 
-export type FileDeconnexion = "reponses" | "examens" | "bilans" | "notes";
+export const MESSAGE_FORMULAIRE_A_ROUVRIR = "Déconnexion suspendue : un formulaire contient une saisie non envoyée, conservée sur cet appareil. Rouvrez ce formulaire pour terminer son enregistrement, puis réessayez.";
+
+export type FileDeconnexion = "reponses" | "examens" | "bilans" | "notes" | "pages" | "formulaires" | "formulaires_a_rouvrir";
 export interface ResultatFlushDeconnexion { ok: boolean; nonConfirmees: FileDeconnexion[] }
 
 export interface DepsFlushDeconnexion {
@@ -29,6 +35,9 @@ export interface DepsFlushDeconnexion {
   saveBilan: SaveRpc;
   flushNotes: () => Promise<boolean>;
   notesEnAttente: (userId: string) => number;
+  /** Absent dans un faux de test = file non concernée. */
+  flushPages?: (userId: string) => Promise<boolean>;
+  flushFormulaires?: (ctx: { userId: string | null; apprenantId: string | null }) => Promise<{ ok: boolean; aRouvrir: string[] }>;
 }
 
 const kvNavigateur = (): DepsFlushDeconnexion["kv"] => ({
@@ -51,6 +60,8 @@ export const depsNavigateur = (): DepsFlushDeconnexion => ({
   saveBilan: (a) => (supabase as any).rpc("bilan_future_save_draft", a),
   flushNotes: flushQuizResultSaves,
   notesEnAttente: getPendingQuizResultCountFor,
+  flushPages: flushModulePagesAvantDeconnexion,
+  flushFormulaires: (ctx) => flushBrouillonsFormulaires(ctx),
 });
 
 export async function flushToutesFilesAvantDeconnexion(
@@ -95,5 +106,33 @@ export async function flushToutesFilesAvantDeconnexion(
     return deps.notesEnAttente(ctx.userId) === 0;
   });
 
+  if (deps.flushPages) await essai("pages", async () => (ctx.userId ? deps.flushPages!(ctx.userId) : true));
+
+  if (deps.flushFormulaires) {
+    try {
+      const r = await deps.flushFormulaires(ctx);
+      if (r.aRouvrir.length > 0) nonConfirmees.push("formulaires_a_rouvrir");
+      else if (!r.ok) nonConfirmees.push("formulaires");
+    } catch { nonConfirmees.push("formulaires"); }
+  }
+
   return { ok: nonConfirmees.length === 0, nonConfirmees };
+}
+
+export const messageDeconnexionSuspendue = (r: { nonConfirmees?: FileDeconnexion[] }) =>
+  r.nonConfirmees?.includes("formulaires_a_rouvrir") ? MESSAGE_FORMULAIRE_A_ROUVRIR : MESSAGE_DECONNEXION_SUSPENDUE;
+
+/** Sortie apprenant commune : files confirmées puis fermeture réelle de session ; sinon rien ne change. */
+export async function sortieApprenantSecurisee(
+  ctx: { userId: string | null; apprenantId: string | null },
+  f: { flush?: typeof flushToutesFilesAvantDeconnexion; signOut?: () => Promise<{ error: unknown }> } = {},
+): Promise<{ ok: boolean; message?: string }> {
+  let r: ResultatFlushDeconnexion;
+  try { r = await (f.flush ?? flushToutesFilesAvantDeconnexion)(ctx); } catch { r = { ok: false, nonConfirmees: [] }; }
+  if (!r.ok) return { ok: false, message: messageDeconnexionSuspendue(r) };
+  try {
+    const { error } = await (f.signOut ?? (() => supabase.auth.signOut({ scope: "local" })))();
+    if (error) return { ok: false, message: "Déconnexion impossible : votre compte reste ouvert. Réessayez." };
+  } catch { return { ok: false, message: "Déconnexion impossible : votre compte reste ouvert. Réessayez." }; }
+  return { ok: true };
 }

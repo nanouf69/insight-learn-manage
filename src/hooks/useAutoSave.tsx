@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { savePublicFormDocument } from "@/lib/savePublicFormDocument";
 import { assurerSessionFraiche } from "@/lib/sessionExpiree";
 import { bounded } from "@/lib/sessionRpc";
+import { enregistrerFormulaireMonte, donneesBrouillon, META_BROUILLON } from "@/lib/brouillonsFormulaires";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -128,7 +129,7 @@ async function saveWithRetry(
 export function loadSavedDraft(apprenantId: string, typeDocument: string): Record<string, any> | null {
   try {
     const pending = JSON.parse(localStorage.getItem(`autosave_pending_${apprenantId}_${typeDocument}`) ?? 'null');
-    if (pending?._pending) return pending;
+    if (pending?._pending) return { ...donneesBrouillon(pending), _pending: true };
     const raw = localStorage.getItem(`autosave_${apprenantId}_${typeDocument}`);
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -249,7 +250,7 @@ export function useAutoSave({
       if (identityRef.current !== identity) return false;
     } else if (isSavingRef.current) {
       pendingDataRef.current = data;
-      try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* unload guard retains memory */ }
+      try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true, [META_BROUILLON]: { titre, moduleId: moduleId ?? null } })); } catch { /* unload guard retains memory */ }
       return false;
     }
 
@@ -284,7 +285,7 @@ export function useAutoSave({
       // A failed validation stays pending so periodic retries resend the validated version only.
       if (isFinal) {
         pendingDataRef.current = data;
-        try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* memory retry */ }
+        try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true, [META_BROUILLON]: { titre, moduleId: moduleId ?? null } })); } catch { /* memory retry */ }
       }
       // Reset error after 5s
       setTimeout(() => setStatus(prev => prev === "error" ? "idle" : prev), 5000);
@@ -301,7 +302,7 @@ export function useAutoSave({
   const queueSave = useCallback((data: Record<string, any>) => {
     if (finalizedRef.current) return;
     pendingDataRef.current = data;
-    try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* memory guarded on unload */ }
+    try { localStorage.setItem(`autosave_pending_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true, [META_BROUILLON]: { titre, moduleId: moduleId ?? null } })); } catch { /* memory guarded on unload */ }
     try { localStorage.setItem(`autosave_${apprenantId}_${typeDocument}`, JSON.stringify({ ...data, _pending: true })); } catch { /* keep memory */ }
     // Debounce: save 2s after last change
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -310,7 +311,7 @@ export function useAutoSave({
         triggerSave(pendingDataRef.current);
       }
     }, 2000);
-  }, [triggerSave, apprenantId, typeDocument]);
+  }, [triggerSave, apprenantId, typeDocument, titre, moduleId]);
 
   // Periodic save every 30s
   useEffect(() => {
@@ -325,6 +326,22 @@ export function useAutoSave({
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [enabled, apprenantId, interval, triggerSave, typeDocument]);
+
+  // Barrière de déconnexion : envoie la saisie en mémoire de ce formulaire affiché.
+  useEffect(() => {
+    if (!enabled || !apprenantId) return;
+    return enregistrerFormulaireMonte({
+      apprenantId, typeDocument,
+      flush: async () => {
+        for (let i = 0; i < 600 && isSavingRef.current; i++) await new Promise((r) => setTimeout(r, 50));
+        if (isSavingRef.current) return false;
+        const data = pendingDataRef.current;
+        if (!data) return true;
+        if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+        return await triggerSave(data);
+      },
+    });
+  }, [enabled, apprenantId, typeDocument, triggerSave]);
 
   // beforeunload protection
   useEffect(() => {
