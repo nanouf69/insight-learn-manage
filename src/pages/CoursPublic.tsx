@@ -82,7 +82,7 @@ import { choisirFeuilleDue, clesTraitees, cleAuthentification, SuiviOuvertureEma
 import { useAuth } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { setAnswerSaveOwnership } from "@/lib/answerPersistence";
-import { flushToutesFilesAvantDeconnexion } from "@/lib/flushAvantDeconnexion";
+import { flushToutesFilesAvantDeconnexion, MESSAGE_DECONNEXION_SUSPENDUE } from "@/lib/flushAvantDeconnexion";
 import { isLearnerPreviewReadOnly, setLearnerPreviewReadOnly } from "@/lib/learnerPreviewGuard";
 import { applyPratiqueUnlockElearning, computeServerCompletedModuleIds, computeUnlockState, getLearnerModuleDisplayState, isModuleLocked as computeIsModuleLocked } from "@/lib/moduleUnlockLogic";
 import { appliquerDerogationsModules, lireDerogationsModules } from '@/lib/moduleAccessDerogation';
@@ -1675,7 +1675,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       flush = await flushToutesFilesAvantDeconnexion({ userId: user?.id ?? null, apprenantId: apprenant?.id ?? null });
     } catch { flush = { ok: false }; }
     if (!flush.ok) {
-      toast.error("Déconnexion suspendue : certaines réponses ne sont pas encore confirmées par le serveur. Elles restent conservées sur cet appareil. Vérifiez votre connexion puis réessayez.", { duration: 15000 });
+      toast.error(MESSAGE_DECONNEXION_SUSPENDUE, { duration: 15000 });
       return false;
     }
     await endConnexion();
@@ -2847,6 +2847,13 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
               type="button"
               className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
               onClick={async () => {
+                // Même barrière que la sortie principale : aucune déconnexion tant qu'une file du compte n'est pas confirmée.
+                let flush: { ok: boolean } = { ok: false };
+                try { flush = await flushToutesFilesAvantDeconnexion({ userId: user?.id ?? null, apprenantId: apprenant?.id ?? null }); } catch { flush = { ok: false }; }
+                if (!flush.ok) {
+                  toast.error(MESSAGE_DECONNEXION_SUSPENDUE, { duration: 15000 });
+                  return;
+                }
                 try { await supabase.auth.signOut({ scope: "local" }); } catch (error) { console.warn("Déconnexion locale impossible", error); }
                 window.location.href = "/login";
               }}

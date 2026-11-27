@@ -39,3 +39,15 @@ export function tentativeNoyauConfirmee(params: {
   }
   return true;
 }
+
+/** Reprise de matière : tentative exacte terminée + même preuve stricte des réponses. Lecture en échec = refus. */
+export function retakeConfirmee(p: {
+  attemptId: string; apprenantId: string; examenId: string; matiereId: string;
+  tentative: ({ etat?: string | null } & Parameters<typeof tentativeNoyauConfirmee>[0]["tentative"]) | null;
+  lignes: Parameters<typeof tentativeNoyauConfirmee>[0]["lignes"] | null;
+  reponses: Record<string, unknown> | null | undefined;
+}): boolean {
+  if (!p.tentative || p.lignes == null || p.tentative.etat !== "terminee") return false;
+  return tentativeNoyauConfirmee({ attemptIdAffiche: p.attemptId, apprenantId: p.apprenantId, examenId: p.examenId,
+    matiereId: p.matiereId, tentative: p.tentative, lignes: p.lignes, reponses: p.reponses });
+}

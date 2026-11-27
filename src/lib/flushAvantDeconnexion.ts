@@ -15,6 +15,8 @@ import { attemptsEnFileNoyau, viderFileNoyau } from "@/features/noyau-passage/po
 import { FUTURE_QUEUE_PREFIX, flushQueue, type KV, type SaveRpc } from "@/lib/bilanFutureTransport";
 import { flushQuizResultSaves, getPendingQuizResultCountFor } from "@/lib/quizResultPersistence";
 
+export const MESSAGE_DECONNEXION_SUSPENDUE = "Déconnexion suspendue : certaines réponses ne sont pas encore confirmées par le serveur. Elles restent conservées sur cet appareil. Vérifiez votre connexion puis réessayez.";
+
 export type FileDeconnexion = "reponses" | "examens" | "bilans" | "notes";
 export interface ResultatFlushDeconnexion { ok: boolean; nonConfirmees: FileDeconnexion[] }
 

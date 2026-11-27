@@ -13,7 +13,13 @@ export function jalonsApplicables(a: any): boolean {
   return !!ref && ref >= DATE_MISE_EN_PLACE_JALONS && !!formationJalonsElearning(a?.type_apprenant, a?.formation_choisie);
 }
 
-/** Lecture seule ; erreur = null (le relevé garde alors le taux e-learning, aucun pourcentage inventé). */
+export const MESSAGE_JALONS_INDISPONIBLES = "Relevé non généré : taux de jalons indisponible (synchronisation serveur en cours ou lecture impossible). Aucun taux de repli n'est imprimé ; relancez l'export.";
+export class JalonsReleveIndisponibles extends Error { constructor(public cause?: unknown) { super(MESSAGE_JALONS_INDISPONIBLES); } }
+
+/**
+ * Lecture seule. Non applicable / gel en attente = null (taux e-learning historique).
+ * Applicable mais illisible ou non concordant = erreur : jamais de taux e-learning de repli.
+ */
 export async function chargerJalonsReleve(a: any): Promise<JalonsReleve | null> {
   if (!jalonsApplicables(a)) return null;
   try {
@@ -32,6 +38,6 @@ export async function chargerJalonsReleve(a: any): Promise<JalonsReleve | null> 
     };
   } catch (e) {
     console.error("[releve] jalons indisponibles", e);
-    return null;
+    throw new JalonsReleveIndisponibles(e);
   }
 }

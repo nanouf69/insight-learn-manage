@@ -1,5 +1,5 @@
 import { requiredElearningHours } from "@/lib/elearningRequiredHours";
-import { chargerJalonsReleve } from "@/lib/pdf/releveJalonsOption";
+import { chargerJalonsReleve, JalonsReleveIndisponibles } from "@/lib/pdf/releveJalonsOption";
 import { supabase } from "@/integrations/supabase/client";
 import JSZip from "jszip";
 import { format, startOfWeek, endOfWeek, getISOWeek, getYear, addWeeks, isBefore, parseISO } from "date-fns";
@@ -353,7 +353,10 @@ export async function buildDossierApprenantIntoZip(
         jalons: jalonsReleve,
       }) as { blob: Blob; fileName: string } | undefined;
       if (relevePdf?.blob) releveFolder.file(relevePdf.fileName, relevePdf.blob);
-    } catch (e) { console.error("[dossier] releve PDF failed", e); }
+    } catch (e) {
+      console.error("[dossier] releve PDF failed", e);
+      if (e instanceof JalonsReleveIndisponibles) releveFolder.file("RELEVE-INDISPONIBLE.txt", e.message);
+    }
   } catch (e) {
     console.error("[dossier] suivi progression failed", e);
     // Source d'heures illisible : export interrompu plutôt qu'un relevé partiel trompeur.

@@ -1,5 +1,5 @@
 import { requiredElearningHours } from "@/lib/elearningRequiredHours";
-import { chargerJalonsReleve } from "@/lib/pdf/releveJalonsOption";
+import { chargerJalonsReleve, JalonsReleveIndisponibles } from "@/lib/pdf/releveJalonsOption";
 import { useQuery } from "@tanstack/react-query";
 import { apercuTexteEmail } from "@/lib/apercuTexteEmail";
 import { supabase } from "@/integrations/supabase/client";
@@ -773,6 +773,7 @@ export async function construireDossierControleZip(apprenant: any, formateur: st
             }
           } catch (pdfErr) {
             console.error("[bulk-download] releve PDF generation failed:", pdfErr);
+            if (pdfErr instanceof JalonsReleveIndisponibles) releveFolder.file("RELEVE-INDISPONIBLE.txt", pdfErr.message);
           }
         } catch (progErr) {
           console.error("[bulk-download] suivi progression failed:", progErr);

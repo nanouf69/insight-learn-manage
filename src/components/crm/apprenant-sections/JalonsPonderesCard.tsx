@@ -9,6 +9,7 @@ import { chargerCalculJalons, estJalonPratique, formationJalonsElearning } from 
 import { EXPLICATION_JALONS, formatDureeJalon, heuresEnregistreesJalons, jalonsRestants, libelleActivitesModule, tableauAffichageJalons } from "@/lib/affichageJalons";
 import { chargerPreuvesJalons } from "@/lib/preuvesJalons";
 import { Button } from "@/components/ui/button";
+import { estErreurSynchronisation } from "@/lib/moduleProgressionReadModel";
 import { ecouterContenuModifie } from "@/lib/contenuModifie";
 import { ObjectifsJalonsSection } from "./ObjectifsJalonsSection";
 import { HEURES_VALIDEES_EVENT } from "@/lib/heuresValideesAdmin";
@@ -50,7 +51,7 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
   const etatGel = gelQuery.data ?? null;
   const gel = etatGel?.etat === "fige" ? etatGel.gel : null;
   // Poids recalculés depuis le contenu ACTUEL — seulement si aucun gel n'existe (lecture du gel réussie).
-  const { data: calculActuel, isError: calculError, isFetching } = useQuery({
+  const { data: calculActuel, isError: calculError, error: calculErreur, refetch: relireCalcul, isFetching } = useQuery({
     queryKey: [JALONS_VOLUMES_KEY, apprenantId, key, userId, gel?.id ?? "actuel"],
     enabled: !!isAdmin && !!key && gelQuery.isSuccess && etatGel?.etat !== "en_attente",
     staleTime: 0,
@@ -97,7 +98,17 @@ export function JalonsPonderesCard({ apprenantId, typeApprenant, formationChoisi
   const preuves = preuvesActuelles;
   if (etatGel?.etat === "en_attente") return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : {mentionGel(etatGel)}</div>;
   if (gelQuery.isError) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-destructive">Jalons pondérés : état du relevé figé illisible — aucun pourcentage affiché (ni figé, ni recalculé).</div>;
-  if (isError) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : données indisponibles (aucun pourcentage de repli affiché).</div>;
+  if (isError) {
+    const synchro = estErreurSynchronisation(calculErreur);
+    return (
+      <div role="alert" className="mt-2 flex items-center justify-between gap-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">
+        <span>{synchro
+          ? "Jalons pondérés : progression en cours de synchronisation avec le serveur — aucun pourcentage affiché tant que l'état serveur ne concorde pas."
+          : "Jalons pondérés : données indisponibles (aucun pourcentage de repli affiché)."}</span>
+        <Button variant="outline" size="sm" disabled={isFetching} onClick={() => void relireCalcul()}>Réessayer</Button>
+      </div>
+    );
+  }
   // Pendant un recalcul, aucun ancien pourcentage n'est affiché.
   if (!calcul || isFetching) return <div className="mt-2 rounded-md border bg-card px-3 py-2 text-xs text-muted-foreground">Jalons pondérés : calcul en cours…</div>;
   const r = calcul.resultat;

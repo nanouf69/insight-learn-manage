@@ -25,6 +25,9 @@ export function avecPreuvesQuizConfirmees<T extends CompletionEvidenceRow>(
 
 export const MESSAGE_SYNCHRONISATION_PROGRESSION = 'Progression en cours de synchronisation — veuillez réessayer.';
 
+export const estErreurSynchronisation = (e: unknown) =>
+  (e as { message?: string } | null)?.message === MESSAGE_SYNCHRONISATION_PROGRESSION;
+
 /** Preuve serveur stricte commune (cartes, compteurs et jalons) : absent ou divergent = synchronisation. */
 export function exigerEtatServeurConcordant<T extends CompletionEvidenceRow>(
   rows: readonly T[], states: ReadonlyMap<number, EtatCompletionServeur>,

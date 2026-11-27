@@ -25,7 +25,7 @@ import { confirmationPresentielRequise } from "@/lib/confirmationPresentielEB";
 import ExamensBlancsEditor from "./ExamensBlancsEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { answersAreEqual } from "@/lib/answerPersistence";
-import { tentativeNoyauConfirmee } from "@/lib/confirmationNoyauEB";
+import { tentativeNoyauConfirmee, retakeConfirmee } from "@/lib/confirmationNoyauEB";
 import { buildExamMatiereExerciceId } from "@/lib/quizAttempts";
 
 import { enqueueQuizResultSave } from "@/lib/quizResultPersistence";
@@ -1417,10 +1417,22 @@ export default function ExamensBlancsPage({
       }
 
       if (apprenantId && subjectRetake?.attempt_id) {
-        const { data: confirmed, error } = await supabase.from('exam_attempts_v2').select('attempt_id, etat')
-          .eq('attempt_id', subjectRetake.attempt_id).eq('apprenant_id', apprenantId).single();
+        // Reprise de matière : même preuve stricte que le passage normal — tentative
+        // exacte terminée ET ensemble exact question/valeur confirmé par le serveur.
+        const [tRes, aRes] = await Promise.all([
+          supabase.from('exam_attempts_v2').select('attempt_id, apprenant_id, exam_id, snapshot, etat')
+            .eq('attempt_id', subjectRetake.attempt_id).eq('apprenant_id', apprenantId).maybeSingle(),
+          supabase.from('answer_state').select('question_id, valeur').eq('attempt_id', subjectRetake.attempt_id),
+        ]);
         tentativeNoyauId = subjectRetake.attempt_id;
-        confirmeParNoyau = !error && confirmed?.etat === 'terminee';
+        confirmeParNoyau = retakeConfirmee({
+          attemptId: subjectRetake.attempt_id, apprenantId, examenId: examenChoisi.id, matiereId: matiere.id,
+          tentative: tRes.error ? null : (tRes.data as any), lignes: aRes.error ? null : (aRes.data as any), reponses: reponses as any,
+        });
+        if (!confirmeParNoyau) {
+          toast.error("Vos réponses de reprise sont encore en attente de confirmation. Elles restent conservées ; réessayez dans un instant.", { duration: 15000 });
+          return;
+        }
       }
 
       if (apprenantId && userId && !confirmeParNoyau) {
