@@ -491,6 +491,143 @@ class Garde0308(unittest.TestCase):
         sql("DELETE FROM module_regles_validation")
 
 
+class RemiseVerifiee(unittest.TestCase):
+    """Chemin réel submit_quiz_attempt (copié du catalogue) → save_module_completion.
+    Sans candidat : documente la faille 0308 (remise vide acceptée). Avec le candidat
+    docs/sql-revue/2026-11-27-remise-quiz-verifiee.sql : couverture serveur exacte exigée."""
+    ED = '{"exercices":[{"id":1,"titre":"Quiz Un","questions":[{"id":11},{"id":12}]},{"id":2,"titre":"Quiz Deux","questions":[{"id":21},{"id":22,"actif":false}]}]}'
+
+    def setUp(self):
+        if sql("SELECT count(*) FROM pg_proc WHERE proname='submit_quiz_attempt'") == '0':
+            self.skipTest('submit_quiz_attempt réel non chargé (catalogue indisponible)')
+        if sql("SELECT count(*) FROM pg_proc WHERE proname='garde_ecriture_directe_releve_module'") == '0':
+            self.skipTest('0308 absente')
+        Apres0197.setUp(self)
+        sql("""ALTER TABLE reponses_apprenants ADD COLUMN IF NOT EXISTS id uuid DEFAULT gen_random_uuid(),
+               ADD COLUMN IF NOT EXISTS user_id uuid, ADD COLUMN IF NOT EXISTS exercice_type text,
+               ADD COLUMN IF NOT EXISTS score numeric, ADD COLUMN IF NOT EXISTS completed boolean,
+               ADD COLUMN IF NOT EXISTS updated_at timestamptz, ADD COLUMN IF NOT EXISTS bonnes_reponses int,
+               ADD COLUMN IF NOT EXISTS total_questions int;
+               CREATE UNIQUE INDEX IF NOT EXISTS ra_unique ON reponses_apprenants(apprenant_id, exercice_id);
+               DELETE FROM reponses_apprenants; DELETE FROM module_editor_state; DELETE FROM module_regles_validation;""")
+        sql(f"INSERT INTO module_editor_state VALUES (2, '{self.ED}')")
+        self.cand = sql("SELECT count(*) FROM pg_proc WHERE proname='quiz_remise_verifiee'") != '0'
+        if self.cand:
+            sql("ALTER TABLE quiz_remises_anterieures_figees DISABLE TRIGGER trg_quiz_remises_figees_append_only; DELETE FROM quiz_remises_anterieures_figees; ALTER TABLE quiz_remises_anterieures_figees ENABLE TRIGGER trg_quiz_remises_figees_append_only")
+
+    def soumettre(self, ex, rep, uid=U, aid=A, score=20, bonnes=99, total=1):
+        return learner(uid, f"SELECT status FROM public.submit_quiz_attempt('{aid}','module_2_exo_{ex}','quiz','{json.dumps(rep, ensure_ascii=False)}'::jsonb,{score},{bonnes},{total})")
+
+    def valider(self, uid=U, aid=A):
+        return smc_for(aid, uid, 2, True, 100, "'[]'::jsonb")
+
+    def figer(self):
+        sql("""INSERT INTO quiz_remises_anterieures_figees(apprenant_id, exercice_id, empreinte_reponses, submitted_at)
+               SELECT apprenant_id, exercice_id, md5(reponses::text), submitted_at FROM reponses_apprenants
+                WHERE exercice_id ~ '^module_\\d+_exo_\\d+$' AND status='submitted' AND submitted_at IS NOT NULL
+                  AND public.reponse_enregistree(reponses) ON CONFLICT DO NOTHING""")
+
+    def need(self):
+        if not self.cand: self.skipTest('candidat remise vérifiée non chargé')
+
+    def test_00_faille_0308_remise_vide_acceptee_sans_candidat(self):
+        if self.cand: self.skipTest('candidat chargé')
+        # Remise totalement vide : refusée par l'ancien contrôle « au moins une réponse dans le module ».
+        sql(self.soumettre(1, {}, total=2)); sql(self.soumettre(2, {}, total=1))
+        self.assertIn('aucune réponse enregistrée', err(self.valider()) or '')
+        # Faille constatée sur la règle réelle 0308 : une seule réponse sur trois questions suffit.
+        self.assertEqual(sql(self.soumettre(1, {"1-11": "A"}, total=2)), 'submitted')
+        self.assertTrue(sql(self.valider()).startswith('completed|100|'))
+
+    def test_01_remise_vide_avec_score_total_navigateur_refusee(self):
+        self.need()
+        sql(self.soumettre(1, {}, score=20, bonnes=2, total=2)); sql(self.soumettre(2, {}, score=20, bonnes=1, total=1))
+        e = err(self.valider()) or ''
+        self.assertIn('non vérifiable par le serveur', e); self.assertIn('« Quiz Un »', e); self.assertIn('« Quiz Deux »', e)
+        self.assertEqual(row(2), '')
+
+    def test_02_reponse_vide_ou_question_omise_refusee(self):
+        self.need()
+        sql(self.soumettre(1, {"1-11": "A", "1-12": ""})); sql(self.soumettre(2, {"2-21": "B"}))
+        self.assertIn('« Quiz Un »', err(self.valider()) or '')
+        sql(f"DELETE FROM reponses_apprenants WHERE exercice_id='module_2_exo_1'")
+        sql(self.soumettre(1, {"1-11": "A"}))
+        self.assertIn('« Quiz Un »', err(self.valider()) or '')
+
+    def test_03_couverture_exacte_valide_score_et_total_ignores(self):
+        self.need()
+        sql(self.soumettre(1, {"1-11": "A", "1-12": ["B", "C"]}, score=0, bonnes=0, total=0))
+        sql(self.soumettre(2, {"2-21": "réponse libre"}, score=0, bonnes=0, total=999))
+        self.assertTrue(sql(self.valider()).startswith('completed|100|'))
+
+    def test_04_cles_d_un_autre_quiz_ou_liste_alteree_ne_couvrent_pas(self):
+        self.need()
+        sql(self.soumettre(1, {"2-21": "A", "1-99": "A", "11": "A", "12": "B"})); sql(self.soumettre(2, {"2-21": "B"}))
+        self.assertIn('« Quiz Un »', err(self.valider()) or '')
+
+    def test_05_mauvais_compte_brouillon_revision_ne_prouvent_pas(self):
+        self.need()
+        self.assertIn('Not allowed', err(self.soumettre(1, {"1-11": "A", "1-12": "B"}, uid=U2)) or '')
+        sql(self.soumettre(1, {"1-11": "A", "1-12": "B"}, uid=U2, aid=A2)); sql(self.soumettre(2, {"2-21": "B"}, uid=U2, aid=A2))
+        sql(f"""INSERT INTO reponses_apprenants(apprenant_id,exercice_id,reponses,status,submitted_at) VALUES
+              ('{A}','module_2_exo_1','{{"1-11":"A","1-12":"B"}}','in_progress',NULL),
+              ('{A}','module_2_revision_exo_2','{{"2-21":"B"}}','submitted',now())""")
+        e = err(self.valider()) or ''
+        self.assertIn('quiz non remis au serveur', e); self.assertIn('« Quiz Un »', e); self.assertIn('« Quiz Deux »', e)
+
+    def test_06_remise_anterieure_figee_acceptee_tant_qu_inchangee(self):
+        self.need()
+        # Bilan projeté : clés affichées différentes du contenu serveur, remise réelle existante.
+        sql(f"""INSERT INTO reponses_apprenants(apprenant_id,exercice_id,reponses,status,submitted_at) VALUES
+              ('{A}','module_2_exo_1','{{"1-501":"A","1-502":"C"}}','submitted','2026-11-20T10:00:00Z'),
+              ('{A}','module_2_exo_2','{{"2-21":"B"}}','submitted','2026-11-20T10:05:00Z')""")
+        self.assertIn('« Quiz Un »', err(self.valider()) or '')
+        self.figer()
+        self.assertTrue(sql(self.valider()).startswith('completed|100|'))
+
+    def test_07_remise_figee_reecrite_ensuite_n_est_plus_acceptee(self):
+        self.need()
+        sql(f"""INSERT INTO reponses_apprenants(apprenant_id,exercice_id,reponses,status,submitted_at) VALUES
+              ('{A}','module_2_exo_1','{{"1-501":"A"}}','submitted','2026-11-20T10:00:00Z')""")
+        self.figer()
+        sql(self.soumettre(1, {"1-501": "Z"}))  # même date conservée par COALESCE, réponses différentes
+        sql(self.soumettre(2, {"2-21": "B"}))
+        self.assertIn('« Quiz Un »', err(self.valider()) or '')
+
+    def test_08_remise_vide_ancienne_jamais_figee(self):
+        self.need()
+        sql(f"""INSERT INTO reponses_apprenants(apprenant_id,exercice_id,reponses,status,submitted_at) VALUES
+              ('{A}','module_2_exo_1','{{}}','submitted','2026-11-20T10:00:00Z'),
+              ('{A}','module_2_exo_2','{{"2-21":""}}','submitted','2026-11-20T10:00:00Z')""")
+        self.figer()
+        self.assertEqual(sql("SELECT count(*) FROM quiz_remises_anterieures_figees"), '0')
+        self.assertIn('« Quiz Un »', err(self.valider()) or '')
+
+    def test_09_registre_append_only_et_inaccessible_aux_eleves(self):
+        self.need()
+        sql(f"""INSERT INTO reponses_apprenants(apprenant_id,exercice_id,reponses,status,submitted_at) VALUES
+              ('{A}','module_2_exo_1','{{"1-501":"A"}}','submitted','2026-11-20T10:00:00Z')""")
+        self.figer()
+        self.assertIn('ajout seul', err("UPDATE quiz_remises_anterieures_figees SET empreinte_reponses='x'") or '')
+        self.assertIn('ajout seul', err("DELETE FROM quiz_remises_anterieures_figees") or '')
+        self.assertIn('permission denied', err(learner(U, "SELECT * FROM quiz_remises_anterieures_figees")) or '')
+        self.assertIn('permission denied', err(learner(U, f"INSERT INTO quiz_remises_anterieures_figees VALUES ('{A}','module_2_exo_2','x',now())")) or '')
+        self.assertIn('permission denied', err(learner(U, f"SELECT public.quiz_remise_verifiee('{A}',2,'1')")) or '')
+
+    def test_10_reponses_et_scores_existants_jamais_modifies(self):
+        self.need()
+        sql(self.soumettre(1, {}, score=17, bonnes=3, total=5)); sql(self.soumettre(2, {"2-21": "B"}, score=4, bonnes=1, total=1))
+        avant = sql("SELECT md5(string_agg(exercice_id||reponses::text||coalesce(score::text,'')||status||submitted_at::text, ',' ORDER BY exercice_id)) FROM reponses_apprenants")
+        err(self.valider())
+        self.assertEqual(sql("SELECT md5(string_agg(exercice_id||reponses::text||coalesce(score::text,'')||status||submitted_at::text, ',' ORDER BY exercice_id)) FROM reponses_apprenants"), avant)
+
+    def test_11_facultatifs_et_bilans_examen_hors_regle(self):
+        self.need()
+        sql(f"INSERT INTO module_editor_state VALUES (5, '{self.ED}')")
+        sql(f"INSERT INTO reponses_apprenants(apprenant_id,exercice_id,reponses,status,submitted_at) VALUES ('{A}','module_5_exo_1','{{\"1-11\":\"A\"}}','submitted',now())")
+        self.assertTrue(sql(smc(U, 5, True, 100, "'[]'::jsonb")).startswith('completed|100|'))
+
+
 def main():
     if '--capture' in sys.argv:
         print(capture_live()); return
@@ -517,10 +654,13 @@ def main():
             for fn in RPCS:
                 sql(live(f"select pg_get_functiondef(oid) from pg_proc where proname='{fn}' and pronamespace='public'::regnamespace") + ';')
             print('[t] RPC réelles actuelles rechargées :', ', '.join(RPCS))
+            sql(live("select pg_get_functiondef('public.submit_quiz_attempt(uuid,text,text,jsonb,numeric,integer,integer)'::regprocedure)") + ';')
+            sql("GRANT EXECUTE ON FUNCTION public.submit_quiz_attempt(uuid,text,text,jsonb,numeric,integer,integer) TO authenticated; GRANT INSERT, UPDATE ON public.reponses_apprenants TO authenticated")
+            print('[t] submit_quiz_attempt réel chargé')
         for extra in [x for x in os.environ.get('MODULE_COMPLETION_EXTRA', '').split(':') if x]:
             sql(pathlib.Path(extra).read_text()); print('[t] SQL supplémentaire appliqué :', extra)
         print('schéma source :', 'catalogue réel actuel' if have_live else 'instantané avant 0197', '| SQL appliqué :', mig)
-        suite = unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(c) for c in (Avant0197, Apres0197, Garde0308)])
+        suite = unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(c) for c in (Avant0197, Apres0197, Garde0308, RemiseVerifiee)])
         if not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful(): raise SystemExit(1)
     finally:
         subprocess.run(AS_USER + ['pg_ctl', '-D', DATA, '-m', 'immediate', 'stop'], stdout=subprocess.DEVNULL)
