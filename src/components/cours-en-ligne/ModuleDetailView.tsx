@@ -67,7 +67,7 @@ import {
 } from "@/lib/quizAttempts";
 import { useQuestionTimeTracking } from "@/hooks/useQuestionTimeTracking";
 import { reconcileHistoricalAnswers } from "@/lib/historicalAnswerReconciliation";
-import { answersAreEqual, enqueueAnswerSave, flushAnswerSavesAndWait, flushAnswerSavesOnUnload, getPendingAnswers, mergeSavedAndPendingAnswers, primeKnownWriteSeq } from "@/lib/answerPersistence";
+import { answersAreEqual, enqueueAnswerSave, flushAnswerSavesAndWait, flushAnswerSavesOnUnload, getConfirmedWriteSeq, getPendingAnswers, mergeSavedAndPendingAnswers, primeKnownWriteSeq } from "@/lib/answerPersistence";
 import { createLiveRefresher, moduleVersionToken, questionBankToken, SONDE_VERSION_ADMIN_MS, SONDE_VERSION_ELEVE_MS, type LiveRefresher } from "@/lib/moduleLiveRefresh";
 import { codeErreurSur, relireAvecReprisesBornees } from "@/lib/relectureBornee";
 import { AnswerSaveIndicator } from "./AnswerSaveIndicator";
@@ -6983,6 +6983,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       };
     })();
     const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string | string[]>>({});
+    const selectedAnswersRef = useRef(selectedAnswers);
+    selectedAnswersRef.current = selectedAnswers;
     const preserveScrollRef = useRef<{ top: number; left: number; anchorId?: string; anchorTop?: number; capturedAt: number } | null>(null);
     const restoreScrollFrameRef = useRef<number | null>(null);
 
@@ -7798,6 +7800,21 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       const revisionIds = [...new Set([...soumis, ...activeExercicesRef.current.map(e => Number(e.id))])];
       if (revisionIds.length === 0) return;
       const revisions = await fetchQuizAttempts(apprenantId, revisionIds.map((id) => buildRevisionExerciceId(module.id, id)));
+      // A frozen initial copy is proof only after an account/module-scoped server
+      // read, never from a revision row or a restored browser snapshot.
+      const archivesParExo = new Map<number, PassageFige>();
+      const archivesIds = revisions.map(row => exoIdDepuisRevision(row.exercice_id))
+        .filter((id): id is number => id != null && !soumis.includes(id));
+      if (archivesIds.length > 0) {
+        const { data, error } = await (supabase as any).from("bilan_passages_figes")
+          .select("exercice_id, reponses, cle_figee, score_bonnes, nb_repondues, nb_questions, fige_at")
+          .eq("apprenant_id", apprenantId).eq("module_id", module.id)
+          .in("exercice_id", archivesIds.map(id => buildExerciceId(module.id, id)));
+        if (!error && Array.isArray(data)) data.forEach((p: PassageFige) => {
+          const id = exoIdDepuisArchive(p.exercice_id);
+          if (id != null && archivesIds.includes(id)) archivesParExo.set(id, p);
+        });
+      }
       revisions.forEach((row) => {
         const exoId = exoIdDepuisRevision(row.exercice_id);
         if (exoId == null) return;
@@ -7809,10 +7826,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         // Quiz initial remis (preuve serveur) : une ancienne copie miroir n'est
         // pas une reprise. Seule une modification sur une question initialement
         // fausse prouve qu'une correction a réellement été commencée.
-        if (soumis.includes(exoId)) {
-          const initiales = initialesParExo.get(exoId) ?? {};
+        const archive = archivesParExo.get(exoId);
+        if (soumis.includes(exoId) || archive) {
+          const initiales = initialesParExo.get(exoId) ?? archive?.reponses ?? {};
           const exoR = activeExercicesRef.current.find((e: any) => e.id === exoId);
           const faussesInitiales = ((exoR?.questions ?? []) as any[])
+            .map(q => archive ? questionAvecCleFigee(q, exoId, archive) : q)
             .filter((q) => Array.isArray(q?.choix) && q.choix.length > 0)
             .map((q) => ({ id: q.id as number | string, cle: `${exoId}-${q.id}`, question: q }))
             .filter(({ cle, question }) => !isAnswerCorrect(initiales[cle], question));
@@ -7827,7 +7846,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             return;
           }
 
-          revisionActiveRef.current.add(exoId);
+          // A stored draft is offered, not opened: the archive/result stays
+          // displayed until the learner explicitly chooses Reprendre.
           setRevisionsTerminees((prev) => ({ ...prev, [exoId]: rep }));
           // La reprise porte sur toutes les fausses encore inchangées ou vides,
           // pas seulement sur les cases vides : une nouvelle réponse encore
@@ -7844,22 +7864,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           });
           return;
         }
-        revisionActiveRef.current.add(exoId);
-        setSelectedAnswers((prev) => {
-          const next = { ...prev };
-          Object.keys(next).forEach((k) => { if (k.startsWith(`${exoId}-`)) delete next[k]; });
-          return { ...next, ...rep };
-        });
-        const exo = activeExercicesRef.current.find((e: any) => e.id === exoId);
-        const manquantes = ((exo?.questions ?? []) as any[])
-          .filter((q) => Array.isArray(q?.choix) && q.choix.length > 0)
-          .map((q) => q.id)
-          .filter((qid) => { const v = rep[`${exoId}-${qid}`]; return Array.isArray(v) ? v.length === 0 : !v; });
-        if (manquantes.length > 0) {
-          setShowResultsFor((prev) => { const n = new Set(prev); n.delete(exoId); return n; });
-          revisionOuverteRef.current.add(exoId);
-          setRevisionQuestionsFor((prev) => ({ ...prev, [exoId]: new Set(manquantes) }));
-        }
+        // No initial server proof: never infer a submission or open its revision.
       });
     };
 
@@ -8102,8 +8107,8 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                   setSelectedAnswers((prev) => ({ ...prev, ...reconciledRedo }));
                 }
                 applySubmittedAttempts(attempts);
-                await appliquerRevisions(attempts);
               }
+              await appliquerRevisions(attempts);
             }
 
           } else {
@@ -9835,9 +9840,10 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                           // d'envoi existante garde les réponses et continue seule.
                           let termine = false;
                           let etapeEnCours = "envoi";
-                          const echec = (etape: string) => {
+                          const comptePourValidation = userIdForSaveRef.current;
+                          const echec = (etape: string, definitif = true) => {
                             if (termine) return;
-                            termine = true;
+                            if (definitif) termine = true;
                             journaliserEchecValidationQuiz({ apprenantId, moduleId: module.id, exerciceId, etape });
                             setValidationFailedFor((prev) => new Set(prev).add(exo.id));
                             // Connexion perdue sur la tablette ? (vérification bornée à 8 s, sans écriture)
@@ -9895,6 +9901,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               }
                             }
                             etapeEnCours = "relecture";
+                            const sequenceConfirmee = getConfirmedWriteSeq(apprenantId, exerciceId);
                             // Le serveur a déjà accusé réception : une erreur PASSAGÈRE de
                             // relecture (pool saturé, délai SQL, réseau) est relue au plus
                             // 3 fois au lieu d'annoncer un échec. Une différence de contenu
@@ -9903,7 +9910,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             const { data: confirmedRow, error: confirmedError } = await relireAvecReprisesBornees(
                               () => supabase
                                 .from("reponses_apprenants" as any)
-                                .select("reponses")
+                                .select("apprenant_id, exercice_id, reponses, write_seq")
                                 .eq("apprenant_id", apprenantId)
                                 .eq("exercice_id", exerciceRelu)
                                 .maybeSingle(),
@@ -9911,11 +9918,20 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             );
                             if (termine) return false;
                             if (confirmedError) { echec(`relecture_erreur_${codeErreurSur(confirmedError)}`); return false; }
+                            if (!confirmedRow || (confirmedRow as any).apprenant_id !== apprenantId ||
+                              (confirmedRow as any).exercice_id !== exerciceRelu ||
+                              sequenceConfirmee <= 0 || (confirmedRow as any).write_seq !== sequenceConfirmee ||
+                              userIdForSaveRef.current !== comptePourValidation) {
+                              echec("relecture_identite_version"); return false;
+                            }
                             const stored = ((confirmedRow as any)?.reponses ?? {}) as Record<string, any>;
                             const aComparer = enRevision
                               ? Object.fromEntries(Object.keys(exoAnswers).map((k) => [k, stored[k]]))
                               : stored;
                             if (!answersAreEqual(aComparer, exoAnswers)) { echec(confirmedRow ? "relecture_difference" : "relecture_ligne_absente"); return false; }
+                            const brouillonActuel = Object.fromEntries(Object.entries(selectedAnswersRef.current)
+                              .filter(([cle]) => cle.startsWith(`${exo.id}-`)));
+                            if (!answersAreEqual(brouillonActuel, exoAnswers)) { echec("brouillon_modifie"); return false; }
                             etapeEnCours = "validation_serveur";
                             if (!enRevision) {
                               const submitted = await submitQuizAttempt({
@@ -9938,7 +9954,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             const delai = new Promise<boolean>((resolve) => {
                               timer = setTimeout(() => {
                                 delaiDepasse = true;
-                                echec(`delai_depasse_20s_pendant_${etapeEnCours}`);
+                                // Screen deadline is not a definitive refusal: the
+                                // same in-flight sequence may still prove its exact draft.
+                                echec(`delai_depasse_20s_pendant_${etapeEnCours}`, false);
                                 resolve(false);
                               }, VALIDATION_QUIZ_DELAI_MS);
                             });
@@ -9948,11 +9966,16 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             // Aucune écriture supplémentaire : seulement l'état écran.
                             void seq.then((okTardif) => {
                               if (!okTardif || !delaiDepasse) return;
+                              termine = true;
                               setValidationFailedFor((prev) => { const n = new Set(prev); n.delete(exo.id); return n; });
                               setValidationSessionPerdueFor((prev) => { const n = new Set(prev); n.delete(exo.id); return n; });
                               afficherResultatValide();
                               toast.success("✅ Quiz validé (confirmation serveur reçue).");
-                            }).catch(() => {});
+                            }).catch(() => { echec("exception"); }).finally(() => {
+                              if (!delaiDepasse) return;
+                              setValidatingExo((cur) => (cur === exo.id ? null : cur));
+                              validationEnCoursRef.current.delete(exo.id);
+                            });
                             const ok = await Promise.race([seq, delai]);
                             if (!ok || termine) return;
                             termine = true;
@@ -9961,8 +9984,12 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                             return;
                           } finally {
                             if (timer) clearTimeout(timer);
-                            setValidatingExo((cur) => (cur === exo.id ? null : cur));
-                            validationEnCoursRef.current.delete(exo.id);
+                            // Do not start a second submission while the timed-out
+                            // sequence is still awaiting its server confirmation.
+                            if (!delaiDepasse || termine) {
+                              setValidatingExo((cur) => (cur === exo.id ? null : cur));
+                              validationEnCoursRef.current.delete(exo.id);
+                            }
                           }
                         }
 

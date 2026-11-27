@@ -35,4 +35,56 @@ describe("isolated Bilan transport", () => {
     const res = await flushQueue(kv, r, async () => ({ error: { message: "network" } }));
     expect(res.pending).toBe(1);
   });
+  it("confirmation de 104 préserve 114 ajoutée pendant l'envoi et sa reprise après reload", async () => {
+    const kv = mem();
+    enqueueDraft(kv, r, { questionId: 104, revision: 1, answer: ["B"], token: "t104" });
+    let ack: ((value: { error: null }) => void) | undefined;
+    const sent: number[] = [];
+    const flushing = flushQueue(kv, r, args => {
+      sent.push(args.p_question);
+      return new Promise(resolve => { ack = resolve; });
+    });
+    enqueueDraft(kv, r, { questionId: 114, revision: 1, answer: ["C"], token: "t114" });
+    ack?.({ error: null });
+    expect((await flushing).pending).toBe(1);
+    const reloaded = mem();
+    reloaded.setItem(futureQueueKey(r), kv.getItem(futureQueueKey(r)) ?? "[]");
+    expect(readQueue(reloaded, r)).toMatchObject([{ questionId: 114, answer: ["C"], token: "t114" }]);
+    await flushQueue(reloaded, r, async args => { sent.push(args.p_question); return { error: null }; });
+    expect(sent).toEqual([104, 114]);
+    expect(readQueue(reloaded, r)).toEqual([]);
+  });
+  it.each([null, { code: "P0493", message: "refus" }, { message: "réseau" }])(
+    "un accusé/refus de l'ancienne version ne supprime pas la nouvelle réponse (%j)", async error => {
+      const kv = mem();
+      enqueueDraft(kv, r, { questionId: 104, revision: 1, answer: ["B"], token: "old" });
+      await flushQueue(kv, r, async () => {
+        enqueueDraft(kv, r, { questionId: 104, revision: 2, answer: ["D"], token: "new" });
+        return { error };
+      });
+      expect(readQueue(kv, r)).toMatchObject([{ questionId: 104, revision: 2, answer: ["D"], token: "new" }]);
+    },
+  );
+  it("même numéro de révision et token remplacé ne valent pas confirmation de la nouvelle valeur", async () => {
+    const kv = mem();
+    enqueueDraft(kv, r, { questionId: 104, revision: 1, answer: ["B"], token: "old" });
+    await flushQueue(kv, r, async () => {
+      enqueueDraft(kv, r, { questionId: 104, revision: 1, answer: ["D"], token: "new" });
+      return { error: null };
+    });
+    expect(readQueue(kv, r)).toMatchObject([{ questionId: 104, answer: ["D"], token: "new" }]);
+  });
+  it("ne renvoie pas une ancienne réponse remplacée pendant l'envoi de la précédente", async () => {
+    const kv = mem();
+    enqueueDraft(kv, r, { questionId: 104, revision: 1, answer: ["B"], token: "104" });
+    enqueueDraft(kv, r, { questionId: 114, revision: 1, answer: ["C"], token: "old114" });
+    const sent: number[] = [];
+    await flushQueue(kv, r, async args => {
+      sent.push(args.p_question);
+      enqueueDraft(kv, r, { questionId: 114, revision: 2, answer: ["D"], token: "new114" });
+      return { error: null };
+    });
+    expect(sent).toEqual([104]);
+    expect(readQueue(kv, r)).toMatchObject([{ questionId: 114, revision: 2, answer: ["D"], token: "new114" }]);
+  });
 });

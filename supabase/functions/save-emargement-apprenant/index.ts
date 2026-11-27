@@ -145,30 +145,51 @@ Deno.serve(async (req) => {
       confirme_identite: Boolean(body?.confirme_identite),
     };
 
-    const { data: existingRows, error: existingError } = await supabase
+    const lireFeuilleVisible = () => supabase
       .from("emargements_fc")
-      .select("id, signature_data_url, absent, signed_at")
+      .select("id, signature_data_url, absent, signed_at, masque")
       .eq("apprenant_id", apprenantId)
       .eq("date_emargement", dateEmargement)
       .eq("demi_journee", demi)
+      .eq("masque", false)
       .limit(1);
+    const { data: existingRows, error: existingError } = await lireFeuilleVisible();
 
     if (existingError) return json({ error: existingError.message, code: existingError.code }, 400);
 
     const existing = existingRows?.[0];
     const hasFilledSignature = Boolean(String(existing?.signature_data_url || "").trim()) || existing?.absent === true;
-    if (existing && hasFilledSignature) return json({ success: true, duplicate: true });
+    if (existing?.masque === false && hasFilledSignature) return json({ success: true, duplicate: true });
+
+    if (!existing) {
+      // Occupancy check only, never a signature proof: the unique slot includes
+      // masked history. Do not unmask, overwrite it, or insert a conflicting row.
+      const { data: maskedRows, error: maskedError } = await supabase.from("emargements_fc")
+        .select("id").eq("apprenant_id", apprenantId).eq("date_emargement", dateEmargement)
+        .eq("demi_journee", demi).eq("masque", true).limit(1);
+      if (maskedError) return json({ error: "Vérification de la feuille impossible", code: maskedError.code }, 503);
+      if (maskedRows?.length) return json({ success: false, code: "feuille_masquee",
+        error: "Une feuille masquée existe pour ce créneau. Aucun nouvel émargement n'a été enregistré. Contactez le centre." }, 409);
+    }
 
     const rowToSave = existing
       ? { ...row, signed_at: new Date().toISOString() }
       : row;
 
     const { error } = existing
-      ? await supabase.from("emargements_fc").update(rowToSave).eq("id", existing.id)
+      ? await supabase.from("emargements_fc").update(rowToSave).eq("id", existing.id).eq("masque", false)
       : await supabase.from("emargements_fc").insert(rowToSave);
 
-    if (error && error.code === "23505") return json({ success: true, duplicate: true });
-    if (error) return json({ error: error.message, code: error.code }, 400);
+    if (error && error.code !== "23505") return json({ error: error.message, code: error.code }, 400);
+
+    // A concurrent insert or a zero-row update is not success by itself.
+    const { data: confirmedRows, error: confirmedError } = await lireFeuilleVisible();
+    const confirmed = confirmedRows?.[0];
+    const confirmedFilled = Boolean(String(confirmed?.signature_data_url || "").trim()) || confirmed?.absent === true;
+    if (confirmedError) return json({ success: false, error: "Émargement non confirmé : vérification impossible", code: "relecture_emargement" }, 503);
+    if (confirmed?.masque !== false || !confirmedFilled) return json({ success: false,
+      error: "Aucune feuille visible signée ne confirme cet émargement. Contactez le centre.", code: "emargement_non_confirme" }, 409);
+    if (error?.code === "23505") return json({ success: true, duplicate: true });
 
     return json({ success: true });
   } catch (e) {

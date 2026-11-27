@@ -1,4 +1,10 @@
 # Roadmap — chantiers ouverts (13/11/2026)
+## Quatre défauts de l'audit — 27/11
+- [x] Préserver les ajouts pendant un flush Bilan et leur reprise après reload ; ancienne réponse remplacée non renvoyée.
+- [x] Confirmation tardive du quiz : même compte/brouillon/version/réponses, une seule remise ; saisie plus récente protégée.
+- [x] Révision archivée proposée uniquement sur choix explicite, résultat initial conservé.
+- [x] Feuille masquée refusée explicitement sans mutation ; conflit relu, aucun faux succès lié au masquage.
+- [x] 32 régressions PASS, PC/mobile fictifs PASS, Deno check et build automatique OK ; 312 fichiers exécutés, quatre assertions textuelles de l'audit toujours en échec, découpage d'un cinquième test ajusté puis 51/51 ciblés PASS ; diffs inspectés, aucun SQL, donnée réelle ni déploiement.
 ## Feuille pratique sans après-midi — 26/11 17:13
 - [x] Suppression du créneau après-midi inventé dans le résumé et les nouveaux PDF du planning quand le champ est vide ; signatures historiques et données enregistrées conservées.
 - [x] Revue des autres lecteurs : calendrier, feuille session pratique, individuel/lot, ZIP et feuille élève corrigés ; PC/mobile et PDF fictif vérifiés, 48 tests ciblés. Inventaire dans docs/emargement-matin-seul-2026-11-26.md ; aucun envoi/publication/écriture réelle.

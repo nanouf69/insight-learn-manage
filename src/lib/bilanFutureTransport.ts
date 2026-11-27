@@ -45,17 +45,23 @@ export type SaveRpc = (args: { p_receipt: string; p_version: string; p_question:
 export async function flushQueue(kv: KV, r: FutureReceipt, save: SaveRpc) {
   const key = futureQueueKey(r);
   const rejected: { draft: FutureDraft; code: string }[] = [];
-  let remaining = readQueue(kv, r);
-  for (const d of [...remaining].sort((a, b) => a.revision - b.revision)) {
+  const sentSnapshot = readQueue(kv, r);
+  for (const d of [...sentSnapshot].sort((a, b) => a.revision - b.revision)) {
+    const sameOperation = (x: FutureDraft) => x.questionId === d.questionId &&
+      x.revision === d.revision && x.token === d.token &&
+      JSON.stringify(x.answer) === JSON.stringify(d.answer);
+    // A later snapshot item may have been replaced while an earlier one was sent.
+    if (!readQueue(kv, r).some(sameOperation)) continue;
     const { error } = await save({ p_receipt: d.receiptId, p_version: d.versionId, p_question: d.questionId, p_revision: d.revision, p_answer: d.answer, p_token: d.token });
-    if (!error) { remaining = remaining.filter(x => x !== d); continue; }
-    if (["P0491", "P0492", "P0493", "42501", "22023"].includes(error.code ?? "")) {
-      rejected.push({ draft: d, code: error.code! });
-      remaining = remaining.filter(x => x !== d);
-      continue;
+    const code = error?.code ?? "";
+    if (error && !["P0491", "P0492", "P0493", "42501", "22023"].includes(code)) {
+      break; // transient: leave the current queue untouched, retry later
     }
-    break; // transient: keep order, retry later
+    if (error) rejected.push({ draft: d, code });
+    // No await between rereading and updating: acknowledge only the exact sent
+    // operation, never a newer answer/revision added while save was in flight.
+    const current = readQueue(kv, r).filter(x => !sameOperation(x));
+    if (current.length) kv.setItem(key, JSON.stringify(current)); else kv.removeItem(key);
   }
-  if (remaining.length) kv.setItem(key, JSON.stringify(remaining)); else kv.removeItem(key);
-  return { pending: remaining.length, rejected };
+  return { pending: readQueue(kv, r).length, rejected };
 }

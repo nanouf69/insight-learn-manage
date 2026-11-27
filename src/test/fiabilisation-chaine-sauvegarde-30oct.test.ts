@@ -178,10 +178,15 @@ describe("Relecture de confirmation : erreur passagère ≠ échec, différence 
   it("l'écran valide uniquement après relecture identique ; différence = échec explicite", () => {
     const src = readFileSync("src/components/cours-en-ligne/ModuleDetailView.tsx", "utf8");
     const i = src.indexOf('etapeEnCours = "relecture"');
-    const bloc = src.slice(i, i + 2600);
+    const fin = src.indexOf("dernierEnvoiValideRef.current.set", i);
+    expect(i).toBeGreaterThan(0);
+    expect(fin).toBeGreaterThan(i);
+    const bloc = src.slice(i, fin);
     expect(bloc).toContain("relireAvecReprisesBornees(");
     expect(bloc).toContain('echec(confirmedRow ? "relecture_difference" : "relecture_ligne_absente")');
-    expect(bloc.indexOf("answersAreEqual")).toBeLessThan(bloc.indexOf("submitQuizAttempt"));
+    const soumission = bloc.indexOf("submitQuizAttempt");
+    expect(soumission).toBeGreaterThan(0);
+    expect(bloc.indexOf("answersAreEqual")).toBeLessThan(soumission);
   });
 });
 
