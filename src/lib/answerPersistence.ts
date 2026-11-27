@@ -171,6 +171,12 @@ interface QueueItem {
    * supprimé), il ne bloque plus la validation.
    */
   superseded_by?: { operation_id: string; write_seq: number; at: string };
+  /**
+   * Questions de cet envoi refusé que le serveur a pourtant appliquées : sa
+   * réponse (stored_reponses) contient exactement la même valeur. Déjà
+   * enregistrées, elles n'ont rien à rejouer.
+   */
+  confirmees_serveur?: string[];
 }
 
 /** Bloqué et encore pertinent : pas couvert par une sauvegarde plus récente confirmée. */
@@ -182,7 +188,7 @@ const estBloqueActif = (item: QueueItem): boolean => item.blocked === true && !i
  * ses questions (sa valeur, plus récente, fait foi). Jamais l'inverse.
  */
 export function bloqueCouvertParConfirmation(
-  bloque: { payload: { apprenant_id: string; exercice_id: string; reponses?: unknown }; queued_at: string; owner_user_id?: string | null },
+  bloque: { payload: { apprenant_id: string; exercice_id: string; reponses?: unknown }; queued_at: string; owner_user_id?: string | null; confirmees_serveur?: string[] },
   confirme: { payload: { apprenant_id: string; exercice_id: string; reponses?: unknown }; queued_at: string; owner_user_id?: string | null },
 ): boolean {
   if (bloque.payload.apprenant_id !== confirme.payload.apprenant_id) return false;
@@ -193,7 +199,8 @@ export function bloqueCouvertParConfirmation(
   const a = bloque.payload.reponses, b = confirme.payload.reponses;
   if (!a || !b || typeof a !== "object" || typeof b !== "object" || Array.isArray(a) || Array.isArray(b)) return false;
   const cles = Object.keys(a as Record<string, unknown>);
-  return cles.length > 0 && cles.every((k) => Object.prototype.hasOwnProperty.call(b, k));
+  const dejaEnregistrees = new Set(bloque.confirmees_serveur ?? []);
+  return cles.length > 0 && cles.every((k) => Object.prototype.hasOwnProperty.call(b, k) || dejaEnregistrees.has(k));
 }
 
 type Listener = (state: AnswerSaveState, pending: number, pendingAnswers: number) => void;
@@ -1139,6 +1146,11 @@ async function sendItem(item: QueueItem): Promise<SendResult> {
           const message = "Une version plus récente existe sur le serveur. Vos réponses locales sont conservées sur cet appareil ; rechargez avant de continuer pour éviter tout écrasement.";
           notifyAnswerSaveRejected(item.payload.exercice_id, "refused", message);
           item.rejection = { exerciceId: item.payload.exercice_id, reason: "refused", message, at: new Date().toISOString() };
+          if (estObjet(item.payload.reponses) && estObjet(confirmation.stored_reponses)) {
+            const envoye = item.payload.reponses as Record<string, unknown>, stocke = confirmation.stored_reponses as Record<string, unknown>;
+            item.confirmees_serveur = Object.keys(envoye).filter((k) => k !== "revisionState" && !skipped.includes(k) &&
+              Object.prototype.hasOwnProperty.call(stocke, k) && answersAreEqual(stocke[k] as any, envoye[k] as any));
+          }
           recordDefinitiveRejection(item.payload.user_id ?? authUserId, item.payload.apprenant_id, item.payload.exercice_id, "refused", message);
           return "blocked";
         }
@@ -1325,6 +1337,7 @@ async function processQueueLocked(): Promise<void> {
               attempts: (queue[idx].attempts ?? 0) + 1,
               blocked: result === "blocked" ? true : queue[idx].blocked,
               rejection: result === "blocked" ? item.rejection : queue[idx].rejection,
+              confirmees_serveur: result === "blocked" ? item.confirmees_serveur : queue[idx].confirmees_serveur,
               retry_after: result === "retry" ? Date.now() + computeRetryDelay((queue[idx].attempts ?? 0) + 1) : queue[idx].retry_after,
               refused_user_ids: refused.size > 0 ? [...refused] : undefined,
             };
