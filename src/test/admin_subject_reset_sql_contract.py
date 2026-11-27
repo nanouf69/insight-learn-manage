@@ -136,4 +136,36 @@ class Contract(unittest.TestCase):
   c=self.context('EB2-TAXI','securite');self.assertFalse(c['expired_empty']);self.assertEqual(c['status'],'en_cours')
   self.assertNotEqual(self.authorize(c,'aaaaaaaa-c002-1111-1111-111111111111',check=False).returncode,0)
   self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{attempt}'").stdout.strip(),'en_cours')
+ def _gestion_t2(self,exam,tag,legacy_age="65 days"):
+  # Anonymized 27/11 case: attempt 1 graded (18-answer row left in_progress), attempt 2 V2 copy opened, never answered, expired.
+  self.seed(exam,'gestion');v=f'ffffffff-{tag}-1111-1111-111111111111';old=f'eeeeeeee-{tag}-1111-1111-111111111111';new=f'eeeeeeee-{tag}-2222-1111-111111111111'
+  content={'exam_id':exam,'matieres':[{'subject_id':'gestion','titre':'Gestion','duree':45}],'questions':[{'id':'gestion:1','matiere':'gestion','type':'QCM','enonce':'Fictif','choix':[{'id':'A','texte':'Oui','correct':True}]}]}
+  snap={**content,'matiere':'gestion','matieres':[{'id':'gestion','duree':45}]}
+  self.sql(f"""INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint,motif,is_test) VALUES('{v}','VA','{exam[2]}','{exam}',1,'publiee','{json.dumps(content)}','t','isolated',true);
+  INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,started_at,finished_at,etat,is_test) VALUES('{old}','{A}','{exam}','{v}','{json.dumps(snap)}','t',now()-interval '65 days',now()-interval '65 days'+interval '10 minutes','terminee',true),('{new}','{A}','{exam}','{v}','{json.dumps(snap)}','t',now()-interval '10 days',NULL,'en_cours',true);
+  INSERT INTO apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,started_at,tentative) VALUES('{A}','{U}','{exam}__gestion',2700,now()-interval '65 days',1),('{A}','{U}','{exam}__gestion__t2',2700,now()-interval '10 days'+interval '400 milliseconds',2);
+  SET session_replication_role=replica;
+  INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,tentative,created_at,updated_at) VALUES('{A}','{U}','{exam}__gestion','examen_blanc','{{"1":["A"],"2":["B"]}}',false,'in_progress',1,now()-interval '65 days',now()-interval '{legacy_age}');
+  INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_type,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,score_obtenu,score_max,completed_at) VALUES('{A}','{U}','examen_blanc','{exam}','Fictif','gestion','Gestion',1,8,20,now()-interval '65 days');
+  SET session_replication_role=origin;""")
+  proof=f"SELECT jsonb_build_object('r',(SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM reponses_apprenants r WHERE exercice_id LIKE '{exam}__gestion%' AND exercice_id<>'{exam}__gestion__t3'),'q',(SELECT jsonb_agg(to_jsonb(q) ORDER BY id) FROM apprenant_quiz_results q WHERE quiz_id='{exam}'),'old',(SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{old}'))"
+  return old,new,proof
+ def test_13_stale_graded_row_does_not_hide_expired_empty_t2_copy(self):
+  old,new,proof=self._gestion_t2('eb1-va','d013');before=self.sql(proof).stdout
+  c=self.context('eb1-va','gestion');self.assertEqual(c['source_exercice_id'],'eb1-va__gestion__t2');self.assertEqual(c['source_attempt_id'],new);self.assertTrue(c['expired_empty']);self.assertEqual(c['status'],'en_attente');self.assertIsNone(c['source_result_id'])
+  self.authorize(c,'aaaaaaaa-d013-1111-1111-111111111111')
+  self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{new}'").stdout.strip(),'abandonnee')
+  self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{old}'").stdout.strip(),'terminee')
+  c2=self.context('eb1-va','gestion');self.assertEqual(c2['source_token'],c['source_token']);self.assertIsNotNone(c2['authorization_id'])
+  r=json.loads(self.start(c2,'bbbbbbbb-d013-1111-1111-111111111111').stdout.splitlines()[-1])
+  self.assertEqual(r['exercice_id'],'eb1-va__gestion__t3');self.assertNotEqual(r['attempt_id'],new)
+  self.assertEqual(before,self.sql(proof).stdout)
+ def test_14_legacy_row_touched_after_copy_start_stays_locked(self):
+  old,new,proof=self._gestion_t2('eb2-va','d014',legacy_age='9 days')
+  r=self.call(f"SELECT exam_subject_reset_context('{A}','eb2-va','gestion')",ADMIN,False);self.assertNotEqual(r.returncode,0);self.assertIn('passages différents',r.stderr)
+ def test_15_copy_with_saved_answer_stays_locked(self):
+  old,new,proof=self._gestion_t2('eb3-va','d015')
+  self.sql(f"INSERT INTO answer_state(attempt_id,apprenant_id,question_id,valeur) VALUES('{new}','{A}','gestion:1','\"A\"')")
+  r=self.call(f"SELECT exam_subject_reset_context('{A}','eb3-va','gestion')",ADMIN,False);self.assertNotEqual(r.returncode,0)
+  self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{new}'").stdout.strip(),'en_cours')
 if __name__=='__main__':unittest.main(verbosity=2)
