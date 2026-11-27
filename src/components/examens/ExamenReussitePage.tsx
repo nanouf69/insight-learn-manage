@@ -3460,7 +3460,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         {sendingCMAEmail ? 'Envoi...' : `Envoyer par email (${reussisLettre.length})`}
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="max-w-lg">
+                    <AlertDialogContent className="max-w-3xl max-h-[95dvh] overflow-y-auto">
                       <AlertDialogHeader>
                         <AlertDialogTitle>Confirmer l'envoi à la CMA</AlertDialogTitle>
                         <AlertDialogDescription asChild>
@@ -3479,6 +3479,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                             <p className="text-xs text-muted-foreground mt-2">
                               ✓ Un accusé de réception sera demandé
                             </p>
+                            <div className="rounded border bg-background"><p className="px-2 py-1 text-xs font-semibold text-foreground">Aperçu du mail envoyé</p>{(() => { try { return <iframe title="Aperçu du mail CMA" className="h-[50dvh] w-full border-t bg-white" sandbox="" srcDoc={generateLettreHTML()} />; } catch (e) { return <p className="px-2 pb-2 text-destructive">{(e as Error).message}</p>; } })()}</div>
                           </div>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
@@ -3495,14 +3496,14 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                       <AlertDialogTrigger asChild>
                         <Button variant="destructive" className="gap-2"><Mail className="h-4 w-4" />Envoyer quand même ({reussisLettre.length})</Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent className="max-w-lg">
+                      <AlertDialogContent className="max-w-3xl max-h-[95dvh] overflow-y-auto">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Envoyer sans le contrôle ?</AlertDialogTitle>
                           <AlertDialogDescription asChild>
                             <div className="space-y-2 text-sm">
                               <p className="font-semibold text-destructive">Les vérifications (territoire, passage pratique, résultats manquants) ne sont pas terminées. La lettre partira telle qu'affichée, avec {reussisLettre.length} candidat(s).</p>
                               <p><strong>Destinataire :</strong> audrey.crevier@cma-auvergnerhonealpes.fr</p>
-                              <p>Vérifiez la liste avant de confirmer : cet envoi ne peut pas être annulé.</p>
+                              <p>Vérifiez la liste avant de confirmer : cet envoi ne peut pas être annulé.</p><div className="rounded border bg-background"><p className="px-2 py-1 text-xs font-semibold text-foreground">Aperçu du mail envoyé</p>{(() => { try { return <iframe title="Aperçu du mail CMA" className="h-[50dvh] w-full border-t bg-white" sandbox="" srcDoc={generateLettreHTML()} />; } catch (e) { return <p className="px-2 pb-2 text-destructive">{(e as Error).message}</p>; } })()}</div>
                             </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
