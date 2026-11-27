@@ -43,6 +43,7 @@ import { DecalerExamenButton } from "./DecalerExamenButton";
 import { DecalesExamenTheorique } from "./DecalesExamenTheorique";
 import { usePratiqueCandidateNotes } from "@/hooks/usePratiqueCandidateNotes";
 import { PratiqueCandidateNote } from "./PratiqueCandidateNote";
+import { NoteLettreCmaField } from "./NoteLettreCmaField";
 import { pratiqueNoteHTML, pratiqueCandidateNameHTML } from "@/lib/pratiqueCandidateNotes";
 import listeMedecinsAgrees from "@/assets/medecins/liste-medecins-agrees.pdf.asset.json";
 import { TauxElearningCell } from './TauxElearningCell';
@@ -3684,13 +3685,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
               </div>
               <div className="mt-4">
                 <Label className="text-sm font-medium">Note pour la lettre à la CMA</Label>
-                <Textarea
-                  rows={3}
-                  className="mt-1.5"
-                  placeholder="Facultatif — cette note apparaît dans la lettre (aperçu, impression et e-mail envoyé à la CMA)."
-                  value={noteLettreCMA}
-                  onChange={(e) => setNoteLettreCMA(e.target.value)}
-                />
+                <NoteLettreCmaField value={noteLettreCMA} onCommit={setNoteLettreCMA} />
                 <p className="text-xs text-muted-foreground mt-1">Enregistrée automatiquement pour cette session d'examen et cette période pratique.</p>
               </div>
             </CardContent>
