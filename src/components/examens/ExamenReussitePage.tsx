@@ -3377,14 +3377,14 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
           printWindow.print();
         };
 
-        const handleSendCMAEmail = async () => {
+        const handleSendCMAEmail = async (forcer = false) => {
           if (reussisLettre.length === 0) return;
           setSendingCMAEmail(true);
           try {
             const fresh = await cmaLettreSources.refetch();
             if (fresh.error || !fresh.data) throw new Error('Preuves CMA indisponibles');
             const freshSelection=selectionLettreCma(fresh.data.candidats,fresh.data.preuves,fresh.data.confirmations,selectedExamDate,selectedDatePratique,'69',removedCandidatsCMA);
-            if (freshSelection.erreur || freshSelection.aVerifier.length || JSON.stringify([...freshSelection.confirmes,...freshSelection.aRepresenter])!==JSON.stringify([...cmaSelection.confirmes,...cmaSelection.aRepresenter])) throw new Error('Sélection CMA modifiée ou à vérifier');
+            if (!forcer && (freshSelection.erreur || freshSelection.aVerifier.length) || JSON.stringify([...freshSelection.confirmes,...freshSelection.aRepresenter])!==JSON.stringify([...cmaSelection.confirmes,...cmaSelection.aRepresenter])) throw new Error('Sélection CMA modifiée ou à vérifier');
             if (reussisLettre.some(a => candidateNotes.draft(a.id) || candidateNotes.isSaving(a.id))) throw new Error("Enregistrez les notes avant l’envoi CMA.");
             const refreshed = await candidateNotes.query.refetch();
             if (refreshed.error) throw refreshed.error;
@@ -3484,12 +3484,35 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleSendCMAEmail}>
+                        <AlertDialogAction onClick={() => handleSendCMAEmail(false)}>
                           Confirmer l'envoi
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  {reussisLettre.length > 0 && !sendingCMAEmail && (resultatsIncomplets || !!cmaSelection.erreur || cmaSelection.aVerifier.length > 0 || candidatsSansPreuveCMA.length > 0 || filieresInconnues.length > 0) && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="gap-2"><Mail className="h-4 w-4" />Envoyer quand même ({reussisLettre.length})</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="max-w-lg">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Envoyer sans le contrôle ?</AlertDialogTitle>
+                          <AlertDialogDescription asChild>
+                            <div className="space-y-2 text-sm">
+                              <p className="font-semibold text-destructive">Les vérifications (territoire, passage pratique, résultats manquants) ne sont pas terminées. La lettre partira telle qu'affichée, avec {reussisLettre.length} candidat(s).</p>
+                              <p><strong>Destinataire :</strong> audrey.crevier@cma-auvergnerhonealpes.fr</p>
+                              <p>Vérifiez la liste avant de confirmer : cet envoi ne peut pas être annulé.</p>
+                            </div>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => handleSendCMAEmail(true)}>Envoyer quand même</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
               </CardTitle>
               {resultatsIncomplets && sansResultat.length > 0 && (
@@ -3562,8 +3585,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         <div className="min-h-0 overflow-y-auto divide-y">
                           {cmaSelection.aVerifier.map(({ candidat, raison }) => (
                             <div key={candidat.id} className="space-y-1 py-3 pr-2">
-                              <p className="break-words font-medium">{candidat.nom} {candidat.prenom}</p>
+                              <p className={`break-words font-medium ${reussisLettre.some(x => x.id === candidat.id) ? 'text-destructive font-bold' : ''}`}>{candidat.nom} {candidat.prenom}</p>
                               <p className="break-words text-sm text-muted-foreground">{raison}</p>
+                              {reussisLettre.some(x => x.id === candidat.id) && <p className="text-sm font-semibold text-destructive">Inscrit quand même sur la liste de la lettre</p>}
                             </div>
                           ))}
                         </div>
