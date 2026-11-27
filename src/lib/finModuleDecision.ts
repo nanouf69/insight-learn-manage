@@ -25,11 +25,29 @@ export function libelleQuizManquants(manquants: QuizManquant[]): string {
   }).join(", ");
 }
 
+export const LIBELLE_QUIZ_EN_ATTENTE = "À valider / aucune soumission confirmée par le serveur";
+
+/** Listes affichées : validés = preuve serveur confirmée ; en attente = aucune soumission confirmée (un brouillon local peut exister). */
+export function listesStatutQuiz(stats: { completedLabels?: string[]; remainingQuizzes?: QuizManquant[] } | null | undefined, exosSoumis: ReadonlySet<number> = new Set()) {
+  const restants = stats?.remainingQuizzes ?? [];
+  const enAttente = restants.filter((q) => !exosSoumis.has(Number(q.id)));
+  const valides = [...(stats?.completedLabels ?? []), ...restants.filter((q) => exosSoumis.has(Number(q.id))).map((q) => q.label)];
+  return { valides, enAttente };
+}
+
+export function messageListesQuiz(valides: string[], enAttente: QuizManquant[]): string {
+  const v = valides.length ? valides.map((l) => `« ${l} »`).join(", ") : "aucun";
+  const a = enAttente.map((q) => (q.label && q.label !== q.id ? `« ${q.label} »` : `quiz n° ${q.id}`)).join(", ");
+  return `Quiz validés (${valides.length}) : ${v}. ${LIBELLE_QUIZ_EN_ATTENTE} (${enAttente.length}) : ${a}.`;
+}
+
 export function decisionFinModule(p: {
   /** undefined = lecture serveur en erreur ; null = aucune ligne serveur (première validation). */
   etatServeur: EtatServeurModule | null | undefined;
   quizRestants: QuizManquant[] | null | undefined;
   exosSoumis: ReadonlySet<number>;
+  /** Libellés des quiz déjà confirmés par le serveur. */
+  quizValides?: string[];
 }): DecisionFinModule {
   if (p.etatServeur === undefined) return { action: "erreur", message: MESSAGE_VERIFICATION_IMPOSSIBLE };
   const manquants = (p.quizRestants ?? []).filter((q) => !p.exosSoumis.has(Number(q.id)));
@@ -37,7 +55,7 @@ export function decisionFinModule(p: {
   if (valideServeur && p.etatServeur!.preuve_complete !== false) return { action: "sortie" };
   if (manquants.length) {
     return { action: "bloquer", manquants,
-      message: `Module à terminer : quiz sans réponse enregistrée : ${libelleQuizManquants(manquants)}.` };
+      message: `Module à terminer. ${messageListesQuiz([...(p.quizValides ?? []), ...(p.quizRestants ?? []).filter((q) => p.exosSoumis.has(Number(q.id))).map((q) => q.label)], manquants)}` };
   }
   if (valideServeur) {
     // Preuve serveur incomplète sans quiz identifiable : jamais de succès local.

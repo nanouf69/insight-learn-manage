@@ -49,6 +49,7 @@ import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/component
 import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboard, modulesAttribuesDashboard, modulesExigesDashboard, equipementsTaxiAjoute, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
+import { LIBELLE_QUIZ_EN_ATTENTE } from "@/lib/finModuleDecision";
 import { exosSoumisDuModule as exosSoumisDuModuleDashboard } from "@/lib/moduleProgressionReadModel";
 import { avecEtatServeur, chargerEtatCompletionServeur, type EtatCompletionServeur } from "@/lib/etatCompletionServeur";
 import { chargerPreuvesQuizModules, projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
@@ -2636,14 +2637,21 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                             </p>
                             {!idsModulesExiges.has(mod.id) && <p className="text-xs text-muted-foreground">Consultation facultative — sans effet sur les jalons acquis</p>}
                             {(moduleQuizStatsById[mod.id]?.remainingQuizzes?.length ?? 0) > 0 && (
-                              <details className="mt-2 text-xs text-destructive" onClick={event => event.stopPropagation()}>
+                              <details open className="mt-2 text-xs text-destructive" onClick={event => event.stopPropagation()}>
                                 <summary className="cursor-pointer font-semibold">Quiz et questions à terminer</summary>
+                                {(moduleQuizStatsById[mod.id]?.completedLabels?.length ?? 0) > 0 && (
+                                  <div className="mt-1 text-foreground" data-testid={`quiz-valides-${mod.id}`}>
+                                    <p className="font-semibold">✅ Quiz validés ({moduleQuizStatsById[mod.id].completedLabels.length})</p>
+                                    <ul className="ml-4 list-disc">{moduleQuizStatsById[mod.id].completedLabels.map(l => <li key={l}>{l}</li>)}</ul>
+                                  </div>
+                                )}
+                                <p className="mt-1 font-semibold">⏳ {LIBELLE_QUIZ_EN_ATTENTE} ({moduleQuizStatsById[mod.id]?.remainingQuizzes?.length ?? 0})</p>
                                 <ul className="mt-1 space-y-1">
                                   {moduleQuizStatsById[mod.id]?.remainingQuizzes?.map(q => (
                                     <li key={q.id}>
                                       <Button variant="link" className="h-auto whitespace-normal p-0 text-left text-destructive" disabled={locked}
                                         onClick={() => { setSelectedExerciseTarget(q.id); trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}>
-                                        {q.label} — questions {q.missingQuestionIds.join(", ")}
+                                        Ouvrir « {q.label} »
                                       </Button>
                                     </li>
                                   ))}

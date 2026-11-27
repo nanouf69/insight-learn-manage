@@ -4,7 +4,7 @@ import { BILAN_EXERCICES_VTC } from "@/components/cours-en-ligne/bilan-exercices
 import { VTC_COURS_DATA } from "@/components/cours-en-ligne/vtc-cours-data";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { exosSoumisDuModule } from "@/lib/moduleProgressionReadModel";
-import { decisionFinModule } from "@/lib/finModuleDecision";
+import { decisionFinModule, listesStatutQuiz } from "@/lib/finModuleDecision";
 
 // Inventaire du module 4 relu le 27/11 après réactivation (id, actif, nombre de questions), ordre conservé.
 const MODULE4 = [
@@ -64,5 +64,22 @@ describe("Module 4 : quiz 103 « Bilan Français » réactivé", () => {
     expect(`${avant.completedQuizzes}/${avant.totalQuizzes}`).toBe("6/7");
     const apres = compterQuizModule([lignePerimee], [], { exosSoumis: soumis([100, 101, 102, 103, 104, 105, 106]) });
     expect(`${apres.completedQuizzes}/${apres.totalQuizzes}`).toBe("7/7");
+  });
+});
+
+describe("Module 4 : listes validés / à valider", () => {
+  const six = [100, 101, 102, 104, 105, 106];
+  const stats = compterQuizModule([lignePerimee], [], { exosSoumis: soumis(six) });
+  it("6 validés nommés, Français seul en attente", () => {
+    const { valides, enAttente } = listesStatutQuiz(stats, new Set(six));
+    expect(valides).toEqual(["Bilan T3P", "Bilan Gestion", "Bilan Sécurité Routière", "Bilan Développement Commercial", "Bilan Anglais", "Bilan Réglementation Spécifique VTC"]);
+    expect(enAttente.map((q) => q.label)).toEqual(["Bilan Français"]);
+  });
+  it("message de blocage : mêmes listes, libellé exact, jamais « jamais répondu »", () => {
+    const d = decisionFinModule({ etatServeur: { status: "completed", preuve_complete: false }, quizRestants: stats.remainingQuizzes, exosSoumis: new Set(six), quizValides: stats.completedLabels });
+    expect(d.action).toBe("bloquer");
+    if (d.action !== "bloquer") return;
+    expect(d.message).toBe("Module à terminer. Quiz validés (6) : « Bilan T3P », « Bilan Gestion », « Bilan Sécurité Routière », « Bilan Développement Commercial », « Bilan Anglais », « Bilan Réglementation Spécifique VTC ». À valider / aucune soumission confirmée par le serveur (1) : « Bilan Français ».");
+    expect(d.manquants.map((q) => q.id)).toEqual(["103"]);
   });
 });

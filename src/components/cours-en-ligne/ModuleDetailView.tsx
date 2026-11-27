@@ -8504,6 +8504,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         etatServeur,
         quizRestants: historicalQuizProof?.remainingQuizzes,
         exosSoumis: submittedExoIdsRef.current,
+        quizValides: historicalQuizProof?.completedLabels,
       });
       if (decisionFin.action === "sortie") return true;
       if (decisionFin.action === "erreur") {
@@ -8515,7 +8516,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         const pageQuiz = pages.findIndex((p: any) => p?.type === "exercice-single" && Number(p.exercice?.id) === premier);
         toast.error(decisionFin.message, {
           id: "fin-module", duration: 15000,
-          ...(pageQuiz >= 0 ? { action: { label: "Ouvrir ce quiz", onClick: () => goToPage(pageQuiz) } } : {}),
+          ...(pageQuiz >= 0 ? { action: { label: `Ouvrir « ${decisionFin.manquants[0]?.label} »`, onClick: () => goToPage(pageQuiz) } } : {}),
         });
         return false;
       }
