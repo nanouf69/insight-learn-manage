@@ -12,7 +12,8 @@ export async function chargerDatesPedagogiquesAttestation(apprenantId:string){
  const preuves:ActivitePedagogiquePreuve[]=rows.filter(r=>Object.entries(r.reponses??{}).some(([k,v])=>!k.startsWith('_')&&v!=null&&v!==''&&JSON.stringify(v)!=='[]'&&JSON.stringify(v)!=='{}')).map(r=>({id:r.id,apprenantId:r.apprenant_id,userId:r.user_id,at:r.submitted_at,type:'exercice_remis',serveur:true,qualifiante:true}));
  const ancienCalcul=()=>({...periodePedagogiqueProuvee(preuves,apprenantId,uid),administrative:a.data.date_fin_cours_en_ligne||a.data.date_fin_formation||null,lectureEffectiveProuvee:false});
  const edof=await supabase.from('edof_fin_formation').select('mis_fin_formation').eq('apprenant_id',apprenantId).order('created_at',{ascending:false}).limit(1);
- const edofValide=edof.error?null:edof.data?.[0]?.mis_fin_formation??false;
+ if(edof.error)throw new Error('Statut EDOF illisible : dates non calculées');
+ const edofValide=edof.data?.[0]?.mis_fin_formation??false;
  if(edofValide!==false)return ancienCalcul();
  let tauxJalons:number|null=null;
  if(formationJalonsElearning(a.data.type_apprenant,a.data.formation_choisie)){
@@ -22,7 +23,7 @@ export async function chargerDatesPedagogiquesAttestation(apprenantId:string){
     const calcul=await chargerCalculJalons({apprenantId,typeApprenant:a.data.type_apprenant,formationChoisie:a.data.formation_choisie,gel:etat.etat==='fige'?etat.gel:null});
     tauxJalons=calcul.resultat.taux;
    }
-  }catch{/* Unknown/frozen unreadable evidence preserves the previous dates. */}
+  }catch{throw new Error('Taux de jalons non synchronisé : dates non calculées');}
  }
  if(conserverDatesActiviteAnterieures(edofValide,tauxJalons))return ancienCalcul();
  const finFormation=a.data.date_fin_formation;

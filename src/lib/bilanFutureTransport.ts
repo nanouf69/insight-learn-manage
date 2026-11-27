@@ -10,6 +10,8 @@ export const FUTURE_QUEUE_PREFIX = "bilan-future:v1:";
 export type FutureDraft = {
   receiptId: string; versionId: string; ownerId: string;
   questionId: number; revision: number; answer: string[]; token: string;
+  /** Refus définitif reçu mais archive locale non confirmée : conservé, jamais renvoyé. */
+  rejectedCode?: string;
 };
 
 export type KV = { getItem(k: string): string | null; setItem(k: string, v: string): void; removeItem(k: string): void };
@@ -44,21 +46,33 @@ export const futureRejectKey = (r: Pick<FutureReceipt, "ownerId" | "passageId" |
 export type FutureRejected = FutureDraft & { code: string; rejectedAt: string };
 
 /** Lecture des réponses refusées conservées pour ce compte/reçu/version (jamais renvoyées). */
-export function readRejected(kv: KV, r: FutureReceipt): FutureRejected[] {
+const memeRejet = (x: FutureDraft, d: FutureDraft) => x.token === d.token && x.revision === d.revision &&
+  x.questionId === d.questionId && JSON.stringify(x.answer) === JSON.stringify(d.answer);
+
+/** Lecture des réponses refusées conservées pour ce compte/reçu/version (jamais renvoyées). null = archive illisible. */
+function lireArchive(kv: KV, r: FutureReceipt): FutureRejected[] | null {
   try {
-    const v = JSON.parse(kv.getItem(futureRejectKey(r)) ?? "[]");
-    return Array.isArray(v) ? v.filter((d: FutureRejected) => d && d.ownerId === r.ownerId && d.receiptId === r.passageId && d.versionId === r.versionId) : [];
-  } catch { return []; }
+    const brut = kv.getItem(futureRejectKey(r));
+    if (brut == null) return [];
+    const v = JSON.parse(brut);
+    return Array.isArray(v) ? v : null;
+  } catch { return null; }
+}
+export function readRejected(kv: KV, r: FutureReceipt): FutureRejected[] {
+  return (lireArchive(kv, r) ?? []).filter((d: FutureRejected) => d && d.ownerId === r.ownerId && d.receiptId === r.passageId && d.versionId === r.versionId);
 }
 
+/** true seulement si la relecture prouve l'entrée exacte (réponse comprise). Archive corrompue = jamais écrasée. */
 function archiverRejet(kv: KV, r: FutureReceipt, d: FutureDraft, code: string): boolean {
   try {
-    const liste = readRejected(kv, r);
-    if (!liste.some((x) => x.token === d.token && x.revision === d.revision && x.questionId === d.questionId)) {
-      liste.push({ ...d, code, rejectedAt: new Date().toISOString() });
+    const liste = lireArchive(kv, r);
+    if (liste === null) return false;
+    if (!liste.some((x) => x && memeRejet(x, d))) {
+      const { rejectedCode: _ignore, ...propre } = d;
+      liste.push({ ...propre, code, rejectedAt: new Date().toISOString() });
+      kv.setItem(futureRejectKey(r), JSON.stringify(liste));
     }
-    kv.setItem(futureRejectKey(r), JSON.stringify(liste));
-    return readRejected(kv, r).some((x) => x.token === d.token && x.revision === d.revision && x.questionId === d.questionId);
+    return readRejected(kv, r).some((x) => memeRejet(x, d));
   } catch { return false; }
 }
 
@@ -76,6 +90,13 @@ export async function flushQueue(kv: KV, r: FutureReceipt, save: SaveRpc) {
       JSON.stringify(x.answer) === JSON.stringify(d.answer);
     // A later snapshot item may have been replaced while an earlier one was sent.
     if (!readQueue(kv, r).some(sameOperation)) continue;
+    if (d.rejectedCode) {
+      // Déjà refusé : on retente seulement l'archivage local, jamais l'envoi.
+      if (!archiverRejet(kv, r, d, d.rejectedCode)) continue;
+      const restant = readQueue(kv, r).filter(x => !sameOperation(x));
+      if (restant.length) kv.setItem(key, JSON.stringify(restant)); else kv.removeItem(key);
+      continue;
+    }
     const { error } = await save({ p_receipt: d.receiptId, p_version: d.versionId, p_question: d.questionId, p_revision: d.revision, p_answer: d.answer, p_token: d.token });
     const code = error?.code ?? "";
     if (error && !["P0491", "P0492", "P0493", "42501", "22023"].includes(code)) {
@@ -85,7 +106,11 @@ export async function flushQueue(kv: KV, r: FutureReceipt, save: SaveRpc) {
       rejected.push({ draft: d, code });
       // Refus définitif : la réponse quitte la file d'envoi (jamais rejouée) mais
       // reste conservée localement, intacte, pour relecture/récupération.
-      if (!archiverRejet(kv, r, d, code)) break; // archivage impossible : on garde la file intacte
+      if (!archiverRejet(kv, r, d, code)) {
+        // Archivage impossible : la réponse reste en file (logout bloqué), marquée pour ne jamais être renvoyée.
+        try { kv.setItem(key, JSON.stringify(readQueue(kv, r).map(x => sameOperation(x) ? { ...x, rejectedCode: code } : x))); } catch { /* file inchangée */ }
+        break;
+      }
     }
     // No await between rereading and updating: acknowledge only the exact sent
     // operation, never a newer answer/revision added while save was in flight.

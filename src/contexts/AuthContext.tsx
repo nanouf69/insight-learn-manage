@@ -15,7 +15,8 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   profile: Profile | null;
-  signOut: () => Promise<void>;
+  /** true seulement si la session locale a réellement été fermée. */
+  signOut: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -244,8 +245,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     manualSignOutRef.current = true;
     // Ne ferme que l'appareil utilisé : les autres connexions restent ouvertes.
-    await supabase.auth.signOut({ scope: "local" });
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "local" });
+      if (error) { manualSignOutRef.current = false; return false; }
+    } catch { manualSignOutRef.current = false; return false; }
     clearAuthState();
+    return true;
   }, [clearAuthState]);
 
   const isAdmin = profile?.role === 'admin';

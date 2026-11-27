@@ -1679,7 +1679,10 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
       return false;
     }
     await endConnexion();
-    await signOut();
+    if (!(await signOut())) {
+      toast.error("Déconnexion impossible : votre compte reste ouvert. Réessayez.", { duration: 15000 });
+      return false;
+    }
     setApprenant(null);
     setSelectedFormation(null);
     setApprenantFetchError(null);
@@ -2854,7 +2857,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                   toast.error(MESSAGE_DECONNEXION_SUSPENDUE, { duration: 15000 });
                   return;
                 }
-                try { await supabase.auth.signOut({ scope: "local" }); } catch (error) { console.warn("Déconnexion locale impossible", error); }
+                let fermee = false;
+                try { const { error } = await supabase.auth.signOut({ scope: "local" }); fermee = !error; } catch { fermee = false; }
+                if (!fermee) {
+                  toast.error("Déconnexion impossible : votre compte reste ouvert. Réessayez.", { duration: 15000 });
+                  return;
+                }
                 window.location.href = "/login";
               }}
             >
