@@ -93,7 +93,8 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
   titre("3. Calendrier");
   para("Emploi du temps susceptible d'être modifié.");
   if (input.erreurLecture) { para("Les sessions n'ont pas pu être lues : calendrier indisponible, à demander au centre."); manquants.push("Lecture des sessions impossible"); }
-  else if (p.mode !== "presentiel") para(p.mode === "elearning" ? "Formation à distance : pas de calendrier en salle. Date de la journée pratique : à confirmer." : "Date de la journée pratique : à confirmer avec le centre.");
+  else if (p.mode !== "presentiel") para(p.mode === "elearning" ? "Formation à distance : pas de calendrier en salle. Date de la journée pratique : Date à définir." : "Date de la journée pratique : Date à définir.");
+  if (!input.erreurLecture && p.mode !== "presentiel") para("La date de l’entraînement pratique est susceptible d’être modifiée.");
   else if (!session) { para("Aucune session réelle sélectionnée : calendrier à confirmer."); manquants.push("Session non sélectionnée"); }
   else {
     para(`Session : ${session.nom}, du ${dateLongue(session.date_debut)} au ${dateLongue(session.date_fin)}.`);
@@ -101,19 +102,20 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
     const auto = c.jours.length === 0 ? agendaAutomatique(session, p.filiere, p.soir) : null;
     if (p.filiere === "va") {
       para("30 h de théorie en e-learning (pas d'agenda en salle pour la théorie).");
-      const j = auto?.lignes.find((l) => l.nature === "Pratique");
-      table(["Date", "Type", "Horaires", "Heures", "Cumul"], [[j?.jour ? dateLongue(j.jour) : "Date à confirmer par le centre", "Pratique (au centre)", "09:00-12:00 / 13:00-16:00", h(HEURES_PRATIQUE), h(30 + HEURES_PRATIQUE)]], ["Total", "", "", "", h(30 + HEURES_PRATIQUE)]);
+      table(["Date", "Type", "Horaires", "Heures", "Cumul"], [["Date à définir", "Pratique (au centre)", "09:00-12:00 / 13:00-16:00", h(HEURES_PRATIQUE), h(30 + HEURES_PRATIQUE)]], ["Total", "", "", "", h(30 + HEURES_PRATIQUE)]);
+      para("La date de l’entraînement pratique est susceptible d’être modifiée.");
     } else if (auto && auto.valide) {
       titre("Agenda détaillé jour par jour");
-      table(["Date", "Type", "Horaires", "Heures", "Cumul"], auto.lignes.map((l) => [l.jour ? dateLongue(l.jour) : "Date à confirmer par le centre", l.nature === "Pratique" ? "Pratique (au centre)" : "Théorie", l.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(l.heures), h(l.cumul)]), ["Total", "", "", "", h(auto.total)]);
+      table(["Date", "Type", "Horaires", "Heures", "Cumul"], auto.lignes.map((l) => [l.nature === "Pratique" ? "Date à définir" : l.jour ? dateLongue(l.jour) : "Date à confirmer par le centre", l.nature === "Pratique" ? "Pratique (au centre)" : "Théorie", l.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(l.heures), h(l.cumul)]), ["Total", "", "", "", h(auto.total)]);
       para("Agenda susceptible d'être modifié : les dates peuvent être décalées en dehors de ces périodes.");
-      if (!auto.lignes.some((l) => l.nature === "Pratique" && l.jour)) manquants.push("Date de la journée pratique");
+      para("La date de l’entraînement pratique est susceptible d’être modifiée.");
     } else if (auto) {
       para(`Avertissement : agenda jour par jour non édité. ${auto.anomalies.join(" ; ")}.`);
       manquants.push(...auto.anomalies.map((a) => `Agenda : ${a}`));
     } else if (c.valide) {
       const lignes = [...c.jours.map((j) => ({ ...j, lib: "Cours" })), ...c.pratique.map((j) => ({ ...j, lib: "Pratique" }))].sort((a, b) => a.jour.localeCompare(b.jour));
-      table(["Date", "Contenu", "Horaires", "Heures"], lignes.map((j) => [dateLongue(j.jour), j.lib, j.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(j.heures)]), ["Total", "", "", h(c.heuresSaisies + c.heuresPratique)]);
+      table(["Date", "Contenu", "Horaires", "Heures"], lignes.map((j) => [j.lib === "Pratique" ? "Date à définir" : dateLongue(j.jour), j.lib, j.plages.map((x) => `${x.debut}-${x.fin}`).join(" / "), h(j.heures)]), ["Total", "", "", h(c.heuresSaisies + c.heuresPratique)]);
+      if (c.pratique.length) para("La date de l’entraînement pratique est susceptible d’être modifiée.");
       para("Agenda susceptible d'être modifié : les dates peuvent être décalées en dehors de ces périodes.");
     } else {
       para(`Calendrier journalier à confirmer : ${c.anomalies.join(" ; ")}.`);
@@ -126,19 +128,19 @@ export function buildProgrammeCalendrierPDF(input: ProgrammeDevisInput): Resulta
     // journée pratique déjà dans l'agenda détaillé
   } else if (calPratique && !calPratique.valide && calPratique.pratique.length) {
     const j = calPratique.pratique[0];
-    para(`Journée pratique (6 h) : ${dateLongue(j.jour)}, ${j.plages.map((x) => `${x.debut}-${x.fin}`).join(" / ")}.`);
+    para(`Journée pratique (6 h) : Date à définir, ${j.plages.map((x) => `${x.debut}-${x.fin}`).join(" / ")}.`); para("La date de l’entraînement pratique est susceptible d’être modifiée.");
   } else if (calPratique && calPratique.valide && calPratique.pratique.length) {
     // déjà présente dans le calendrier journalier
   } else if (calPratique && !calPratique.pratique.length) {
-    para("Journée pratique (6 h) : date à confirmer."); manquants.push("Date de la journée pratique");
+    para("Journée pratique (6 h) : Date à définir."); para("La date de l’entraînement pratique est susceptible d’être modifiée.");
   } else {
     const pratiques = sessionsPratique(input.sessions, p.filiere).filter((s) => !session || s.date_debut >= session.date_fin);
     if (pratiques.length) {
       const s = pratiques[0];
       const jour = s.jours.find((j) => j.nature !== "examen");
       const plages = jour && heuresPlages(jour.plages) ? jour.plages.map((x) => `${x.debut}-${x.fin}`).join(" / ") : s.heure_debut && s.heure_fin ? `${s.heure_debut}-${s.heure_fin}` : "horaires à confirmer";
-      para(`Stage pratique prévu : ${dateLongue(s.date_debut)}, ${plages}${s.lieu ? `, ${s.lieu}` : ""}.`);
-    } else { para("Stage pratique : date à confirmer."); manquants.push("Date du stage pratique"); }
+      para(`Stage pratique prévu : Date à définir, ${plages}${s.lieu ? `, ${s.lieu}` : ""}.`); para("La date de l’entraînement pratique est susceptible d’être modifiée.");
+    } else { para("Stage pratique : Date à définir."); para("La date de l’entraînement pratique est susceptible d’être modifiée."); }
   }
 
   // 4. Examen

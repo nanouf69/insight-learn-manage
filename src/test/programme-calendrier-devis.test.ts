@@ -163,3 +163,19 @@ describe("pratique automatique : dernier samedi de la session", () => {
     expect(c.valide).toBe(false); expect(c.anomalies.join(" ")).toMatch(/dernier samedi/);
   });
 });
+
+describe("date de l'entraînement pratique jamais précisée", () => {
+  const formation = { id: "taxi_presential", label: "TAXI", designation: "Formation initiale TAXI en présentiel", agrement: "n°69-18-001" };
+  const cours15 = joursOuvres("2027-01-04", "2027-01-25").slice(0, 15).map((jour) => ({ jour, plages: PLAGES_JOURNEE, nature: "cours" as const }));
+  const samedi = { jour: "2027-01-23", plages: PLAGES_JOURNEE, nature: "pratique" as const };
+  it("ligne pratique = « Date à définir » + mention, théorie, horaires et examen conservés", () => {
+    const { doc } = buildProgrammeCalendrierPDF({ formation, programme: formationProgramme("taxi_presential")!, session: { ...taxi4janv, jours: [...cours15, samedi] }, sessions: [taxi4janv, examen] });
+    const txt = doc.output();
+    expect(txt).toMatch(/Date . d.finir/);
+    expect(txt).toMatch(/entra.nement pratique est susceptible d.+tre modifi.e/);
+    expect(txt).not.toMatch(/23 janvier 2027/);
+    expect(txt).toMatch(/4 janvier 2027/);
+    expect(txt).toMatch(/26 janvier 2027/);
+    expect(txt).toMatch(/09:00-12:00 \/ 13:00-16:00/);
+  });
+});
