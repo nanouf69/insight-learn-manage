@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import logoFtransport from "@/assets/logo-ftransport.png";
 
 interface SidebarProps {
@@ -70,8 +71,9 @@ const menuItems = [
 export function Sidebar({ currentPage, onNavigate, collapsed = false, onToggleCollapse }: SidebarProps) {
   const { signOut } = useAuth();
 
+  // Espace admin : aucune file de réponses apprenant n'appartient à ce compte (files indexées par l'identifiant apprenant).
   const handleLogout = async () => {
-    await signOut();
+    if (!(await signOut())) toast.error("Déconnexion impossible : votre session reste ouverte. Réessayez.");
   };
 
   return (

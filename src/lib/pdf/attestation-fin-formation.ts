@@ -125,6 +125,10 @@ function formatHours(h: number): string {
   return `${hours}h${mins.toString().padStart(2, '0')}`;
 }
 
+export class AttestationJalonsIndisponibles extends Error {
+  constructor() { super("Taux de jalons illisible : attestation non générée, aucun document téléchargé. Réessayez dans un instant."); this.name = 'AttestationJalonsIndisponibles'; }
+}
+
 export async function generateAttestationFinFormation(
   apprenant: any,
   sessions: SessionInfo[] = [],
@@ -220,10 +224,9 @@ export async function generateAttestationFinFormation(
       tauxJalons = tableau.taux;
       lignesJalons = lignesJalonsAttestation(tableau);
     } catch (lectureError) {
-      // Erreur de lecture ≠ zéro : aucun taux fabriqué sur un document officiel.
+      // Erreur de lecture ≠ zéro : aucun document officiel produit sans taux prouvé.
       console.error('[Attestation] Taux de jalons indisponible', lectureError);
-      lignesJalons = null;
-      tauxJalons = null;
+      throw new AttestationJalonsIndisponibles();
     }
   }
 

@@ -23,6 +23,11 @@ export default function PiloteApprenantTest() {
   const [email, setEmail] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
+  // Pilote TEST : aucune file locale de réponses (écritures RPC directes) ; échec = session conservée.
+  const deconnexionPilote = async () => {
+    try { const { error } = await supabase.auth.signOut(); if (error) setErreur("Déconnexion impossible : session conservée."); }
+    catch { setErreur("Déconnexion impossible : session conservée."); }
+  };
   const [tentative, setTentative] = useState<TentativeReelle | null>(null);
   const [reponses, setReponses] = useState<Record<string, string>>({});
   const [revisions, setRevisions] = useState<Record<string, number>>({});
@@ -129,7 +134,7 @@ export default function PiloteApprenantTest() {
       <div className="p-8 space-y-2">
         <p>Aucune épreuve TEST accessible pour ce compte.</p>
         {erreur && <p className="text-sm text-destructive">{erreur}</p>}
-        <Button variant="outline" onClick={() => supabase.auth.signOut()}>Se déconnecter</Button>
+        <Button variant="outline" onClick={deconnexionPilote}>Se déconnecter</Button>
       </div>
     );
   }
@@ -189,7 +194,7 @@ export default function PiloteApprenantTest() {
         <Button onClick={terminer} data-testid="terminer">Terminer l'épreuve</Button>
       )}
       {erreur && <p className="text-sm text-destructive">{erreur}</p>}
-      <Button variant="outline" size="sm" onClick={() => supabase.auth.signOut()}>Se déconnecter</Button>
+      <Button variant="outline" size="sm" onClick={deconnexionPilote}>Se déconnecter</Button>
     </div>
   );
 }

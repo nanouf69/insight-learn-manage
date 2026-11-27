@@ -238,7 +238,7 @@ export function DocumentsFormation({ apprenant }: DocumentsFormationProps) {
       }
     } catch (error) {
       console.error('Erreur génération PDF:', error);
-      toast.error("Erreur lors de la génération du document");
+      toast.error((error as any)?.name === 'AttestationJalonsIndisponibles' ? (error as Error).message : "Erreur lors de la génération du document");
     } finally {
       setGeneratingDoc(null);
     }
