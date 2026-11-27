@@ -3658,7 +3658,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         {lignes.map(({ candidat: a, statut }, index) => (
                           <div key={a.id} className="flex items-start justify-between gap-2 py-2 text-sm">
                             <div className="min-w-0 flex-1">
-                              <span className={`break-words font-medium ${aFormerIds.has(a.id) ? 'font-bold text-destructive' : ''}`}><span className="mr-2 inline-block min-w-6 tabular-nums">{index + 1}.</span>{a.nom} {a.prenom}</span>
+                              <span className={`break-words font-medium ${aFormerIds.has(a.id) ? 'font-bold text-destructive' : ''}`}><span className="mr-2 inline-block min-w-6 tabular-nums">{index + 1}.</span><a href={`/?section=crm&apprenant=${encodeURIComponent(String(a.id))}`} target="_blank" rel="noopener noreferrer" className="hover:underline" title="Ouvrir la fiche CRM" aria-label={`Ouvrir la fiche CRM de ${a.nom} ${a.prenom}`}>{a.nom} {a.prenom}</a></span>
                               <p className="break-words text-xs text-muted-foreground">{aFormerIds.has(a.id) ? 'À former — épreuve pratique · ' : ''}{statut}</p>
                               <PratiqueCandidateNote candidateId={a.id} candidateName={`${a.nom} ${a.prenom}`} notes={candidateNotes} />
                             </div>
@@ -3670,7 +3670,7 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
                         ))}
                         {lignesAFormer.map((a, index) => (
                           <div key={`af-${a.id}`} className="py-2 text-sm">
-                            <span className="break-words font-bold text-destructive"><span className="mr-2 inline-block min-w-6 tabular-nums">{lignes.length + index + 1}.</span>{a.nom} {a.prenom}</span>
+                            <span className="break-words font-bold text-destructive"><span className="mr-2 inline-block min-w-6 tabular-nums">{lignes.length + index + 1}.</span><a href={`/?section=crm&apprenant=${encodeURIComponent(String(a.id))}`} target="_blank" rel="noopener noreferrer" className="hover:underline" title="Ouvrir la fiche CRM" aria-label={`Ouvrir la fiche CRM de ${a.nom} ${a.prenom}`}>{a.nom} {a.prenom}</a></span>
                             <p className="text-xs text-destructive">À former — épreuve pratique</p>
                             <PratiqueCandidateNote candidateId={a.id} candidateName={`${a.nom} ${a.prenom}`} notes={candidateNotes} />
                           </div>
