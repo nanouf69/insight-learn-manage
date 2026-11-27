@@ -11022,15 +11022,6 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </CardContent>
           </Card>
 
-          {/* Même support authentifié que l’aperçu élève, sans activité ni écriture. */}
-          {[6, 8].includes(Number(module.id)) && (
-            <PratiqueQuestionsSupport
-              key={`questions-pratique-edition-${module.id}`}
-              moduleId={Number(module.id)}
-              coursId={2}
-            />
-          )}
-
           {/* Cours */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -11093,6 +11084,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                   onFileDeleted={(itemId, fichierIndex, url) => handleFileDeleted("cours", itemId, fichierIndex, url)}
                 />
               )
+            )}
+            {/* Affiché dans la liste des cours comme les supports PowerPoint ; lecture seule, hors pages/activités. */}
+            {[6, 8].includes(Number(module.id)) && (
+              <Card className="border-2 border-primary/30">
+                <CardContent className="p-4">
+                  <PratiqueQuestionsSupport
+                    key={`questions-pratique-edition-${module.id}`}
+                    moduleId={Number(module.id)}
+                    coursId={2}
+                  />
+                </CardContent>
+              </Card>
             )}
           </div>
 
