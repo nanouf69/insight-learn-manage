@@ -2122,6 +2122,13 @@
       "when": 1795768536879,
       "tag": "0302_devis_envoi_destinataires",
       "breakpoints": true
+    },
+    {
+      "idx": 303,
+      "version": "7",
+      "when": 1795770418517,
+      "tag": "0303_subject_reset_same_second_v2_recovery",
+      "breakpoints": true
     }
   ]
 }
