@@ -18,6 +18,7 @@ import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestio
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { reponsesArchiveHorsRevision } from '@/lib/bilanRevisionPrecedence';
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
+import { decisionFinModule } from "@/lib/finModuleDecision";
 import { chargerPreuvesQuizModules, avecPreuvesQuizConfirmees } from '@/lib/moduleProgressionReadModel';
 import { hasRecordedAnswer } from "@/lib/moduleCompletionEvidence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
@@ -8482,14 +8483,18 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         toast.error("Quiz Lyon à terminer : les 138 questions doivent avoir une réponse enregistrée.");
         return false;
       }
-      if (historicalQuizProof?.remainingQuizzes.length) {
-        const missing = historicalQuizProof.remainingQuizzes.filter(q => !submittedExoIdsRef.current.has(Number(q.id)));
-        if (missing.length) {
-          toast.error("Module à terminer : des questions de votre passage restent sans réponse enregistrée.");
-          return false;
-        }
+      // completionPersistedRef est mis à true au chargement dès que le serveur
+      // relit une ligne « completed » (ou un passage archivé) : sortie idempotente.
+      const decisionFin = decisionFinModule({
+        completionServeurConfirmee: completionPersistedRef.current,
+        quizRestants: historicalQuizProof?.remainingQuizzes,
+        exosSoumis: submittedExoIdsRef.current,
+      });
+      if (decisionFin.action === "sortie") return true;
+      if (decisionFin.action === "bloquer") {
+        toast.error(decisionFin.message, { duration: 12000 });
+        return false;
       }
-      if (completionPersistedRef.current) return true;
 
       if (!apprenantId) {
         // Côté élève : jamais de fausse réussite sans identité (rien n'est enregistré).
@@ -10650,7 +10655,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
             </Button>
             );
           })() : (
-            <Button variant="secondary" className="gap-2" disabled={savingCompletion || !!historicalQuizProof?.remainingQuizzes.some(q => !submittedExoIdsRef.current.has(Number(q.id)))} onClick={async () => {
+            <Button variant="secondary" className="gap-2" disabled={savingCompletion} onClick={async () => {
               await terminerModuleEtQuitter();
             }}>
               <CheckCircle2 className="w-4 h-4" />
