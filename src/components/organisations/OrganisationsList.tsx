@@ -26,7 +26,7 @@ export function OrganisationsList() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [sending, setSending] = useState(false);
-  const [relai, setRelai] = useState<null | { mode: "transfert" | "renvoi"; to: string; subject: string; note: string }>(null);
+  const [relai, setRelai] = useState<null | { mode: "transfert" | "renvoi"; to: string; subject: string; note: string; contenu: string }>(null);
   const [relaiEnvoi, setRelaiEnvoi] = useState(false);
 
   const ouvrirRelai = (mode: "transfert" | "renvoi") => {
@@ -37,6 +37,11 @@ export function OrganisationsList() {
       to: mode === "renvoi" ? (selectedEmail.recipients || []).join(", ") : "",
       subject: mode === "transfert" && !/^tr\s*:/i.test(sujet) ? `TR: ${sujet}` : sujet,
       note: "",
+      contenu: (() => {
+        if (!selectedEmail.body_html) return String(selectedEmail.body_preview || "");
+        const d = new DOMParser().parseFromString(selectedEmail.body_html.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(p|div|li|h\d|tr)>/gi, "\n"), "text/html");
+        return (d.body.textContent || "").replace(/\n{3,}/g, "\n\n").trim();
+      })(),
     });
   };
 
@@ -48,7 +53,8 @@ export function OrganisationsList() {
       return;
     }
     if (!relai.subject.trim()) { toast.error("Veuillez renseigner un objet"); return; }
-    const original = selectedEmail.body_html || String(selectedEmail.body_preview || "").replace(/\n/g, "<br>");
+    const echap = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+    const original = echap(relai.contenu);
     const dateTxt = selectedEmail.sent_at || selectedEmail.received_at
       ? format(new Date(selectedEmail.sent_at || selectedEmail.received_at), "dd MMMM yyyy 'à' HH:mm", { locale: fr }) : "-";
     const note = relai.note.trim() ? relai.note.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>") + "<br><br>" : "";
@@ -561,6 +567,7 @@ export function OrganisationsList() {
                   <h4 className="text-sm font-semibold">{relai.mode === "transfert" ? "Transférer ce mail" : "Renvoyer ce mail"}</h4>
                   <Input aria-label="Destinataire" placeholder="Adresse email du destinataire" value={relai.to} onChange={(e) => setRelai({ ...relai, to: e.target.value })} />
                   <Input aria-label="Objet" placeholder="Objet" value={relai.subject} onChange={(e) => setRelai({ ...relai, subject: e.target.value })} />
+                  <Textarea aria-label="Contenu du mail" placeholder="Contenu du mail" rows={10} value={relai.contenu} onChange={(e) => setRelai({ ...relai, contenu: e.target.value })} />
                   <Textarea aria-label="Message ajouté" placeholder="Message à ajouter au-dessus (facultatif)" rows={3} value={relai.note} onChange={(e) => setRelai({ ...relai, note: e.target.value })} />
                   <div className="flex justify-end gap-2">
                     <Button variant="ghost" size="sm" onClick={() => setRelai(null)} disabled={relaiEnvoi}>Annuler</Button>
