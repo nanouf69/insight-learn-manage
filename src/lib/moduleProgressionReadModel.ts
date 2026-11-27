@@ -49,3 +49,14 @@ export function projeterProgressionConfirmee<T extends CompletionEvidenceRow>(
 ): T[] {
   return exigerEtatServeurConcordant(rows, states).map(row => avecPreuvesQuizConfirmees(row, apprenantId, proofs));
 }
+
+/** Quiz d'origine (jamais une révision) d'un module avec tentative soumise confirmée par le serveur, pour ce compte seulement. */
+export function exosSoumisDuModule(proofs: readonly OwnedSubmittedModuleProof[], moduleId: number, apprenantId: string): Set<string> {
+  const out = new Set<string>();
+  for (const p of proofs) {
+    if (p.apprenant_id !== apprenantId || p.status !== 'submitted' || !p.submitted_at) continue;
+    const m = /^module_(\d+)_exo_(\d+)$/.exec(p.exercice_id);
+    if (m && Number(m[1]) === Number(moduleId)) out.add(m[2]);
+  }
+  return out;
+}

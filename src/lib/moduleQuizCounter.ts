@@ -2,7 +2,12 @@ import { hasRecordedAnswer } from "./moduleCompletionEvidence";
 export interface QuizCounterItem { id: string; label: string; questionIds: string[] }
 
 /** Completed rows carry the historical perimeter; revisions never extend it. */
-export function compterQuizModule(rows: any[], current: QuizCounterItem[]) {
+/**
+ * `opts.exosSoumis` : quiz d'origine avec tentative soumise confirmée par le serveur
+ * (status submitted + submitted_at) ; `opts.preuveServeurComplete` : verdict etat_completion_modules.
+ * Affichage seul : le statut du module reste celui du serveur.
+ */
+export function compterQuizModule(rows: any[], current: QuizCounterItem[], opts: { exosSoumis?: ReadonlySet<string>; preuveServeurComplete?: boolean | null } = {}) {
   const terminal = rows.filter((r) => r.status === "completed" && Array.isArray(r.details) && r.details.length > 0)
     .sort((a, b) => String(a.completed_at ?? a.created_at ?? "").localeCompare(String(b.completed_at ?? b.created_at ?? "")));
   const evidence = terminal.length ? [terminal[0]] : rows;
@@ -20,6 +25,7 @@ export function compterQuizModule(rows: any[], current: QuizCounterItem[]) {
     ? [...groups].map(([id, g]) => ({ id, label: current.find((q) => q.id === id)?.label ?? g.label, questionIds: [...g.ids] }))
     : current;
   const done = (q: QuizCounterItem) => {
+    if (opts.preuveServeurComplete === true || opts.exosSoumis?.has(q.id)) return true;
     const g = groups.get(q.id);
     return !!g && g.answered.size > 0 && q.questionIds.every((id) => g.answered.has(id));
   };

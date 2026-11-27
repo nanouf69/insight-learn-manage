@@ -49,6 +49,7 @@ import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/component
 import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboard, modulesAttribuesDashboard, modulesExigesDashboard, equipementsTaxiAjoute, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
+import { exosSoumisDuModule as exosSoumisDuModuleDashboard } from "@/lib/moduleProgressionReadModel";
 import { avecEtatServeur, chargerEtatCompletionServeur, type EtatCompletionServeur } from "@/lib/etatCompletionServeur";
 import { chargerPreuvesQuizModules, projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
 import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
@@ -900,6 +901,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   const [moduleScores, setModuleScores] = useState<Record<number, { score_obtenu: number | null; score_max: number | null }>>({});
   // Liste réelle des quiz de chaque module (contenu serveur), lecture seule — affichage uniquement.
   // Quiz attendus = un élément PAR QUIZ réel du module (même compte que la page du module).
+  const [preuvesQuizDashboard, setPreuvesQuizDashboard] = useState<{ owner: string; proofs: any[] } | null>(null);
   const [quizAttendusParModule, setQuizAttendusParModule] = useState<Record<number, Array<{ id: string; label: string; questionIds: string[] }>>>({});
   useEffect(() => {
     let annule = false;
@@ -1314,6 +1316,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         });
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows as any);
+        setPreuvesQuizDashboard({ owner: apprenant.id, proofs: preuvesQuiz as any[] });
         setCompletionsOwner(apprenant.id ?? null);
         setCompletionsError(false);
         setCompletionsLoaded(true);
@@ -1649,6 +1652,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         });
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows as any);
+        setPreuvesQuizDashboard({ owner: apprenant.id, proofs: preuvesQuiz as any[] });
         setCompletionsOwner(apprenant.id);
         setCompletionsError(false);
         setCompletionsLoaded(true);
@@ -2139,7 +2143,12 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Quiz attendus = liste réelle du module, comptée quiz par quiz (comme la page du module).
     const attendus = quizAttendusParModule[module.id];
     if ((attendus && attendus.length > 0) || rows.some((r) => r.status === "completed" && Array.isArray(r.details) && r.details.some((d: any) => d.exerciceId != null && d.questionId != null))) {
-      acc[module.id] = compterQuizModule(rows, attendus ?? []);
+      // Même preuve que le serveur : tentatives d'origine soumises du compte + verdict etat_completion_modules.
+      const ownerPreuves = apprenant?.id && preuvesQuizDashboard?.owner === apprenant.id ? preuvesQuizDashboard.proofs : [];
+      acc[module.id] = compterQuizModule(rows, attendus ?? [], {
+        exosSoumis: apprenant?.id ? exosSoumisDuModuleDashboard(ownerPreuves, module.id, apprenant.id) : new Set(),
+        preuveServeurComplete: rows.some((r: any) => r.status === "completed" && r.preuve_serveur === true) ? true : null,
+      });
       return acc;
     }
     const completedLabelsArr = Array.from(doneLabels).sort();

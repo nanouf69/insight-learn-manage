@@ -19,6 +19,7 @@ import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPer
 import { reponsesArchiveHorsRevision } from '@/lib/bilanRevisionPrecedence';
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
 import { decisionFinModule } from "@/lib/finModuleDecision";
+import { chargerEtatCompletionServeur } from "@/lib/etatCompletionServeur";
 import { chargerPreuvesQuizModules, avecPreuvesQuizConfirmees } from '@/lib/moduleProgressionReadModel';
 import { hasRecordedAnswer } from "@/lib/moduleCompletionEvidence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
@@ -8483,18 +8484,42 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         toast.error("Quiz Lyon à terminer : les 138 questions doivent avoir une réponse enregistrée.");
         return false;
       }
-      // completionPersistedRef est mis à true au chargement dès que le serveur
-      // relit une ligne « completed » (ou un passage archivé) : sortie idempotente.
+      // Autorité = verdict serveur relu au clic : une ancienne ligne « completed »
+      // sans preuve actuelle complète ne suffit jamais (aucune écriture ici).
+      let etatServeur: { status: string | null; preuve_complete: boolean | null } | null | undefined = null;
+      if (apprenantId && studentOnly) {
+        try {
+          const etats = await chargerEtatCompletionServeur(apprenantId);
+          const e = etats.get(Number(module.id));
+          etatServeur = e ? { status: e.status, preuve_complete: e.preuve_complete } : null;
+        } catch (err) {
+          console.error("[ModuleDetailView] verdict serveur indisponible", err);
+          etatServeur = undefined;
+        }
+      } else if (completionPersistedRef.current) {
+        etatServeur = { status: "completed", preuve_complete: null };
+      }
       const decisionFin = decisionFinModule({
-        completionServeurConfirmee: completionPersistedRef.current,
+        etatServeur,
         quizRestants: historicalQuizProof?.remainingQuizzes,
         exosSoumis: submittedExoIdsRef.current,
       });
       if (decisionFin.action === "sortie") return true;
-      if (decisionFin.action === "bloquer") {
-        toast.error(decisionFin.message, { duration: 12000 });
+      if (decisionFin.action === "erreur") {
+        toast.error(decisionFin.message, { id: "fin-module", duration: 12000 });
         return false;
       }
+      if (decisionFin.action === "bloquer") {
+        const premier = Number(decisionFin.manquants[0]?.id);
+        const pageQuiz = pages.findIndex((p: any) => p?.type === "exercice-single" && Number(p.exercice?.id) === premier);
+        toast.error(decisionFin.message, {
+          id: "fin-module", duration: 15000,
+          ...(pageQuiz >= 0 ? { action: { label: "Ouvrir ce quiz", onClick: () => goToPage(pageQuiz) } } : {}),
+        });
+        return false;
+      }
+      // Ligne « completed » périmée : jamais de réécriture depuis l'écran.
+      if (etatServeur?.status === "completed") return false;
 
       if (!apprenantId) {
         // Côté élève : jamais de fausse réussite sans identité (rien n'est enregistré).
