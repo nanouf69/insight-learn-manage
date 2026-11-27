@@ -2118,7 +2118,7 @@ const CoursQuizEquipementsTaxi = lazy(() => import("./equipements-taxi-locale/Co
 const QuizJoursFeries = lazy(() => import("./cas-pratique-feries/QuizJoursFeries"));
 import QuizExterneBilan, { quizIntegresBilan, exerciceRemplaceParQuizIntegres, etapeQuizComplementaires, ID_ETAPE_QUIZ_COMPLEMENTAIRES } from "./QuizExterneBilan";
 import { getCachedSignedUrl, signCourseObject } from "@/lib/signedCourseUrlCache";
-import { exoSauvegardable, revisionsSessionARestaurer, revisionFaussesTerminee, revisionRepriseProuvee } from "@/lib/revisionFaussesEtat";
+import { exoSauvegardable, revisionsSessionARestaurer, revisionFaussesTerminee, revisionRepriseProuvee, questionsRevisionRestantes, validationEcritRevision } from "@/lib/revisionFaussesEtat";
 
 const PRATIQUE_VTC_DATA: ModuleData = {
   id: 8,
@@ -7832,8 +7832,9 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
           // La reprise porte sur toutes les fausses encore inchangées ou vides,
           // pas seulement sur les cases vides : une nouvelle réponse encore
           // fausse prouve la reprise sans signifier que la correction est finie.
+          const vides = new Set(questionsRevisionRestantes(rep, clesFausses));
           const restantes = faussesInitiales
-            .filter(({ cle }) => !revisionFaussesTerminee(initiales, rep, [cle]))
+            .filter(({ cle }) => vides.has(cle))
             .map(({ id }) => id);
           setRepriseEnAttente((prev) => {
             const next = { ...prev };
@@ -9813,6 +9814,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                         // sa note et le statut du module ne sont jamais touchés.
                         if (apprenantId) {
                           let enRevision = revisionActiveRef.current.has(exo.id) || submittedExoIdsRef.current.has(exo.id);
+                          // Quiz déjà remis sans révision ouverte : les réponses à l'écran sont la
+                          // copie initiale. Ne rien renvoyer (un miroir écraserait une vraie
+                          // correction) ; la remise initiale reste la preuve et l'élève continue.
+                          if (enRevision && !validationEcritRevision({ dejaRemis: true, revisionOuverte: revisionOuverteRef.current.has(exo.id) })) {
+                            validationEnCoursRef.current.delete(exo.id);
+                            setValidatingExo((cur) => (cur === exo.id ? null : cur));
+                            afficherResultatValide();
+                            return;
+                          }
                           const exoAnswers: Record<string, any> = {};
                           Object.entries(selectedAnswers).forEach(([k, v]) => {
                             if (k.startsWith(`${exo.id}-`)) exoAnswers[k] = v;

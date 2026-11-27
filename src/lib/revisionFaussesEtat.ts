@@ -47,5 +47,22 @@ export function revisionFaussesTerminee(
   clesFausses: string[],
 ): boolean {
   if (!revision || clesFausses.length === 0) return false;
-  return clesFausses.every((k) => !vide(revision[k]) && norm(revision[k]) !== norm(initiales[k]));
+  // Terminée = reprise prouvée (pas une copie miroir) ET chaque question
+  // initialement fausse a de nouveau une réponse. Retenir la même réponse
+  // qu'au départ reste une correction faite : ne jamais la redemander en boucle.
+  return revisionRepriseProuvee(initiales, revision, clesFausses) && clesFausses.every((k) => !vide(revision[k]));
+}
+
+/** Questions encore à refaire dans une reprise prouvée : uniquement les réponses vides. */
+export function questionsRevisionRestantes(revision: Record<string, Rep> | null | undefined, clesFausses: string[]): string[] {
+  return clesFausses.filter((k) => vide(revision?.[k]));
+}
+
+/**
+ * Valider un quiz déjà remis n'écrit une révision que si elle est réellement
+ * ouverte : sinon les réponses affichées sont la copie initiale, et les
+ * renvoyer écraserait une vraie correction par un miroir.
+ */
+export function validationEcritRevision(p: { dejaRemis: boolean; revisionOuverte: boolean }): boolean {
+  return !p.dejaRemis || p.revisionOuverte;
 }
