@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, MapPin, Landmark, ChevronRight, Inbox, Send, Eye, RefreshCw, Loader2, PenLine, FileText } from "lucide-react";
+import { Mail, Phone, MapPin, Landmark, ChevronRight, Inbox, Send, Eye, RefreshCw, Loader2, PenLine, FileText, Search, X } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,6 +18,7 @@ import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 
 export function OrganisationsList() {
+  const [recherche, setRecherche] = useState("");
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
   const [selectedEmail, setSelectedEmail] = useState<any>(null);
   const [syncing, setSyncing] = useState(false);
@@ -148,6 +149,13 @@ export function OrganisationsList() {
   const receivedEmails = (orgEmails?.filter(e => e.sender_email?.toLowerCase().includes(selectedOrg?.email?.split('@')[1]?.toLowerCase() || '')) || [])
     .sort((a, b) => new Date(b.received_at || b.created_at).getTime() - new Date(a.received_at || a.created_at).getTime());
 
+  const normaliserRecherche = (valeur: string) => valeur.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("fr").trim();
+  const termes = normaliserRecherche(recherche).split(/\s+/).filter(Boolean);
+  const organisationsFiltrees = (organisations || []).filter((org) => {
+    const texte = normaliserRecherche([org.nom, org.ville, org.email, org.siret].filter(Boolean).join(" "));
+    return termes.every((terme) => texte.includes(terme));
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -158,12 +166,12 @@ export function OrganisationsList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Organisations</h1>
           <p className="text-muted-foreground">Gérez vos organisations clientes et partenaires</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             className="gap-2"
@@ -196,8 +204,28 @@ export function OrganisationsList() {
         </div>
       </div>
 
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+        <Input
+          aria-label="Rechercher une organisation"
+          placeholder="Rechercher par nom, ville, email ou SIRET…"
+          value={recherche}
+          onChange={(event) => setRecherche(event.target.value)}
+          className="pl-10 pr-12"
+        />
+        {recherche && (
+          <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2" aria-label="Effacer la recherche" title="Effacer la recherche" onClick={() => setRecherche("")}>
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+      {organisationsFiltrees.length === 0 && (
+        <p role="status" className="py-8 text-center text-muted-foreground">
+          {recherche.trim() ? "Aucune organisation ne correspond à votre recherche." : "Aucune organisation enregistrée."}
+        </p>
+      )}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {(organisations || []).map((org) => (
+        {organisationsFiltrees.map((org) => (
           <Card
             key={org.id}
             className="hover:shadow-md transition-shadow cursor-pointer"
