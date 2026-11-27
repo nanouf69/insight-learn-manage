@@ -26,6 +26,15 @@ const lignePerimee = {
 const soumis = (ids: number[], extra: any[] = []) => exosSoumisDuModule(
   [...ids.map((e) => ({ apprenant_id: A, exercice_id: `module_4_exo_${e}`, status: "submitted", submitted_at: "2026-11-25T21:00:00Z", reponses: {} })), ...extra] as any, 4, A);
 
+// Module 9 (Bilan TAXI) relu le 27/11 après réactivation : même quiz Français 103 requis par d'anciens périmètres.
+const MODULE9 = [100, 101, 102, 103, 105, 203, 204].map((id) => ({ id, actif: true }));
+describe("Module 9 : quiz 103 « Bilan Français » réactivé", () => {
+  it("visible pour l'élève TAXI, ordre conservé", () => {
+    expect(MODULE9.filter((e) => exerciceVisibleApprenant(9, e)).map((e) => e.id)).toEqual([100, 101, 102, 103, 105, 203, 204]);
+    expect(exerciceVisibleApprenant(9, { id: 103, actif: false })).toBe(false);
+  });
+});
+
 describe("Module 4 : quiz 103 « Bilan Français » réactivé", () => {
   it("visible et ouvrable par l'élève, sans changer l'ordre ni les autres quiz", () => {
     const visibles = MODULE4.filter((e) => exerciceVisibleApprenant(4, e)).map((e) => e.id);
