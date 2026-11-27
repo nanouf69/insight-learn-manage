@@ -29,7 +29,7 @@ export function compterQuizModule(rows: any[], current: QuizCounterItem[], opts:
     const g = groups.get(q.id);
     return !!g && g.answered.size > 0 && q.questionIds.every((id) => g.answered.has(id));
   };
-  return { completedQuizzes: required.filter(done).length, totalQuizzes: required.length,
+  return { requiredQuizzes: required.map((q) => ({ id: q.id, label: q.label })), completedQuizzes: required.filter(done).length, totalQuizzes: required.length,
     completedLabels: required.filter(done).map((q) => q.label), remainingLabels: required.filter((q) => !done(q)).map((q) => q.label),
     remainingQuizzes: required.filter((q) => !done(q)).map(q => ({ ...q, missingQuestionIds: q.questionIds.filter(id => !groups.get(q.id)?.answered.has(id)) })) };
 }

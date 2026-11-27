@@ -19,9 +19,12 @@ import { applyQuestionSaveIntent, isCanonicalQuestionSaveIntent, explicitQuestio
 import { pendingModulePages, queueModulePagesStatus } from "@/lib/modulePagesPersistence";
 import { reponsesArchiveHorsRevision } from '@/lib/bilanRevisionPrecedence';
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
-import { decisionFinModule } from "@/lib/finModuleDecision";
+import { decisionFinModule, MESSAGE_VERIFICATION_IMPOSSIBLE } from "@/lib/finModuleDecision";
 import { chargerEtatCompletionServeur } from "@/lib/etatCompletionServeur";
-import { chargerPreuvesQuizModules, avecPreuvesQuizConfirmees } from '@/lib/moduleProgressionReadModel';
+import { chargerPreuvesQuizModules, chargerReponsesQuizOrigine, avecPreuvesQuizConfirmees } from '@/lib/moduleProgressionReadModel';
+import { etatServeurQuizModule, listesQuizModule, texteListesQuiz, type ListesQuiz } from '@/lib/quizStatutListes';
+import QuizStatutListes from './QuizStatutListes';
+import { MODULES_QUESTIONS_FACULTATIVES } from '@/lib/moduleCompletionEvidence';
 import { hasRecordedAnswer } from "@/lib/moduleCompletionEvidence";
 import { BilanSyncDiagnostic } from './BilanSyncDiagnostic';
 import { computeExercicePartNumbers } from "@/lib/exercicePartNumbers";
@@ -7117,6 +7120,42 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
     // fait sur une liste pas encore chargée après rechargement).
     const activeExercicesRef = useRef<ExerciceItem[]>(activeExercices);
     activeExercicesRef.current = activeExercices;
+    // Listes nominatives serveur (confirmés / en attente) : lecture seule, erreur = « non vérifiable ».
+    const modulePourListes = Number(moduleData.id);
+    const listesQuizApplicables = studentOnly && !!apprenantId && !MODULES_QUESTIONS_FACULTATIVES.has(modulePourListes)
+      && !(modulePourListes >= 35 && modulePourListes <= 38) && modulePourListes !== 5 && modulePourListes !== 11;
+    const [etatQuizServeur, setEtatQuizServeur] = useState<{ cle: string; serveur: ReturnType<typeof etatServeurQuizModule> | null; moduleConfirme: boolean } | null>(null);
+    const [etatQuizTick, setEtatQuizTick] = useState(0);
+    const cleEtatQuiz = `${apprenantId ?? ""}:${modulePourListes}:${etatQuizTick}`;
+    useEffect(() => {
+      if (!listesQuizApplicables || !apprenantId) return;
+      let annule = false;
+      (async () => {
+        try {
+          const [lignes, etats] = await Promise.all([chargerReponsesQuizOrigine(apprenantId), chargerEtatCompletionServeur(apprenantId)]);
+          const e = etats.get(modulePourListes);
+          if (!annule) setEtatQuizServeur({ cle: cleEtatQuiz, serveur: etatServeurQuizModule(lignes, modulePourListes, apprenantId),
+            moduleConfirme: e?.status === "completed" && e?.preuve_complete !== false });
+        } catch (err) {
+          console.error("[ModuleDetailView] état des quiz illisible", err);
+          if (!annule) setEtatQuizServeur({ cle: cleEtatQuiz, serveur: null, moduleConfirme: false });
+        }
+      })();
+      return () => { annule = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [cleEtatQuiz, listesQuizApplicables]);
+    const quizRequisListes = activeExercices
+      .filter((e: any) => Array.isArray(e?.questions) && e.questions.length > 0)
+      .map((e: any) => ({ id: String(e.id), label: String(e.titre ?? e.id) }));
+    const listesQuiz: ListesQuiz | null = listesQuizApplicables && etatQuizServeur?.cle === cleEtatQuiz && quizRequisListes.length > 0
+      ? listesQuizModule({
+          requis: quizRequisListes,
+          serveur: etatQuizServeur.serveur,
+          moduleConfirme: etatQuizServeur.moduleConfirme,
+          reponsesLocales: (id) => Object.entries(selectedAnswers ?? {})
+            .filter(([cle, v]) => cle.startsWith(`${id}-`) && hasRecordedAnswer(v)).length,
+        })
+      : null;
 
     // Nombre total de questions actives du module : transmis au serveur avec
     // chaque sauvegarde de réponse pour permettre la validation automatique
@@ -8511,6 +8550,31 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
         quizValides: historicalQuizProof?.completedLabels,
       });
       if (decisionFin.action === "sortie") return true;
+      if (listesQuizApplicables && apprenantId) {
+        // Listes serveur relues au clic : erreur = aucun succès ; quiz en attente = blocage nominatif.
+        let listesClic: ListesQuiz;
+        try {
+          const lignes = await chargerReponsesQuizOrigine(apprenantId);
+          listesClic = listesQuizModule({ requis: quizRequisListes, serveur: etatServeurQuizModule(lignes, Number(module.id), apprenantId),
+            reponsesLocales: (id) => Object.entries(selectedAnswersRef.current ?? {}).filter(([cle, v]) => cle.startsWith(`${id}-`) && hasRecordedAnswer(v)).length });
+        } catch {
+          listesClic = listesQuizModule({ requis: quizRequisListes, serveur: null });
+        }
+        if (!listesClic.lisible) {
+          toast.error(MESSAGE_VERIFICATION_IMPOSSIBLE, { id: "fin-module", duration: 12000 });
+          return false;
+        }
+        if (listesClic.enAttente.length > 0) {
+          const premier = listesClic.enAttente.find((q) => q.statut !== "indisponible");
+          const pageQuiz = premier ? pages.findIndex((p: any) => p?.type === "exercice-single" && String(p.exercice?.id) === premier.id) : -1;
+          setEtatQuizTick((t) => t + 1);
+          toast.error(`Module à terminer. ${texteListesQuiz(listesClic)}`, {
+            id: "fin-module", duration: 15000,
+            ...(pageQuiz >= 0 ? { action: { label: `Ouvrir « ${premier!.label} »`, onClick: () => goToPage(pageQuiz) } } : {}),
+          });
+          return false;
+        }
+      }
       if (decisionFin.action === "erreur") {
         toast.error(decisionFin.message, { id: "fin-module", duration: 12000 });
         return false;
@@ -9992,6 +10056,7 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
                               });
                               if (!submitted) { echec("validation_serveur"); return false; }
                               submittedExoIdsRef.current.add(exo.id);
+                              setEtatQuizTick((t) => t + 1);
                             }
                             dernierEnvoiValideRef.current.set(exo.id, exerciceId);
                             return true;
@@ -10415,6 +10480,15 @@ const ModuleDetailView = ({ module, onBack, studentOnly = false, apprenantId, ap
       <>
       <div className="max-w-[1760px] mx-auto">
         <AnswerSaveIndicator className="mb-2" />
+        {listesQuiz && listesQuiz.enAttente.length > 0 && (
+          <div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3" data-testid="module-quiz-listes">
+            <p className="mb-1 text-sm font-semibold text-destructive">Quiz de ce module</p>
+            <QuizStatutListes listes={listesQuiz} onOuvrir={(id) => {
+              const page = pages.findIndex((p: any) => p?.type === "exercice-single" && String(p.exercice?.id) === id);
+              if (page >= 0) goToPage(page);
+            }} />
+          </div>
+        )}
       </div>
       <div className="flex gap-4 lg:gap-6 max-w-[1760px] mx-auto">
         {/* Vertical progress sidebar — desktop */}

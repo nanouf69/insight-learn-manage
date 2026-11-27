@@ -18,6 +18,7 @@ Usage : python3 src/test/module_completion_sql_contract.py [--capture]
 Variable MIGRATION_0197 : chemin du SQL de correction (défaut : fichier du dépôt).
 """
 import glob
+import json
 import os
 import pathlib
 import subprocess
@@ -421,6 +422,75 @@ class Apres0197(unittest.TestCase):
         self.assertEqual(row(2), '')
 
 
+class Garde0308(unittest.TestCase):
+    """0308 : aucun nombre ni liste du navigateur ne remplace les remises d'origine serveur."""
+    def setUp(self):
+        if sql("SELECT count(*) FROM pg_proc WHERE proname='garde_ecriture_directe_releve_module'") == '0':
+            self.skipTest('0308 absente')
+        Apres0197.setUp(self)
+        ed = '{"exercices":[{"id":1,"titre":"Quiz Un","questions":[{"id":1}]},{"id":2,"titre":"Quiz Deux","questions":[{"id":2}]},' \
+             '{"id":3,"titre":"Quiz Inactif","actif":false,"questions":[{"id":3}]},{"id":4,"titre":"Quiz Vide","deletedQuestionIds":[4],"questions":[{"id":4}]}]}'
+        sql(f"DELETE FROM module_editor_state; INSERT INTO module_editor_state VALUES (2, '{ed}'), (5, '{ed}'), (3, '{ed}')")
+
+    def remise(self, ex, aid=A, status='submitted', exo=None):
+        sub = 'now()' if status == 'submitted' else 'NULL'
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{aid}','{exo or f'module_2_exo_{ex}'}','{{\"{ex}-{ex}\":\"A\"}}','{status}',{sub})")
+
+    def details(self, *exos):
+        return "'" + json.dumps([{"exerciceId": e, "questionId": e, "reponseCorrecte": "A", "reponseEleve": "A"} for e in exos]) + "'::jsonb"
+
+    def test_01_details_tronques_par_le_navigateur_refuses_quiz_nomme(self):
+        self.remise(1)
+        e = err(smc(U, 2, True, 100, self.details(1))) or ''
+        self.assertIn('quiz non remis', e); self.assertIn('« Quiz Deux »', e)
+        self.assertNotIn('Quiz Inactif', e); self.assertNotIn('Quiz Vide', e)
+        self.assertEqual(row(2), '')
+
+    def test_02_details_nuls_sur_ligne_tronquee_refuses(self):
+        self.remise(1)
+        sql(smc(U, 2, False, 50, self.details(1)))
+        self.assertIn('« Quiz Deux »', err(smc(U, 2, True, 100, 'NULL')) or '')
+        self.assertTrue(row(2).startswith('in_progress'))
+
+    def test_03_toutes_les_remises_d_origine_valident(self):
+        self.remise(1); self.remise(2)
+        self.assertTrue(sql(smc(U, 2, True, 100, self.details(1, 2))).startswith('completed|100|'))
+
+    def test_04_brouillon_revision_autre_compte_ne_prouvent_pas(self):
+        self.remise(1); self.remise(2, status='draft')
+        self.remise(2, exo='module_2_revision_exo_2'); self.remise(2, aid=A2)
+        self.assertIn('« Quiz Deux »', err(smc(U, 2, True, 100, self.details(1, 2))) or '')
+
+    def test_05_ecriture_directe_eleve_refusee_admin_autorise(self):
+        e = err(learner(U, f"INSERT INTO {TABLE}(apprenant_id,module_id,status,progress,completed_at) VALUES ('{A}',2,'completed',100,now())"))
+        self.assertIn('validation serveur obligatoire', e or '')
+        sql(smc(U, 2, False, 10))
+        e = err(learner(U, f"UPDATE {TABLE} SET status='completed', progress=100, completed_at=now() WHERE apprenant_id='{A}' AND module_id=2"))
+        self.assertIn('validation serveur obligatoire', e or '')
+        self.assertTrue(row(2).startswith('in_progress'))
+        sql(learner(ADMIN, f"UPDATE {TABLE} SET status='completed', progress=100, completed_at=now() WHERE apprenant_id='{A}' AND module_id=2"))
+        self.assertTrue(row(2).startswith('completed|100|'))
+
+    def test_06_autovalidation_total_navigateur_inaccessible_a_l_eleve(self):
+        self.remise(1)
+        self.assertIn('permission denied', err(learner(U, f"SELECT * FROM public.autovalidate_module_if_complete('{A}', 2, 1)")) or '')
+        self.assertIn('permission denied', err(f"SET ROLE anon; SELECT * FROM public.autovalidate_module_if_complete('{A}', 2, 1)") or '')
+        # Même par le service, un total trop faible ne contourne pas les remises manquantes.
+        self.assertIn('« Quiz Deux »', err(f"SET ROLE service_role; SELECT * FROM public.autovalidate_module_if_complete('{A}', 2, 1)") or '')
+        self.assertEqual(row(2), '')
+
+    def test_07_facultatifs_bilans_examen_et_deja_termines_inchanges(self):
+        sql("INSERT INTO module_regles_validation VALUES (3, false, true)")
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_3_exo_1','{{\"1-1\":\"B\"}}')")
+        self.assertTrue(sql(smc(U, 3, True, 100, self.details(1))).startswith('completed|100|'))
+        sql(f"INSERT INTO reponses_apprenants VALUES ('{A}','module_5_exo_1','{{\"1-1\":\"B\"}}')")
+        self.assertTrue(sql(smc(U, 5, True, 100, self.details(1))).startswith('completed|100|'))
+        sql(f"INSERT INTO {TABLE}(apprenant_id,module_id,status,progress,completed_at,details) VALUES ('{A}',4,'completed',100,'2026-09-17T08:00:00Z','[]')")
+        sql("INSERT INTO module_editor_state SELECT 4, module_data FROM module_editor_state WHERE module_id=2")
+        self.assertEqual(sql(smc(U, 4, True, 100, self.details(1))), 'completed|100|2026-09-17 08:00:00+00')
+        sql("DELETE FROM module_regles_validation")
+
+
 def main():
     if '--capture' in sys.argv:
         print(capture_live()); return
@@ -442,8 +512,15 @@ def main():
     try:
         build('avant', FIX_AVANT.read_text())
         build('t', schema_now, migration)
+        if have_live:
+            # 0230/0232 rejouées par build() pour etat_completion_modules : les RPC réelles actuelles reprennent la main.
+            for fn in RPCS:
+                sql(live(f"select pg_get_functiondef(oid) from pg_proc where proname='{fn}' and pronamespace='public'::regnamespace") + ';')
+            print('[t] RPC réelles actuelles rechargées :', ', '.join(RPCS))
+        for extra in [x for x in os.environ.get('MODULE_COMPLETION_EXTRA', '').split(':') if x]:
+            sql(pathlib.Path(extra).read_text()); print('[t] SQL supplémentaire appliqué :', extra)
         print('schéma source :', 'catalogue réel actuel' if have_live else 'instantané avant 0197', '| SQL appliqué :', mig)
-        suite = unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(c) for c in (Avant0197, Apres0197)])
+        suite = unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(c) for c in (Avant0197, Apres0197, Garde0308)])
         if not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful(): raise SystemExit(1)
     finally:
         subprocess.run(AS_USER + ['pg_ctl', '-D', DATA, '-m', 'immediate', 'stop'], stdout=subprocess.DEVNULL)

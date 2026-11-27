@@ -43,7 +43,7 @@ describe("Incident module 4 : ligne completed périmée", () => {
     expect(d.action).toBe("bloquer");
     if (d.action !== "bloquer") return;
     expect(d.manquants.map((q) => q.id)).toEqual(["103"]);
-    expect(d.message).toContain("À valider / aucune soumission confirmée par le serveur (1) : « Bilan Français ».");
+    expect(d.message).toContain("Quiz en attente ou indisponibles (1) : « Bilan Français » (aucune remise confirmée par le serveur).");
     expect(d.message).not.toMatch(/sans réponse/);
   });
   it("preuve incomplète sans quiz identifiable : erreur, jamais de sortie", () => {

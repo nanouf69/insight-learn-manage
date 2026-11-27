@@ -79,7 +79,7 @@ describe("Module 4 : listes validés / à valider", () => {
     const d = decisionFinModule({ etatServeur: { status: "completed", preuve_complete: false }, quizRestants: stats.remainingQuizzes, exosSoumis: new Set(six), quizValides: stats.completedLabels });
     expect(d.action).toBe("bloquer");
     if (d.action !== "bloquer") return;
-    expect(d.message).toBe("Module à terminer. Quiz validés (6) : « Bilan T3P », « Bilan Gestion », « Bilan Sécurité Routière », « Bilan Développement Commercial », « Bilan Anglais », « Bilan Réglementation Spécifique VTC ». À valider / aucune soumission confirmée par le serveur (1) : « Bilan Français ».");
+    expect(d.message).toBe("Module à terminer. Quiz confirmés par le serveur (6) : « Bilan T3P », « Bilan Gestion », « Bilan Sécurité Routière », « Bilan Développement Commercial », « Bilan Anglais », « Bilan Réglementation Spécifique VTC ». Quiz en attente ou indisponibles (1) : « Bilan Français » (aucune remise confirmée par le serveur).");
     expect(d.manquants.map((q) => q.id)).toEqual(["103"]);
   });
 });

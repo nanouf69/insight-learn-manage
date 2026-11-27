@@ -16,6 +16,16 @@ export async function chargerPreuvesQuizModules(apprenantId: string): Promise<Ow
     .order('id').range(from, to)));
 }
 
+/** Account-scoped original-attempt rows of every status (drafts included), for pending-quiz labels only. */
+export async function chargerReponsesQuizOrigine(apprenantId: string): Promise<OwnedSubmittedModuleProof[]> {
+  const lignes = await freshSessionRead(() => fetchAllRows<OwnedSubmittedModuleProof>((from, to) => supabase
+    .from('reponses_apprenants')
+    .select('apprenant_id, exercice_id, status, submitted_at, reponses')
+    .eq('apprenant_id', apprenantId).like('exercice_id', 'module_%_exo_%')
+    .order('id').range(from, to)));
+  return lignes.filter(l => /^module_\d+_exo_\d+$/.test(l.exercice_id));
+}
+
 /** A display-only overlay; historical scores, timestamps and raw details remain intact. */
 export function avecPreuvesQuizConfirmees<T extends CompletionEvidenceRow>(
   row: T, apprenantId: string, proofs: readonly OwnedSubmittedModuleProof[],

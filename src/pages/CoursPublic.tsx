@@ -49,10 +49,12 @@ import { ModulesProgressionEleve, useActivitesTermineesEleve } from "@/component
 import { resolveFormationId, normalizeFormationKey, normalizeModuleIdForDashboard, modulesAttribuesDashboard, modulesExigesDashboard, equipementsTaxiAjoute, DASHBOARD_PARENT_TO_CHILDREN } from "@/lib/parcoursModulesDashboard";
 import { progressionModulesEleve } from "@/lib/progressionModulesEleve";
 import { compterQuizModule } from "@/lib/moduleQuizCounter";
-import { LIBELLE_QUIZ_EN_ATTENTE } from "@/lib/finModuleDecision";
 import { exosSoumisDuModule as exosSoumisDuModuleDashboard } from "@/lib/moduleProgressionReadModel";
 import { avecEtatServeur, chargerEtatCompletionServeur, type EtatCompletionServeur } from "@/lib/etatCompletionServeur";
-import { chargerPreuvesQuizModules, projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
+import { chargerPreuvesQuizModules, chargerReponsesQuizOrigine, projeterProgressionConfirmee } from '@/lib/moduleProgressionReadModel';
+import { etatServeurQuizModule, listesQuizModule, type ListesQuiz } from '@/lib/quizStatutListes';
+import QuizStatutListes from '@/components/cours-en-ligne/QuizStatutListes';
+import { getPendingAnswers } from '@/lib/answerPersistence';
 import { exceptionModulesEleve } from "@/lib/exceptionsModulesEleve";
 import { activitesModuleEleve, libelleJeux, jeuxRestants, type EtatActivitesModuleEleve } from "@/lib/activitesModuleEleve";
 import StudentLogin from "@/components/cours-en-ligne/StudentLogin";
@@ -903,6 +905,8 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
   // Liste réelle des quiz de chaque module (contenu serveur), lecture seule — affichage uniquement.
   // Quiz attendus = un élément PAR QUIZ réel du module (même compte que la page du module).
   const [preuvesQuizDashboard, setPreuvesQuizDashboard] = useState<{ owner: string; proofs: any[] } | null>(null);
+  // Lignes d'origine du compte (brouillons compris) ; rows null = lecture en erreur (jamais « non répondu »).
+  const [reponsesQuizDashboard, setReponsesQuizDashboard] = useState<{ owner: string; rows: any[] | null } | null>(null);
   const [quizAttendusParModule, setQuizAttendusParModule] = useState<Record<number, Array<{ id: string; label: string; questionIds: string[] }>>>({});
   useEffect(() => {
     let annule = false;
@@ -1272,7 +1276,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     const requestId = ++completionsRequestRef.current;
     let cancelled = false;
     const fetchCompletions = async () => {
-      const [completionsResult, { data: examData }, etatsServeur, preuvesQuiz] = await Promise.all([
+      const [completionsResult, { data: examData }, etatsServeur, preuvesQuiz, reponsesQuizOrigine] = await Promise.all([
         // Source of truth: DB progression, with retries so a transient failure
         // never yields an empty progression (which re-locked validated modules).
         fetchModuleCompletions(apprenant.id),
@@ -1284,6 +1288,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         // Verdict serveur unique ; erreur de lecture = progression non affichée (jamais un faux terminé).
         chargerEtatCompletionServeur(apprenant.id).catch((e) => { console.error("[CoursPublic] état serveur indisponible", e); return null as Map<number, EtatCompletionServeur> | null; }),
         chargerPreuvesQuizModules(apprenant.id),
+        chargerReponsesQuizOrigine(apprenant.id).catch((e) => { console.error("[CoursPublic] réponses quiz illisibles", e); return null; }),
       ]);
 
       // Liste vide = peut-être une lecture faite avant que la connexion soit prête
@@ -1318,6 +1323,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows as any);
         setPreuvesQuizDashboard({ owner: apprenant.id, proofs: preuvesQuiz as any[] });
+        setReponsesQuizDashboard({ owner: apprenant.id, rows: reponsesQuizOrigine as any[] | null });
         setCompletionsOwner(apprenant.id ?? null);
         setCompletionsError(false);
         setCompletionsLoaded(true);
@@ -1630,7 +1636,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     // Re-fetch completions to pick up any quiz results saved during the module
     if (apprenant?.id) {
       const requestId = ++completionsRequestRef.current;
-      const [completionsResult, { data: examData }, etatsServeur, preuvesQuiz] = await Promise.all([
+      const [completionsResult, { data: examData }, etatsServeur, preuvesQuiz, reponsesQuizOrigine] = await Promise.all([
         fetchModuleCompletions(apprenant.id),
         supabase
           .from("apprenant_quiz_results" as any)
@@ -1640,6 +1646,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         // Verdict serveur unique ; erreur de lecture = progression non affichée (jamais un faux terminé).
         chargerEtatCompletionServeur(apprenant.id).catch((e) => { console.error("[CoursPublic] état serveur indisponible", e); return null as Map<number, EtatCompletionServeur> | null; }),
         chargerPreuvesQuizModules(apprenant.id),
+        chargerReponsesQuizOrigine(apprenant.id).catch((e) => { console.error("[CoursPublic] réponses quiz illisibles", e); return null; }),
       ]);
       if (completionsResult.ok && etatsServeur && requestId === completionsRequestRef.current) {
         const completionRows = projeterProgressionConfirmee(completionsResult.rows, apprenant.id, etatsServeur, preuvesQuiz);
@@ -1654,6 +1661,7 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
         setModuleScores(scores);
         setModuleCompletionsForNotes(completionRows as any);
         setPreuvesQuizDashboard({ owner: apprenant.id, proofs: preuvesQuiz as any[] });
+        setReponsesQuizDashboard({ owner: apprenant.id, rows: reponsesQuizOrigine as any[] | null });
         setCompletionsOwner(apprenant.id);
         setCompletionsError(false);
         setCompletionsLoaded(true);
@@ -2164,6 +2172,33 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
     return acc;
   }, {});
 
+  // Listes nominatives (confirmés / en attente) : mêmes règles que le détail du module.
+  const listesQuizParModule: Record<number, ListesQuiz> = {};
+  for (const module of modules) {
+    const stats: any = moduleQuizStatsById[module.id];
+    const requis = stats?.requiredQuizzes as Array<{ id: string; label: string }> | undefined;
+    if (!requis?.length || !apprenant?.id) continue;
+    const lignes = reponsesQuizDashboard?.owner === apprenant.id ? reponsesQuizDashboard.rows : null;
+    const etat = (completionsByModuleId[module.id] || []).find((r: any) => r?.status === "completed" && r?.preuve_serveur === true);
+    const attendus = quizAttendusParModule[module.id];
+    listesQuizParModule[module.id] = listesQuizModule({
+      requis,
+      serveur: lignes ? etatServeurQuizModule(lignes, module.id, apprenant.id) : null,
+      moduleConfirme: !!etat,
+      affichables: attendus?.length ? new Set(attendus.map((q) => String(q.id))) : undefined,
+      reponsesLocales: (id) => Object.values(getPendingAnswers(apprenant.id, `module_${module.id}_exo_${id}`) ?? {}).filter((v) => v != null && v !== "" && !(Array.isArray(v) && v.length === 0)).length,
+    });
+  }
+
+  // Affichage seul : compteur et « Reste » issus des mêmes listes nominatives (preuve serveur).
+  const quizAffiche = (id: number) => {
+    const base = moduleQuizStatsById[id];
+    const l = listesQuizParModule[id];
+    if (!base || !l) return base;
+    return { ...base, completedQuizzes: l.confirmes.length, totalQuizzes: l.confirmes.length + l.enAttente.length,
+      remainingLabels: l.enAttente.map((q) => q.label) };
+  };
+
   // Compute examen blanc stats per module (35=VTC, 36=TAXI, 37=TA, 38=VA)
   const examIdsForType = (type: "VTC" | "TAXI" | "TA" | "VA") =>
     examensActuels.filter(e => e.type === type && !e.id.startsWith("bilan-")).map(e => e.id);
@@ -2627,35 +2662,20 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                                     ? `📊 ${examBlancStatsById[mod.id].completed}/${examBlancStatsById[mod.id].total} examens blancs réalisés`
                                     : mod.description)
                                   : activitesParModule[mod.id] && activitesParModule[mod.id].etat !== "aucune"
-                                    ? (moduleQuizStatsById[mod.id]?.totalQuizzes > 0
-                                      ? `📊 Quiz : ${moduleQuizStatsById[mod.id].completedQuizzes}/${moduleQuizStatsById[mod.id].totalQuizzes} terminé${moduleQuizStatsById[mod.id].completedQuizzes > 1 ? "s" : ""}${moduleQuizStatsById[mod.id].remainingLabels.length ? ` — Reste : ${moduleQuizStatsById[mod.id].remainingLabels.join(", ")}` : ""}`
+                                    ? (quizAffiche(mod.id)?.totalQuizzes > 0
+                                      ? `📊 Quiz : ${quizAffiche(mod.id).completedQuizzes}/${quizAffiche(mod.id).totalQuizzes} terminé${quizAffiche(mod.id).completedQuizzes > 1 ? "s" : ""}${quizAffiche(mod.id).remainingLabels.length ? ` — Reste : ${quizAffiche(mod.id).remainingLabels.join(", ")}` : ""}`
                                       : mod.description)
-                                  : moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && moduleQuizStatsById[mod.id]?.completedQuizzes > 0
-                                    ? `📊 ${moduleQuizStatsById[mod.id].completedQuizzes}/${moduleQuizStatsById[mod.id].totalQuizzes} quiz complétés — Reste : ${moduleQuizStatsById[mod.id].remainingLabels.join(", ") || "aucun"}`
+                                  : quizAffiche(mod.id)?.totalQuizzes > 0 && quizAffiche(mod.id)?.completedQuizzes > 0
+                                    ? `📊 ${quizAffiche(mod.id).completedQuizzes}/${quizAffiche(mod.id).totalQuizzes} quiz complétés — Reste : ${quizAffiche(mod.id).remainingLabels.join(", ") || "aucun"}`
                                     : mod.description
                               )}
                             </p>
                             {!idsModulesExiges.has(mod.id) && <p className="text-xs text-muted-foreground">Consultation facultative — sans effet sur les jalons acquis</p>}
-                            {(moduleQuizStatsById[mod.id]?.remainingQuizzes?.length ?? 0) > 0 && (
-                              <details open className="mt-2 text-xs text-destructive" onClick={event => event.stopPropagation()}>
-                                <summary className="cursor-pointer font-semibold">Quiz et questions à terminer</summary>
-                                {(moduleQuizStatsById[mod.id]?.completedLabels?.length ?? 0) > 0 && (
-                                  <div className="mt-1 text-foreground" data-testid={`quiz-valides-${mod.id}`}>
-                                    <p className="font-semibold">✅ Quiz validés ({moduleQuizStatsById[mod.id].completedLabels.length})</p>
-                                    <ul className="ml-4 list-disc">{moduleQuizStatsById[mod.id].completedLabels.map(l => <li key={l}>{l}</li>)}</ul>
-                                  </div>
-                                )}
-                                <p className="mt-1 font-semibold">⏳ {LIBELLE_QUIZ_EN_ATTENTE} ({moduleQuizStatsById[mod.id]?.remainingQuizzes?.length ?? 0})</p>
-                                <ul className="mt-1 space-y-1">
-                                  {moduleQuizStatsById[mod.id]?.remainingQuizzes?.map(q => (
-                                    <li key={q.id}>
-                                      <Button variant="link" className="h-auto whitespace-normal p-0 text-left text-destructive" disabled={locked}
-                                        onClick={() => { setSelectedExerciseTarget(q.id); trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }}>
-                                        Ouvrir « {q.label} »
-                                      </Button>
-                                    </li>
-                                  ))}
-                                </ul>
+                            {(listesQuizParModule[mod.id]?.enAttente.length ?? 0) > 0 && (
+                              <details open className="mt-2 text-xs" onClick={event => event.stopPropagation()}>
+                                <summary className="cursor-pointer font-semibold text-destructive">Quiz et questions à terminer</summary>
+                                <QuizStatutListes listes={listesQuizParModule[mod.id]} desactive={locked} testId={`quiz-listes-${mod.id}`}
+                                  onOuvrir={(id) => { setSelectedExerciseTarget(id); trackModuleActivity(mod.id, mod.nom); setSelectedModule(mod); }} />
                               </details>
                             )}
                             {!locked && activitesParModule[mod.id] && libelleJeux(activitesParModule[mod.id]) && (
@@ -2673,9 +2693,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                                 {examBlancStatsById[mod.id].completed}/{examBlancStatsById[mod.id].total}
                               </Badge>
                             )}
-                            {!locked && !examBlancStatsById[mod.id] && moduleQuizStatsById[mod.id]?.completedQuizzes > 0 && moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && (
+                            {!locked && !examBlancStatsById[mod.id] && quizAffiche(mod.id)?.completedQuizzes > 0 && quizAffiche(mod.id)?.totalQuizzes > 0 && (
                               <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/30">
-                                {moduleQuizStatsById[mod.id].completedQuizzes}/{moduleQuizStatsById[mod.id].totalQuizzes}
+                                {quizAffiche(mod.id).completedQuizzes}/{quizAffiche(mod.id).totalQuizzes}
                               </Badge>
                             )}
                             {locked ? (
@@ -2738,9 +2758,9 @@ const CoursPublic = ({ embedded, apprenantOverride }: CoursPublicProps) => {
                                   — {examBlancStatsById[mod.id].completed}/{examBlancStatsById[mod.id].total} examens blancs réalisés
                                 </span>
                               )}
-                              {!introLockedDone && !examBlancStatsById[mod.id] && moduleQuizStatsById[mod.id]?.totalQuizzes > 0 && (
+                              {!introLockedDone && !examBlancStatsById[mod.id] && quizAffiche(mod.id)?.totalQuizzes > 0 && (
                                 <span className="ml-2 font-semibold">
-                                  — {moduleQuizStatsById[mod.id].completedQuizzes}/{moduleQuizStatsById[mod.id].totalQuizzes} quiz complétés
+                                  — {quizAffiche(mod.id).completedQuizzes}/{quizAffiche(mod.id).totalQuizzes} quiz complétés
                                 </span>
                               )}
                               {!introLockedDone && !examBlancStatsById[mod.id] && moduleRealizedPointsById[mod.id]?.length > 0 && !(moduleQuizStatsById[mod.id]?.totalQuizzes > 0) && (

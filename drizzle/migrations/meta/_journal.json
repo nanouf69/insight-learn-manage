@@ -2157,6 +2157,13 @@
       "when": 1795799843628,
       "tag": "0307_questions_affichees_retrait_confiance_navigateur_sql",
       "breakpoints": true
+    },
+    {
+      "idx": 308,
+      "version": "7",
+      "when": 1795800634061,
+      "tag": "0308_validation_module_sans_preuve_navigateur",
+      "breakpoints": true
     }
   ]
 }
