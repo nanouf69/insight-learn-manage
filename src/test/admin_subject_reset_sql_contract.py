@@ -38,7 +38,12 @@ class Contract(unittest.TestCase):
  def seed(self,exam,mid):
   s={'id':exam,'matieres':[{'id':mid,'nom':'A T3P','duree':45,'questions':[{'id':1,'enonce':'Fictif','type':'QCM','choix':[{'id':'A','texte':'Oui','correct':True}]}]},{'id':'anglais','nom':'E Anglais','duree':30,'questions':[{'id':1,'enonce':'Other','type':'QCM'}]}]}
   self.sql(f"INSERT INTO examens_blancs_parcours(module_id,exam_id) VALUES({36 if '-TAXI' in exam else 37 if '-ta' in exam else 38 if '-va' in exam else 35},'{exam}') ON CONFLICT DO NOTHING")
-  self.sql(f"INSERT INTO module_editor_state(module_id,module_data) VALUES((SELECT coalesce(max(module_id),0)+1 FROM module_editor_state),'{json.dumps(s)}')")
+  existing=self.sql(f"SELECT module_data FROM module_editor_state WHERE module_data->>'id'='{exam}'").stdout.strip()
+  if existing:
+   data=json.loads(existing)
+   if not any(m.get('id')==mid for m in data['matieres']):
+    data['matieres'].append(s['matieres'][0]);self.sql(f"UPDATE module_editor_state SET module_data='{json.dumps(data)}' WHERE module_data->>'id'='{exam}'")
+  else:self.sql(f"INSERT INTO module_editor_state(module_id,module_data) VALUES((SELECT coalesce(max(module_id),0)+1 FROM module_editor_state),'{json.dumps(s)}')")
  def context(self,exam,mid,uid=ADMIN):return json.loads(self.call(f"SELECT exam_subject_reset_context('{A}','{exam}','{mid}')",uid).stdout.splitlines()[-1])
  def authorize(self,c,op=None,uid=ADMIN,check=True):
   op=op or 'aaaaaaaa-1111-1111-1111-111111111111'
@@ -120,7 +125,7 @@ class Contract(unittest.TestCase):
   self.seed(exam,mid);version='ffffffff-'+attempt[9:13]+'-1111-1111-111111111111'
   content={'exam_id':exam,'matieres':[{'subject_id':mid,'titre':'Securite','duree':30}],'questions':[{'id':mid+':1','matiere':mid,'type':'QCM','enonce':'Fictif','choix':[{'id':'A','texte':'Oui','correct':True}]}]}
   snap={**content,'matiere':mid,'matieres':[{'id':mid,'duree':30}]}
-  self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint,motif,is_test) VALUES('{version}','VTC','{exam[2]}','{exam}',1,'publiee','{json.dumps(content)}','t','isolated',true);INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,started_at,is_test) VALUES('{attempt}','{A}','{exam}','{version}','{json.dumps(snap)}','t',now()-interval '65 days',true);INSERT INTO apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,started_at,tentative) VALUES('{A}','{U}','{exam}__{mid}',1800,now()-interval '65 days',1);SET session_replication_role=replica;INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,submitted_at,tentative) VALUES('{A}','{U}','{exam}__{mid}','examen_blanc','{legacy}',true,'submitted',now()-interval '65 days',1);SET session_replication_role=origin")  # historical row predates P0530
+  self.sql(f"INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint,motif,is_test) VALUES('{version}','VTC','{exam[2]}','{exam}',(SELECT coalesce(max(version_number),0)+1 FROM exam_content_versions WHERE exam_id='{exam}'),'publiee','{json.dumps(content)}','t','isolated',true);INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,started_at,is_test) VALUES('{attempt}','{A}','{exam}','{version}','{json.dumps(snap)}','t',now()-interval '65 days',true);INSERT INTO apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,started_at,tentative) VALUES('{A}','{U}','{exam}__{mid}',1800,now()-interval '65 days',1);SET session_replication_role=replica;INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,submitted_at,tentative) VALUES('{A}','{U}','{exam}__{mid}','examen_blanc','{legacy}',true,'submitted',now()-interval '65 days',1);SET session_replication_role=origin")  # historical row predates P0530
  def test_11_anonymized_empty_legacy_row_expired_v2_copy_recoverable(self):
   # Anonymized 27/11 case: legacy row submitted with {} + expired V2 copy without answers.
   attempt='eeeeeeee-1111-1111-1111-111111111111';self._expired_copy('EB5','securite',attempt,'{}')
@@ -140,16 +145,28 @@ class Contract(unittest.TestCase):
   # Anonymized 27/11 case: attempt 1 graded (18-answer row left in_progress), attempt 2 V2 copy opened, never answered, expired.
   self.seed(exam,'gestion');v=f'ffffffff-{tag}-1111-1111-111111111111';old=f'eeeeeeee-{tag}-1111-1111-111111111111';new=f'eeeeeeee-{tag}-2222-1111-111111111111'
   content={'exam_id':exam,'matieres':[{'subject_id':'gestion','titre':'Gestion','duree':45}],'questions':[{'id':'gestion:1','matiere':'gestion','type':'QCM','enonce':'Fictif','choix':[{'id':'A','texte':'Oui','correct':True}]}]}
-  snap={**content,'matiere':'gestion','matieres':[{'id':'gestion','duree':45}]}
-  self.sql(f"""INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint,motif,is_test) VALUES('{v}','VA','{exam[2]}','{exam}',1,'publiee','{json.dumps(content)}','t','isolated',true);
-  INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,started_at,finished_at,etat,is_test) VALUES('{old}','{A}','{exam}','{v}','{json.dumps(snap)}','t',now()-interval '65 days',now()-interval '65 days'+interval '10 minutes','terminee',true),('{new}','{A}','{exam}','{v}','{json.dumps(snap)}','t',now()-interval '10 days',NULL,'en_cours',true);
-  INSERT INTO apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,started_at,tentative) VALUES('{A}','{U}','{exam}__gestion',2700,now()-interval '65 days',1),('{A}','{U}','{exam}__gestion__t2',2700,now()-interval '10 days'+interval '400 milliseconds',2);
+  snap={**content,'matiere':'gestion','matieres':[{'subject_id':'gestion','duree':45}]}
+  legacy=json.dumps({str(i):['A'] for i in range(1,19)})
+  self.sql(f"""INSERT INTO exam_content_versions(id,filiere,exam_numero,exam_id,version_number,statut,content,fingerprint,motif,is_test) VALUES('{v}','VA','{exam[2]}','{exam}',(SELECT coalesce(max(version_number),0)+1 FROM exam_content_versions WHERE exam_id='{exam}'),'publiee','{json.dumps(content)}','t','isolated',true);
+  INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,started_at,finished_at,etat,is_test) VALUES('{old}','{A}','{exam}','{v}','{json.dumps(snap)}','t',now()-interval '65 days',now()-interval '65 days'+interval '10 minutes','terminee',true),('{new}','{A}','{exam}','{v}','{json.dumps(snap)}','t',date_trunc('second',now()-interval '10 days')+interval '333 milliseconds',NULL,'en_cours',true);
+  INSERT INTO apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,started_at,tentative) VALUES('{A}','{U}','{exam}__gestion',2700,now()-interval '65 days',1),('{A}','{U}','{exam}__gestion__t2',2700,date_trunc('second',now()-interval '10 days')+interval '716 milliseconds',2);
   SET session_replication_role=replica;
-  INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,tentative,created_at,updated_at) VALUES('{A}','{U}','{exam}__gestion','examen_blanc','{{"1":["A"],"2":["B"]}}',false,'in_progress',1,now()-interval '65 days',now()-interval '{legacy_age}');
+  INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,tentative,created_at,updated_at) VALUES('{A}','{U}','{exam}__gestion','examen_blanc','{legacy}',false,'in_progress',1,now()-interval '65 days',now()-interval '{legacy_age}');
   INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_type,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,score_obtenu,score_max,completed_at) VALUES('{A}','{U}','examen_blanc','{exam}','Fictif','gestion','Gestion',1,8,20,now()-interval '65 days');
   SET session_replication_role=origin;""")
-  proof=f"SELECT jsonb_build_object('r',(SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM reponses_apprenants r WHERE exercice_id LIKE '{exam}__gestion%' AND exercice_id<>'{exam}__gestion__t3'),'q',(SELECT jsonb_agg(to_jsonb(q) ORDER BY id) FROM apprenant_quiz_results q WHERE quiz_id='{exam}'),'old',(SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{old}'))"
+  proof=f"SELECT jsonb_build_object('r',(SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM reponses_apprenants r WHERE exercice_id LIKE '{exam}__gestion%' AND exercice_id<>'{exam}__gestion__t3'),'q',(SELECT jsonb_agg(to_jsonb(q) ORDER BY id) FROM apprenant_quiz_results q WHERE quiz_id='{exam}'),'t',(SELECT jsonb_agg(to_jsonb(t) ORDER BY id) FROM apprenant_examen_timers t WHERE exercice_id LIKE '{exam}__gestion%' AND exercice_id<>'{exam}__gestion__t3'),'old',(SELECT to_jsonb(a) FROM exam_attempts_v2 a WHERE attempt_id='{old}'))"
   return old,new,proof
+ def _assert_pairing_refused(self,exam,new,proof):
+  before=self.sql(proof).stdout
+  neutralizations=self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{new}'").stdout.strip()
+  r=self.call(f"SELECT exam_subject_reset_context('{A}','{exam}','gestion')",ADMIN,False)
+  if r.returncode==0:
+   c=json.loads(r.stdout.splitlines()[-1]);self.assertIn(c['status'],('ambigu','en_cours'));self.assertFalse(c['expired_empty']);self.assertNotEqual(c['source_attempt_id'],new)
+  else:self.assertIn('passages différents',r.stderr)
+  self.assertEqual(before,self.sql(proof).stdout)
+  self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{new}'").stdout.strip(),'en_cours')
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_tentatives_neutralisees WHERE attempt_id='{new}'").stdout.strip(),neutralizations)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM exam_subject_retakes WHERE exam_id='{exam}' AND matiere_id='gestion'").stdout.strip(),'0')
  def test_13_stale_graded_row_does_not_hide_expired_empty_t2_copy(self):
   old,new,proof=self._gestion_t2('eb1-va','d013');before=self.sql(proof).stdout
   c=self.context('eb1-va','gestion');self.assertEqual(c['source_exercice_id'],'eb1-va__gestion__t2');self.assertEqual(c['source_attempt_id'],new);self.assertTrue(c['expired_empty']);self.assertEqual(c['status'],'en_attente');self.assertIsNone(c['source_result_id'])
@@ -166,6 +183,43 @@ class Contract(unittest.TestCase):
  def test_15_copy_with_saved_answer_stays_locked(self):
   old,new,proof=self._gestion_t2('eb3-va','d015')
   self.sql(f"INSERT INTO answer_state(attempt_id,apprenant_id,question_id,valeur) VALUES('{new}','{A}','gestion:1','\"A\"')")
-  r=self.call(f"SELECT exam_subject_reset_context('{A}','eb3-va','gestion')",ADMIN,False);self.assertNotEqual(r.returncode,0)
-  self.assertEqual(self.sql(f"SELECT etat FROM exam_attempts_v2 WHERE attempt_id='{new}'").stdout.strip(),'en_cours')
+  self._assert_pairing_refused('eb3-va',new,proof)
+ def test_16_timer_in_another_utc_second_stays_locked(self):
+  old,new,proof=self._gestion_t2('eb4-va','d016')
+  self.sql(f"UPDATE apprenant_examen_timers SET started_at=started_at+interval '1 second' WHERE exercice_id='eb4-va__gestion__t2'")
+  self._assert_pairing_refused('eb4-va',new,proof)
+ def test_17_multiple_timers_in_same_second_stay_locked(self):
+  old,new,proof=self._gestion_t2('eb5-va','d017')
+  self.sql(f"INSERT INTO apprenant_examen_timers(apprenant_id,user_id,exercice_id,duree_secondes,started_at,tentative) SELECT '{A}','{U}','eb5-va__gestion__t3',2700,started_at,3 FROM apprenant_examen_timers WHERE exercice_id='eb5-va__gestion__t2'")
+  self._assert_pairing_refused('eb5-va',new,proof)
+ def test_18_multiple_open_copies_stay_locked(self):
+  old,new,proof=self._gestion_t2('eb6-va','d018')
+  self.sql(f"INSERT INTO exam_attempts_v2(attempt_id,apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,started_at,is_test) SELECT 'eeeeeeee-d018-3333-1111-111111111111',apprenant_id,exam_id,exam_version_id,snapshot,snapshot_fingerprint,started_at+interval '100 milliseconds',true FROM exam_attempts_v2 WHERE attempt_id='{new}'")
+  self._assert_pairing_refused('eb6-va',new,proof)
+ def test_19_answer_event_on_empty_copy_stays_locked(self):
+  old,new,proof=self._gestion_t2('EB1','d019')
+  self.sql(f"INSERT INTO answer_events(response_id,attempt_id,apprenant_id,question_id,valeur_nouvelle,revision_nouvelle) VALUES(gen_random_uuid(),'{new}','{A}','gestion:1','[\"A\"]',1)")
+  self._assert_pairing_refused('EB1',new,proof)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM answer_events WHERE attempt_id='{new}'").stdout.strip(),'1')
+ def test_20_core_result_on_empty_copy_stays_locked(self):
+  old,new,proof=self._gestion_t2('EB3','d020')
+  self.sql(f"INSERT INTO core_exam_results(attempt_id,apprenant_id,score,total) VALUES('{new}','{A}',10,20)")
+  self._assert_pairing_refused('EB3',new,proof)
+  self.assertEqual(self.sql(f"SELECT count(*) FROM core_exam_results WHERE attempt_id='{new}'").stdout.strip(),'1')
+ def test_21_candidate_exercise_response_stays_locked(self):
+  old,new,proof=self._gestion_t2('EB4','d021')
+  self.sql(f"SET session_replication_role=replica;INSERT INTO reponses_apprenants(apprenant_id,user_id,exercice_id,exercice_type,reponses,completed,status,tentative) VALUES('{A}','{U}','EB4__gestion__t2','examen_blanc','{{\"1\":[\"A\"]}}',false,'in_progress',2);SET session_replication_role=origin")
+  self._assert_pairing_refused('EB4',new,proof)
+ def test_22_existing_neutralization_stays_locked(self):
+  old,new,proof=self._gestion_t2('EB5','d022')
+  self.sql(f"INSERT INTO core_tentatives_neutralisees(attempt_id,apprenant_id,exam_id,motif) VALUES('{new}','{A}','EB5','fixture-other-operation')")
+  self._assert_pairing_refused('EB5',new,proof)
+ def test_23_timer_duration_mismatch_stays_locked(self):
+  old,new,proof=self._gestion_t2('EB6','d023')
+  self.sql("UPDATE apprenant_examen_timers SET duree_secondes=1800 WHERE exercice_id='EB6__gestion__t2'")
+  self._assert_pairing_refused('EB6',new,proof)
+ def test_24_result_for_candidate_attempt_stays_locked(self):
+  old,new,proof=self._gestion_t2('EB1-TAXI','d024')
+  self.sql(f"INSERT INTO apprenant_quiz_results(apprenant_id,user_id,quiz_type,quiz_id,quiz_titre,matiere_id,matiere_nom,tentative,score_obtenu,score_max,completed_at) VALUES('{A}','{U}','examen_blanc','EB1-TAXI','Fictif','gestion','Gestion',2,10,20,now()-interval '9 days')")
+  self._assert_pairing_refused('EB1-TAXI',new,proof)
 if __name__=='__main__':unittest.main(verbosity=2)

@@ -248,7 +248,8 @@ DECLARE
  attempt public.exam_attempts_v2; source_key text; source_attempt uuid;
  n integer; matched integer; status text; reason text; v_source_token text; grant_id uuid;
  expired_empty boolean:=false;
- paired_ok boolean:=false; stale_answer_id uuid; stale_n integer; cand public.exam_attempts_v2; prev_timer_start timestamptz;
+ paired_ok boolean:=false; stale_answer_id uuid; stale_n integer; timer_same_second integer;
+ cand public.exam_attempts_v2; prev_timer_start timestamptz;
 BEGIN
  IF auth.uid() IS NULL OR NOT (public.core_est_proprietaire(p_apprenant_id) OR public.has_role(auth.uid(),'admin')) THEN
   RAISE EXCEPTION 'Droits insuffisants.' USING ERRCODE='42501'; END IF;
@@ -283,9 +284,9 @@ BEGIN
  IF source_key IS NULL OR split_part(source_key,'__',1)<>p_exam_id OR split_part(source_key,'__',2)<>p_matiere_id THEN
   RAISE EXCEPTION 'Identité source contradictoire.' USING ERRCODE='P0482'; END IF;
  IF answer.id IS NOT NULL AND timer.id IS NOT NULL AND answer.exercice_id<>timer.exercice_id THEN
-  -- 27/11/2026: an older graded passage's leftover row must not hide a newer, expired, empty V2 copy.
-  -- Pairing is by strict chronological bracketing (previous timer < copy start <= latest timer start,
-  -- no later copy), never by a tolerance window; every other mismatch stays fail-closed.
+  -- 27/11/2026 narrow exception: the older filled row belongs to an earlier graded copy.
+  -- Only one empty expired V2 copy and one subject timer started in the SAME UTC second
+  -- can be paired. Any ambiguity, answer, event, result or duration mismatch stays P0482.
   SELECT count(*) INTO stale_n FROM public.exam_attempts_v2 a WHERE a.apprenant_id=p_apprenant_id AND a.exam_id=p_exam_id
    AND a.snapshot->>'matiere'=p_matiere_id AND a.etat='en_cours' AND a.finished_at IS NULL;
   IF stale_n=1 THEN
@@ -308,18 +309,28 @@ BEGIN
   END IF;
   SELECT max(t.started_at) INTO prev_timer_start FROM public.apprenant_examen_timers t WHERE t.apprenant_id=p_apprenant_id
    AND split_part(t.exercice_id,'__',1)=p_exam_id AND split_part(t.exercice_id,'__',2)=p_matiere_id AND t.tentative<timer.tentative;
-  IF cand.attempt_id IS NOT NULL AND stale_n=1
+  SELECT count(*) INTO timer_same_second FROM public.apprenant_examen_timers t WHERE t.apprenant_id=p_apprenant_id
+   AND split_part(t.exercice_id,'__',1)=p_exam_id AND split_part(t.exercice_id,'__',2)=p_matiere_id
+   AND date_trunc('second',t.started_at AT TIME ZONE 'UTC')=date_trunc('second',cand.started_at AT TIME ZONE 'UTC');
+  IF cand.attempt_id IS NOT NULL AND stale_n=1 AND timer_same_second=1
    AND timer.tentative>1 AND timer.exercice_id=p_exam_id||'__'||p_matiere_id||'__t'||timer.tentative
    AND now()>=timer.started_at+make_interval(secs=>timer.duree_secondes)
-   AND cand.started_at<=timer.started_at AND prev_timer_start IS NOT NULL AND prev_timer_start<cand.started_at
+   AND date_trunc('second',cand.started_at AT TIME ZONE 'UTC')=date_trunc('second',timer.started_at AT TIME ZONE 'UTC')
+   AND prev_timer_start IS NOT NULL AND prev_timer_start<cand.started_at
    AND NOT EXISTS(SELECT 1 FROM public.exam_attempts_v2 b WHERE b.apprenant_id=p_apprenant_id AND b.exam_id=p_exam_id
     AND b.snapshot->>'matiere'=p_matiere_id AND b.started_at>cand.started_at)
+   AND jsonb_array_length(coalesce(cand.snapshot->'matieres','[]'::jsonb))=1
+   AND coalesce(cand.snapshot->'matieres'->0->>'subject_id',cand.snapshot->'matieres'->0->>'id')=p_matiere_id
+   AND cand.snapshot->'matieres'->0->>'duree' ~ '^[0-9]+([.][0-9]+)?$'
+   AND timer.duree_secondes=(cand.snapshot->'matieres'->0->>'duree')::numeric*60
+   AND jsonb_array_length(coalesce(cand.snapshot->'questions','[]'::jsonb))>0
    AND greatest(answer.tentative,coalesce(substring(answer.exercice_id FROM '__t([0-9]+)$')::integer,1))<timer.tentative
    AND answer.created_at<cand.started_at AND answer.updated_at<cand.started_at
    AND coalesce(answer.submitted_at,answer.updated_at)<cand.started_at
    AND EXISTS(SELECT 1 FROM public.apprenant_quiz_results q WHERE q.apprenant_id=p_apprenant_id AND q.quiz_id=p_exam_id
     AND q.quiz_type='examen_blanc' AND q.matiere_id=p_matiere_id
-    AND q.tentative=greatest(answer.tentative,coalesce(substring(answer.exercice_id FROM '__t([0-9]+)$')::integer,1)))
+    AND q.tentative=greatest(answer.tentative,coalesce(substring(answer.exercice_id FROM '__t([0-9]+)$')::integer,1))
+    AND q.completed_at IS NOT NULL AND q.completed_at<cand.started_at)
    AND NOT EXISTS(SELECT 1 FROM public.apprenant_quiz_results q WHERE q.apprenant_id=p_apprenant_id AND q.quiz_id=p_exam_id
     AND q.quiz_type='examen_blanc' AND q.matiere_id=p_matiere_id AND q.tentative>=timer.tentative)
    AND NOT EXISTS(SELECT 1 FROM public.reponses_apprenants r WHERE r.apprenant_id=p_apprenant_id AND r.exercice_id=timer.exercice_id)
