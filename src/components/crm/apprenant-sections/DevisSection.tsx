@@ -31,6 +31,7 @@ import Docxtemplater from "docxtemplater";
 import PizZip from "pizzip";
 import { devisPratiqueDates, type DevisPratiquePlanning } from "@/lib/devisPratiqueDates";
 import { devisDatesSignature, formatDevisDate } from "@/lib/devisDatesSignature";
+import { SERVICES_CATALOGUE_DEVIS, appliquerPrestationDevis } from "@/lib/devisServicesCatalogue";
 import { PreuveConsentementFc } from "@/components/devis/PreuveConsentementFc";
 import { dureeDevisElearning, formationDevisAvecDuree } from "@/lib/devisDureesElearning";
 import type { TrainingContract } from "@/lib/contratFormation/model";
@@ -712,6 +713,7 @@ const FORMATIONS_CATALOGUE = [
   { label: "Formation VA E-learning - 499 €", prix: 499, designation: "Formation passerelle VTC pour chauffeur TAXI en E-learning (VA)" },
   { label: "Formation pratique TAXI - 349 €", prix: 349, designation: "Formation pratique TAXI - Préparation pratique à l'examen taxi" },
   { label: "Formation mobilité TAXI 14h - 349 €", prix: 349, designation: "Formation mobilité TAXI (14h) - Formation obligatoire de mobilité pour exercer dans un autre département" },
+  ...SERVICES_CATALOGUE_DEVIS,
 ];
 
 /* ─── DATES DE FORMATION CATALOGUE (présentiel) ─── */
@@ -1164,7 +1166,8 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
   const applyFormationCatalogue = (formationLabel: string) => {
     const f = FORMATIONS_CATALOGUE.find(f => f.label === formationLabel);
     if (!f) return;
-    setLignes(prev => prev.map((l, i) => i === 0 ? { ...l, designation: f.designation, prixUnitaire: f.prix } : l));
+    setLignes(prev => prev.map((l, i) => i === 0 ? appliquerPrestationDevis(l, f) : l));
+    if (f.prix === null) toast.info("Saisissez le prix convenu pour cette prestation avant de générer le devis.");
     const lower = formationLabel.toLowerCase();
     if (lower.includes('taxi')) setFormationType('taxi');
     else if (lower.includes('vtc')) setFormationType('vtc');
@@ -1917,10 +1920,10 @@ export function DevisSection({ apprenant }: DevisSectionProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Appliquer une formation catalogue</Label>
+            <Label>Appliquer une formation ou un service du catalogue</Label>
             <Select onValueChange={applyFormationCatalogue}>
               <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une formation..." />
+                <SelectValue placeholder="Sélectionner une formation ou un service..." />
               </SelectTrigger>
               <SelectContent>
                 {FORMATIONS_CATALOGUE.map(f => (
