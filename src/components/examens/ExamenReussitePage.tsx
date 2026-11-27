@@ -3278,7 +3278,9 @@ export function ExamenReussitePage({ onNavigateToApprenant }: { onNavigateToAppr
         const getCategorieCMA = categorieCma;
         const aFormerIds = new Set(tousAFormer.map(a => a.id));
         const aFormerHorsListeCMA = tousAFormer.filter(a => !candidatsAffichesCMA.some(r => r.candidat.id === a.id));
-        const reussisLettre = candidatsLettreAvecFormation(reussisLettreBase, tousAFormer);
+        const reussisLettreSelection = candidatsLettreAvecFormation(reussisLettreBase, tousAFormer);
+        // La lettre suit la liste affichée : les ajouts manuels y figurent aussi (sans doublon).
+        const reussisLettre = [...reussisLettreSelection, ...candidatsAffichesCMA.map(r => r.candidat).filter(c => !reussisLettreSelection.some(x => x.id === c.id))] as typeof reussisLettreSelection;
         const filieresInconnues = reussisLettre.filter(a => !getCategorieCMA(a.type_apprenant));
         const taxiReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'TAXI');
         const vtcReussis = reussisLettre.filter(a => getCategorieCMA(a.type_apprenant) === 'VTC');
