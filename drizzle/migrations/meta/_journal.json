@@ -2129,6 +2129,13 @@
       "when": 1795770418517,
       "tag": "0303_subject_reset_same_second_v2_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 304,
+      "version": "7",
+      "when": 1795798375108,
+      "tag": "0304_validation_admin_preuve_legacy",
+      "breakpoints": true
     }
   ]
 }

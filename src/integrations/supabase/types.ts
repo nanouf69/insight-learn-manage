@@ -6851,6 +6851,39 @@ export type Database = {
         }
         Relationships: []
       }
+      module_completion_validations_admin: {
+        Row: {
+          apprenant_id: string
+          auteur_role: string
+          auteur_uid: string | null
+          created_at: string
+          id: string
+          module_id: number
+          motif: string
+          preuves: Json
+        }
+        Insert: {
+          apprenant_id: string
+          auteur_role: string
+          auteur_uid?: string | null
+          created_at?: string
+          id?: string
+          module_id: number
+          motif: string
+          preuves: Json
+        }
+        Update: {
+          apprenant_id?: string
+          auteur_role?: string
+          auteur_uid?: string | null
+          created_at?: string
+          id?: string
+          module_id?: number
+          motif?: string
+          preuves?: Json
+        }
+        Relationships: []
+      }
       module_editor_state: {
         Row: {
           created_at: string
@@ -10608,6 +10641,25 @@ export type Database = {
           prenom: string
           type_signalement: string
         }[]
+      }
+      admin_valider_module_preuve_legacy: {
+        Args: { _apprenant_id: string; _module_id: number; _motif: string }
+        Returns: {
+          apprenant_id: string
+          auteur_role: string
+          auteur_uid: string | null
+          created_at: string
+          id: string
+          module_id: number
+          motif: string
+          preuves: Json
+        }
+        SetofOptions: {
+          from: "*"
+          to: "module_completion_validations_admin"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       agenda_blocs_emargement_eleve: {
         Args: { p_apprenant_id: string }
