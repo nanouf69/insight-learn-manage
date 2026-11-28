@@ -4,7 +4,7 @@ import { ajouterLyonVtc, COURS_LYON_VTC_ID, PDF_LYON_VTC, estPdfLyonVtc } from '
 import { fusionnerQuizLyon, retirerAjoutsQuizLyon } from '@/lib/pratiqueVtcLyonFusion';
 import { lireVersionQuizLyon, type VersionQuizLyon } from '@/lib/pratiqueVtcLyonVersion';
 import { reponsesQuizLyonCompletes } from '@/lib/pratiqueVtcLyonAchevement';
-import { FRAIS_EXAMEN_CMA_INFORMATION } from "@/lib/fraisExamenCma";
+import { FRAIS_EXAMEN_CMA_INFORMATION, FRAIS_EXAMEN_CMA_PASSERELLE_INFORMATION } from "@/lib/fraisExamenCma";
 import { Bilan505Desactive, couperBilan505, remettreBilan505, useBilan505Active, type RevueItem } from '@/lib/bilan505Remise';
 import { Bilan505RevuePanel } from './Bilan505RevuePanel';
 import { FirstPassageProvider, QuestionFirstPassageRate } from './QuestionFirstPassageRate';
@@ -1829,7 +1829,7 @@ const INTRODUCTION_TA_PRESENTIEL_DATA: ModuleData = {
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
-    { id: 1, titre: "Bienvenue — Passerelle TA", description: "Cette formation passerelle vous permet d'obtenir votre carte TAXI en complétant vos compétences VTC.\n\nVous devez réussir l'examen théorique sur 2 matières spécifiques TAXI, puis l'épreuve pratique.\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
+    { id: 1, titre: "Bienvenue — Passerelle TA", description: `Cette formation passerelle vous permet d'obtenir votre carte TAXI en complétant vos compétences VTC.\n\nVous devez réussir l'examen théorique sur 2 matières spécifiques TAXI, puis l'épreuve pratique.\n\n${FRAIS_EXAMEN_CMA_PASSERELLE_INFORMATION}\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€`, actif: true },
     { id: 2, titre: "Contenu de l'examen — Épreuves spécifiques TAXI", description: `L'examen passerelle TA se compose de 2 épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
 
 📝 ÉPREUVES SPÉCIFIQUES TAXI :
@@ -1886,7 +1886,7 @@ const INTRODUCTION_TA_ELEARNING_DATA: ModuleData = {
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 102, titre: "Conditions Générales de Vente", description: "Veuillez lire et accepter les CGV avant de continuer.", actif: true, checklistType: "cgv" },
-    { id: 1, titre: "Bienvenue — Passerelle TA (E-learning)", description: "Formation passerelle TAXI en e-learning.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
+    { id: 1, titre: "Bienvenue — Passerelle TA (E-learning)", description: `Formation passerelle TAXI en e-learning.\n\n2 matières : Réglementation nationale TAXI + Réglementation locale\n\n${FRAIS_EXAMEN_CMA_PASSERELLE_INFORMATION}\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€`, actif: true },
     { id: 2, titre: "Contenu de l'examen — Épreuves spécifiques TAXI", description: `L'examen passerelle TA se compose de 2 épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
 
 📝 ÉPREUVES SPÉCIFIQUES TAXI :
@@ -1939,7 +1939,7 @@ const INTRODUCTION_VA_PRESENTIEL_DATA: ModuleData = {
     { id: 0, titre: "Test de compétences avant formation", description: "Répondez aux questions.", actif: true, checklistType: "competences" },
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
-    { id: 1, titre: "Bienvenue — Passerelle VA", description: "Cette formation passerelle vous permet d'obtenir votre carte VTC en complétant vos compétences TAXI.\n\nVous devez réussir l'examen théorique sur 2 matières spécifiques VTC, puis l'épreuve pratique.\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
+    { id: 1, titre: "Bienvenue — Passerelle VA", description: `Cette formation passerelle vous permet d'obtenir votre carte VTC en complétant vos compétences TAXI.\n\nVous devez réussir l'examen théorique sur 2 matières spécifiques VTC, puis l'épreuve pratique.\n\n${FRAIS_EXAMEN_CMA_PASSERELLE_INFORMATION}\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€`, actif: true },
     { id: 2, titre: "Contenu de l'examen — Épreuves spécifiques VTC", description: `L'examen passerelle VA se compose de 2 épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
 
 📝 ÉPREUVES SPÉCIFIQUES VTC :
@@ -1995,7 +1995,7 @@ const INTRODUCTION_VA_ELEARNING_DATA: ModuleData = {
     { id: 100, titre: "Analyse du besoin – Fiche client", description: "Complétez cette fiche.", actif: true, checklistType: "analyse-besoin" },
     { id: 101, titre: "Questionnaire Projet Professionnel", description: "Évaluation de votre motivation et de votre projet professionnel.", actif: true, checklistType: "projet-professionnel" },
     { id: 102, titre: "Conditions Générales de Vente", description: "Veuillez lire et accepter les CGV avant de continuer.", actif: true, checklistType: "cgv" },
-    { id: 1, titre: "Bienvenue — Passerelle VA (E-learning)", description: "Formation passerelle VTC en e-learning.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€", actif: true },
+    { id: 1, titre: "Bienvenue — Passerelle VA (E-learning)", description: `Formation passerelle VTC en e-learning.\n\n2 matières : Développement Commercial + Réglementation spécifique VTC\n\n${FRAIS_EXAMEN_CMA_PASSERELLE_INFORMATION}\n\n💰 Frais d'examen en cas d'échec :\n• Examen théorique : environ 240€\n• Examen pratique : environ 200€`, actif: true },
     { id: 2, titre: "Contenu de l'examen — Épreuves spécifiques VTC", description: `L'examen passerelle VA se compose de 2 épreuves théoriques d'admissibilité (QCM + QRC) et d'une épreuve pratique d'admission.
 
 📝 ÉPREUVES SPÉCIFIQUES VTC :

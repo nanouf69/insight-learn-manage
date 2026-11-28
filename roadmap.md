@@ -71,6 +71,7 @@
 - [x] Relire les enregistrements, tester les contrôles ciblés et fournir le bilan précis des preuves, réserves et limites : 19 tests PASS, build OK ; dépôt réel non effectué faute de binaires.
 - [ ] Dépôt réel des deux originaux et confirmation de la date manuscrite : bloqué par les binaires non transmis ; bilans trimestriels et justificatifs à enregistrer lorsqu'ils existeront.
 ## Frais CMA TAXI/VTC 2027 — 25/11
+- [x] 28/11 : trois tarifs datés dans les six introductions (246 €, 171 €, 120 € dès le 01/01/2027) ; seuls les textes Cloud 1/32 enregistrés avec CAS/readback, quiz de repassage et corrigés inchangés, historiques/progression préservés ; 17 tests, typecheck/build PASS, rapport docs/cma-tarifs-2027-introductions-2026-11-28.md ; aucune publication. Écran élève réel non prouvé (compte expiré).
 - [x] Inventaire code/Cloud et 192 documents locaux ; 241 historiques/identifiants distingués, repassages environ 240 € non assimilés à l'examen complet.
 - [x] 246 € daté préparé introductions 1/26, étapes 4/5, estimation CRM et trois modèles mails ; cours bienvenue Cloud 1 ajouté avec journal avant/après ; aucun paiement/document signé/publication.
 - [x] 26 tests ciblés PASS, huit vues Introduction fictives PC/mobile, étapes 4/5 et build OK ; 62 modules comparés (seul 1 change), 383 versions inchangées. Bilan docs/cma-tarif-2027-2026-11-25.md.

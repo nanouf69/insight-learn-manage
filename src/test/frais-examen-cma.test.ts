@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { fraisExamenCma } from "@/lib/fraisExamenCma";
+import { FRAIS_EXAMEN_CMA_INFORMATION, FRAIS_EXAMEN_CMA_PASSERELLE_INFORMATION, fraisExamenCma } from "@/lib/fraisExamenCma";
 import { candidatsAPayer, tarifExamen } from "@/lib/candidatsAPayer";
 
 describe("Frais CMA datés, décision 25/11/2026", () => {
@@ -15,5 +15,24 @@ describe("Frais CMA datés, décision 25/11/2026", () => {
     const before = structuredClone(rows);
     expect(candidatsAPayer(rows, a=>a.statut, a=>a.type, a=>a.date).montant).toBe(655);
     expect(rows).toEqual(before);
+  });
+
+  it("introduction TAXI/VTC : examen complet 241 € en 2026 puis 246 € au 1er janvier 2027", () => {
+    expect(FRAIS_EXAMEN_CMA_INFORMATION).toContain("examen complet 241 € en 2026 ; 246 € à partir du 1er janvier 2027");
+  });
+
+  it("introductions passerelles : 168 € en 2026 puis 171 € au 1er janvier 2027", () => {
+    expect(FRAIS_EXAMEN_CMA_PASSERELLE_INFORMATION).toContain("examen passerelle 168 € en 2026 ; 171 € à partir du 1er janvier 2027");
+  });
+
+  it("introductions TAXI/VTC et passerelles : pratique seule 118 € en 2026 puis 120 € au 1er janvier 2027", () => {
+    for (const texte of [FRAIS_EXAMEN_CMA_INFORMATION, FRAIS_EXAMEN_CMA_PASSERELLE_INFORMATION]) {
+      expect(texte).toContain("Épreuve pratique seule : 118 € en 2026 ; 120 € à partir du 1er janvier 2027");
+    }
+  });
+
+  it("les montants de repassage ne sont pas assimilés aux trois tarifs CMA", () => {
+    expect(FRAIS_EXAMEN_CMA_INFORMATION).toContain("repassage après échec sont distincts");
+    expect(FRAIS_EXAMEN_CMA_PASSERELLE_INFORMATION).toContain("repassage après échec sont distincts");
   });
 });

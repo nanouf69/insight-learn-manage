@@ -1,5 +1,6 @@
 /** Information prospective uniquement : aucun paiement ni document historique n'est recalculé. */
-export const FRAIS_EXAMEN_CMA_INFORMATION = "Examen complet CMA TAXI/VTC : 241 € en 2026 ; 246 € à partir du 1er janvier 2027. Les tarifs de repassage et de mobilité professionnelle sont distincts.";
+export const FRAIS_EXAMEN_CMA_INFORMATION = "Tarifs CMA TAXI/VTC : examen complet 241 € en 2026 ; 246 € à partir du 1er janvier 2027. Épreuve pratique seule : 118 € en 2026 ; 120 € à partir du 1er janvier 2027. Les tarifs de passerelle et de repassage après échec sont distincts.";
+export const FRAIS_EXAMEN_CMA_PASSERELLE_INFORMATION = "Tarifs CMA passerelles TA/VA : examen passerelle 168 € en 2026 ; 171 € à partir du 1er janvier 2027. Épreuve pratique seule : 118 € en 2026 ; 120 € à partir du 1er janvier 2027. Les tarifs de repassage après échec sont distincts.";
 
 export function fraisExamenCma(date?: string | Date | null): number {
   if (date instanceof Date) {
